@@ -25,13 +25,13 @@ export default function FinalCTA() {
           <div className="mt-10 flex flex-wrap gap-4">
             <a
               href="#analyze"
-              className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3 text-[15px] font-semibold text-[#111827] shadow-sm transition hover:bg-gray-50"
+              className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3 text-[15px] font-semibold text-[#111827] shadow-[0_0_0_2px_rgba(255,255,255,0.35)] transition hover:bg-gray-50"
             >
               Analyze my resume
             </a>
             <a
               href="#practice"
-              className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-7 py-3 text-[15px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+              className="inline-flex items-center justify-center rounded-full bg-white/10 px-7 py-3 text-[15px] font-semibold text-white shadow-[0_0_0_2px_rgba(255,255,255,0.35)] backdrop-blur-sm transition hover:bg-white/20"
             >
               Practice interviews
             </a>
