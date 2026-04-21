@@ -12,8 +12,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/90 backdrop-blur border-b border-gray-100">
-      <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
+    <header className="sticky top-4 z-30 w-full px-4 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between rounded-full border border-gray-100 bg-white/95 px-5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur sm:h-[72px] sm:px-6 lg:px-8">
         {/* Logo */}
         <a href="#" className="flex items-center">
           <img src="/assets/logo.png" alt="Artemis" className="h-8 w-auto object-contain" />
@@ -70,8 +70,8 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="lg:hidden border-t border-gray-100 bg-white">
-          <ul className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-4">
+        <div className="lg:hidden mx-auto mt-2 max-w-7xl rounded-2xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+          <ul className="flex flex-col gap-1 px-4 py-4">
             {navLinks.map((link) => (
               <li key={link.label}>
                 <a

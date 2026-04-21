@@ -8,7 +8,9 @@ export default function Hero() {
         <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
           <span className="text-[#111827]">Land the job,</span>
           <br />
-          <span className="text-[#6b7280]">not just another application.</span>
+          <span className="text-[#6b7280]">not just another</span>
+          <br />
+          <span className="text-[#6b7280]">application.</span>
         </h1>
 
         <p className="mt-6 max-w-[700px] text-base leading-relaxed text-gray-500 sm:text-lg">
@@ -24,11 +26,11 @@ export default function Hero() {
       </section>
 
       {/* Illustration */}
-      <section className="mx-auto flex w-full justify-center px-6 pt-16 pb-20 sm:pt-20">
+      <section className="mx-auto flex w-full justify-center px-6 pt-16 pb-0 sm:pt-20">
         <img
           src="/assets/globe.png"
           alt="Illustration of a globe with orbital rings"
-          className="w-full max-w-[640px] opacity-95 select-none"
+          className="w-full max-w-[900px] select-none"
           draggable="false"
         />
       </section>

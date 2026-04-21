@@ -1,7 +1,7 @@
 export default function FinalCTA() {
   return (
     <section className="w-full bg-white px-6 py-20 lg:px-10 lg:py-24">
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[32px] bg-[#16a34a] px-8 py-16 sm:px-12 sm:py-20 lg:px-16 lg:py-24">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[32px] bg-[#22c55e] px-8 py-16 sm:px-12 sm:py-20 lg:px-16 lg:py-24">
         {/* Decorative globe */}
         <img
           src="/assets/globe.png"
