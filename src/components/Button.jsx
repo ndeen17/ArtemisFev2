@@ -10,9 +10,9 @@ export default function Button({
 
   const variants = {
     primary:
-      'bg-brand-green text-[#111827] ring-4 ring-[#bbf7d0] shadow-sm hover:shadow-md hover:brightness-105 active:brightness-95',
+      'bg-brand-green text-[#111827] ring-[2px] ring-[#dcfce7] shadow-sm hover:shadow-md hover:brightness-105 active:brightness-95',
     outline:
-      'bg-white text-[#111827] ring-4 ring-[#f1f5f9] border border-[#e5e7eb] hover:bg-gray-50 hover:border-gray-300',
+      'bg-white text-[#111827] shadow-[0_0_0_2px_rgba(17,24,39,0.04),0_1px_2px_rgba(17,24,39,0.05)] hover:shadow-[0_0_0_2px_rgba(17,24,39,0.06),0_1px_2px_rgba(17,24,39,0.07)]',
   };
 
   const sizes = {
