@@ -5,7 +5,7 @@ export default function Hero() {
     <main className="w-full bg-white">
       {/* Hero text + CTA */}
       <section className="mx-auto flex max-w-[900px] flex-col items-center px-6 pt-24 text-center sm:pt-28 lg:pt-32">
-        <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-[64px]">
           <span className="text-[#111827]">Land the job,</span>
           <br />
           <span className="text-[#6b7280]">not just another</span>
