@@ -10,9 +10,9 @@ export default function Button({
 
   const variants = {
     primary:
-      'bg-brand-green text-[#111827] shadow-sm hover:shadow-md hover:brightness-105 active:brightness-95',
+      'bg-brand-green text-[#111827] ring-4 ring-[#bbf7d0] shadow-sm hover:shadow-md hover:brightness-105 active:brightness-95',
     outline:
-      'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400',
+      'bg-white text-[#111827] ring-4 ring-[#f1f5f9] border border-[#e5e7eb] hover:bg-gray-50 hover:border-gray-300',
   };
 
   const sizes = {
