@@ -18,7 +18,11 @@ export default function CvPage() {
     setError(null);
     try {
       await upload.mutateAsync(file);
-      navigate('/onboarding/cv/edit');
+      // Upload path: the user already has a finished CV. Skip the structured
+      // editor (which can feel like a "build a CV" detour after upload) and
+      // jump straight to the next onboarding step. They can still tweak it
+      // anytime via Profile → Edit CV or Settings → Resume.
+      navigate('/onboarding/linkedin');
     } catch (err) {
       const apiErr = extractApiError(err);
       setError(apiErr.message);
@@ -54,7 +58,7 @@ export default function CvPage() {
           I don&apos;t have a CV yet
         </Button>
         {stateQuery.data?.hasCv ? (
-          <Button onClick={() => navigate('/onboarding/cv/edit')} size="sm">
+          <Button onClick={() => navigate('/onboarding/linkedin')} size="sm">
             Continue with current CV
           </Button>
         ) : null}

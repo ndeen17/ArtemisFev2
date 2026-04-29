@@ -33,62 +33,126 @@ const LEVELS: { value: ExperienceLevel; title: string }[] = [
   { value: 'lead', title: 'Staff / lead (10+)' },
 ];
 
+type Stage = 'name' | 'role';
+
+/**
+ * /onboarding/role — split into two micro-steps so the page never feels stuck.
+ *
+ *  Stage 1 ("name"): just the display name. Submit ⇒ patches displayName +
+ *      auth store, advances to stage 2 inline (no route change).
+ *  Stage 2 ("role"): role + experience level + Continue → patches both and
+ *      navigates to /onboarding/goal.
+ *
+ * The user sees a single Continue button per stage with clear, immediate
+ * feedback — fixing the previous "after typing my name nothing happens"
+ * cul-de-sac where Continue was silently disabled until role+level were set.
+ */
 export default function RolePage() {
   const navigate = useNavigate();
   const stateQuery = useOnboardingState();
   const patch = usePatchOnboarding();
   const setUser = useAuthStore((s) => s.setUser);
   const user = useAuthStore((s) => s.user);
+
+  const [stage, setStage] = useState<Stage>('name');
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState<Role | null>(null);
   const [level, setLevel] = useState<ExperienceLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Hydrate from server state once, and skip the name stage if it's already set.
   useEffect(() => {
-    if (stateQuery.data) {
-      setRole(stateQuery.data.role);
-      setLevel(stateQuery.data.experienceLevel);
-      if (stateQuery.data.displayName) setDisplayName(stateQuery.data.displayName);
+    if (!stateQuery.data) return;
+    if (stateQuery.data.displayName) {
+      setDisplayName((prev) => (prev === '' ? stateQuery.data!.displayName ?? '' : prev));
     }
+    setRole((prev) => prev ?? stateQuery.data.role);
+    setLevel((prev) => prev ?? stateQuery.data.experienceLevel);
+    if (stateQuery.data.displayName && stage === 'name') {
+      setStage('role');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateQuery.data]);
 
   const trimmedName = displayName.trim();
-  const canContinue = Boolean(trimmedName.length >= 2 && role && level);
+  const canSubmitName = trimmedName.length >= 2;
+  const canSubmitRole = Boolean(role && level);
 
-  async function next() {
-    if (!role || !level || trimmedName.length < 2) return;
+  async function submitName(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!canSubmitName) return;
+    setError(null);
+    try {
+      await patch.mutateAsync({ displayName: trimmedName });
+      if (user) setUser({ ...user, displayName: trimmedName });
+      setStage('role');
+    } catch (err) {
+      setError(extractApiError(err).message);
+    }
+  }
+
+  async function submitRole() {
+    if (!role || !level) return;
     setError(null);
     try {
       await patch.mutateAsync({
-        displayName: trimmedName,
         role,
         experienceLevel: level,
         onboardingStep: 'goal',
       });
-      // Reflect the new name in the auth store so dashboard greeting is fresh.
-      if (user) setUser({ ...user, displayName: trimmedName });
       navigate('/onboarding/goal');
     } catch (err) {
       setError(extractApiError(err).message);
     }
   }
 
+  if (stage === 'name') {
+    return (
+      <OnboardingLayout step={1} backTo="/">
+        <StepHeader
+          eyebrow="Welcome"
+          title="What should we call you?"
+          subtitle="We'll use this to greet you across the app. Just a first name is fine."
+        />
+
+        <form onSubmit={submitName} className="space-y-6" noValidate>
+          <FormField
+            id="onb-name"
+            label="Your name"
+            placeholder="Jane"
+            autoComplete="given-name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            autoFocus
+            hint="Two characters or more."
+          />
+
+          {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
+
+          <div className="flex justify-end pt-2">
+            <Button type="submit" disabled={!canSubmitName || patch.isPending}>
+              {patch.isPending ? (
+                <span className="inline-flex items-center gap-2">
+                  <SpinnerIcon /> Saving…
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2">
+                  Continue <ArrowRightIcon />
+                </span>
+              )}
+            </Button>
+          </div>
+        </form>
+      </OnboardingLayout>
+    );
+  }
+
   return (
     <OnboardingLayout step={1} backTo="/">
       <StepHeader
-        eyebrow="Step 1"
+        eyebrow={`Hi ${trimmedName || 'there'} 👋`}
         title="What do you do?"
         subtitle="We tailor your dashboard, prep questions, and CV feedback to your role and seniority."
-      />
-
-      <FormField
-        id="onb-name"
-        label="What should we call you?"
-        placeholder="Jane"
-        autoComplete="given-name"
-        value={displayName}
-        onChange={(e) => setDisplayName(e.target.value)}
-        hint="We'll use this to greet you across the app."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -128,8 +192,15 @@ export default function RolePage() {
 
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
-      <div className="flex justify-end pt-2">
-        <Button onClick={next} disabled={!canContinue || patch.isPending}>
+      <div className="flex items-center justify-between gap-3 pt-2">
+        <button
+          type="button"
+          onClick={() => setStage('name')}
+          className="text-[13px] font-semibold text-gray-500 hover:text-[#111827]"
+        >
+          ← Change name
+        </button>
+        <Button onClick={submitRole} disabled={!canSubmitRole || patch.isPending}>
           {patch.isPending ? (
             <span className="inline-flex items-center gap-2">
               <SpinnerIcon /> Saving…
