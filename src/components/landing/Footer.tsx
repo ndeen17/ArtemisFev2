@@ -38,12 +38,14 @@ export function Footer() {
             <ul className="mt-6 space-y-0">
               {col.links.map((label) => (
                 <li key={label} className="border-b border-[#e5e7eb]">
-                  <a
-                    href="#"
-                    className="block py-4 text-[17px] font-semibold text-[#111827] transition-colors hover:text-[#22c55e]"
+                  {/* These pages aren't built yet — render as non-interactive labels
+                      so we don't ship dead links. Replace with <a href> when each page exists. */}
+                  <span
+                    className="block py-4 text-[17px] font-semibold text-[#111827]/60 cursor-default"
+                    aria-disabled="true"
                   >
                     {label}
-                  </a>
+                  </span>
                 </li>
               ))}
             </ul>

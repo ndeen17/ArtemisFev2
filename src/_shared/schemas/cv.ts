@@ -22,8 +22,63 @@ export type CvSummary = z.infer<typeof CvSummarySchema>;
 /** Full CV payload (with text) — used by editor / rewriter (Phase 5). */
 export const CvDetailSchema = CvSummarySchema.extend({
   rawText: z.string(),
+  /** Structured representation used by the interactive editor + live preview.
+   *  Optional for legacy uploaded CVs that haven't been parsed yet. */
+  structured: z.lazy(() => StructuredCvSchema).nullable().optional(),
 });
 export type CvDetail = z.infer<typeof CvDetailSchema>;
+
+/** Structured CV shape used by the interactive editor + live preview.
+ *  All string fields are optional/empty-allowed so the editor can hold
+ *  in-progress state. Validation tightens at save time on the BE if needed. */
+export const StructuredCvHeaderSchema = z.object({
+  fullName: z.string().trim().max(120).default(''),
+  headline: z.string().trim().max(160).default(''),
+  email: z.string().trim().max(160).default(''),
+  phone: z.string().trim().max(40).default(''),
+  location: z.string().trim().max(160).default(''),
+  linkedin: z.string().trim().max(200).default(''),
+  website: z.string().trim().max(200).default(''),
+});
+export type StructuredCvHeader = z.infer<typeof StructuredCvHeaderSchema>;
+
+export const StructuredCvExperienceSchema = z.object({
+  id: z.string(),
+  title: z.string().trim().max(120).default(''),
+  company: z.string().trim().max(120).default(''),
+  location: z.string().trim().max(120).default(''),
+  startDate: z.string().trim().max(20).default(''),
+  endDate: z.string().trim().max(20).default(''),
+  current: z.boolean().default(false),
+  achievements: z.array(z.string().trim().max(500)).max(12).default([]),
+});
+export type StructuredCvExperience = z.infer<typeof StructuredCvExperienceSchema>;
+
+export const StructuredCvEducationSchema = z.object({
+  id: z.string(),
+  school: z.string().trim().max(160).default(''),
+  qualification: z.string().trim().max(160).default(''),
+  startDate: z.string().trim().max(20).default(''),
+  endDate: z.string().trim().max(20).default(''),
+  detail: z.string().trim().max(400).default(''),
+});
+export type StructuredCvEducation = z.infer<typeof StructuredCvEducationSchema>;
+
+export const StructuredCvSchema = z.object({
+  header: StructuredCvHeaderSchema,
+  summary: z.string().trim().max(1500).default(''),
+  experience: z.array(StructuredCvExperienceSchema).max(15).default([]),
+  education: z.array(StructuredCvEducationSchema).max(8).default([]),
+  skills: z.array(z.string().trim().max(60)).max(40).default([]),
+});
+export type StructuredCv = z.infer<typeof StructuredCvSchema>;
+
+/** Patch payload for PATCH /cv/:id. All sections optional so the FE can do
+ *  partial updates as the user moves through the editor. */
+export const CvPatchSchema = z.object({
+  structured: StructuredCvSchema,
+});
+export type CvPatchInput = z.infer<typeof CvPatchSchema>;
 
 /** ONB-06A: paste a JD, get a CV draft. */
 export const CvFromJdSchema = z.object({

@@ -40,7 +40,11 @@ export function ScoreReveal({ overview }: Props) {
   }, [score]);
 
   const onContinue = () => {
-    ack.mutate(undefined, { onSettled: () => navigate('/profile', { replace: true }) });
+    // Fire-and-forget the ack — the mutation optimistically clears firstReveal
+    // in the cache via onMutate, so we can navigate immediately. If the POST
+    // fails the worst case is the user sees the reveal again next visit.
+    ack.mutate();
+    navigate('/profile', { replace: true });
   };
 
   const tagline =
@@ -92,7 +96,7 @@ export function ScoreReveal({ overview }: Props) {
         transition={{ delay: 1.7, duration: 0.4 }}
         className="mt-8 flex items-center justify-center"
       >
-        <Button variant="primary" size="md" onClick={onContinue} disabled={ack.isPending}>
+        <Button variant="primary" size="md" onClick={onContinue}>
           <span className="inline-flex items-center gap-2">
             <SparklesIcon className="w-4 h-4" />
             See what to do next

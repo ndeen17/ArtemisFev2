@@ -67,9 +67,13 @@ export function useUploadCv() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: cvApi.upload,
-    onSuccess() {
+    async onSuccess() {
       void qc.invalidateQueries({ queryKey: CV_KEY });
-      void qc.invalidateQueries({ queryKey: KEY });
+      // The backend advances onboardingStep to 'linkedin' on upload. Refetch
+      // onboarding state and mirror it into the auth store so the route gate
+      // doesn't bounce the user back to /onboarding/cv.
+      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
+      syncAuthStep(qc, state);
     },
   });
 }
@@ -78,9 +82,10 @@ export function useGenerateCvFromJd() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: cvApi.fromJd,
-    onSuccess() {
+    async onSuccess() {
       void qc.invalidateQueries({ queryKey: CV_KEY });
-      void qc.invalidateQueries({ queryKey: KEY });
+      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
+      syncAuthStep(qc, state);
     },
   });
 }
@@ -89,9 +94,10 @@ export function useGenerateCvFromQuestionnaire() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: cvApi.fromQuestionnaire,
-    onSuccess() {
+    async onSuccess() {
       void qc.invalidateQueries({ queryKey: CV_KEY });
-      void qc.invalidateQueries({ queryKey: KEY });
+      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
+      syncAuthStep(qc, state);
     },
   });
 }

@@ -17,11 +17,19 @@ export default function CvBuilderJdPage() {
   const [error, setError] = useState<string | null>(null);
 
   const len = jd.trim().length;
-  const tooShort = len > 0 && len < MIN;
+  const tooShort = len < MIN;
   const ready = len >= MIN && len <= MAX;
 
   async function submit() {
     setError(null);
+    if (!ready) {
+      setError(
+        len === 0
+          ? 'Paste a job description to continue.'
+          : `Add at least ${MIN - len} more characters for a useful draft.`,
+      );
+      return;
+    }
     try {
       await generate.mutateAsync({ jobDescription: jd.trim() });
       navigate('/onboarding/linkedin');
@@ -49,9 +57,11 @@ export default function CvBuilderJdPage() {
         />
         <div className="flex items-center justify-between text-[12px]">
           <span className={tooShort ? 'text-amber-600' : 'text-gray-500'}>
-            {tooShort
-              ? `Add at least ${MIN - len} more characters for a useful draft.`
-              : 'Tip: include responsibilities, requirements, and the seniority level.'}
+            {len === 0
+              ? `Paste a job description (at least ${MIN} characters) to continue.`
+              : tooShort
+                ? `Add at least ${MIN - len} more characters for a useful draft.`
+                : 'Tip: include responsibilities, requirements, and the seniority level.'}
           </span>
           <span className="text-gray-400">
             {len.toLocaleString()} / {MAX.toLocaleString()}
@@ -62,7 +72,7 @@ export default function CvBuilderJdPage() {
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
       <div className="flex justify-end">
-        <Button onClick={submit} disabled={!ready || generate.isPending}>
+        <Button onClick={submit} disabled={generate.isPending}>
           {generate.isPending ? (
             <span className="inline-flex items-center gap-2">
               <SpinnerIcon /> Drafting your CV…

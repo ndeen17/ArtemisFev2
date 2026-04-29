@@ -44,6 +44,16 @@ export function useMarkScoreRevealSeen() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: profileApi.markScoreRevealSeen,
+    onMutate() {
+      // Optimistically clear firstReveal so the immediate /profile redirect
+      // doesn't bounce the user back to the reveal page while the refetch
+      // is still in flight.
+      qc.setQueryData(OVERVIEW_KEY, (prev: unknown) =>
+        prev && typeof prev === 'object'
+          ? { ...(prev as Record<string, unknown>), firstReveal: false }
+          : prev,
+      );
+    },
     onSuccess() {
       void qc.invalidateQueries({ queryKey: OVERVIEW_KEY });
     },

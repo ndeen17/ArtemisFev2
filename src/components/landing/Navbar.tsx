@@ -1,11 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 
 const navLinks = [
   { label: 'Resume Builder', href: '#resume' },
   { label: 'AI Interviews', href: '#interviews' },
   { label: 'Mentor Match', href: '#mentors' },
-  { label: 'Pricing', href: '#pricing' },
 ];
 
 /** Landing — sticky pill-shaped top navigation with mobile menu. */
@@ -15,9 +15,9 @@ export function Navbar() {
   return (
     <header className="sticky top-4 z-30 w-full px-4 sm:px-6 lg:px-8">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between rounded-full border border-gray-100 bg-white/95 px-5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur sm:h-[72px] sm:px-6 lg:px-8">
-        <a href="#" className="flex items-center" aria-label="Artemis home">
+        <Link to="/" className="flex items-center" aria-label="Artemis home">
           <img src="/assets/logo.png" alt="Artemis" className="h-8 w-auto object-contain" />
-        </a>
+        </Link>
 
         <ul className="hidden lg:flex items-center gap-10">
           {navLinks.map((link) => (

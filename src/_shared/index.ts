@@ -9,6 +9,7 @@ export * from './schemas/common.js';
 export * from './schemas/auth.js';
 export * from './schemas/onboarding.js';
 export * from './schemas/cv.js';
+export * from './schemas/cvCoach.js';
 export * from './schemas/analysis.js';
 export * from './schemas/profile.js';
 export * from './schemas/goal.js';

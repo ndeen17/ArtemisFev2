@@ -21,15 +21,6 @@ const ROLES: { value: Role; title: string; description: string }[] = [
     description: 'Roadmaps, discovery, shipping outcomes.',
   },
   { value: 'designer', title: 'Designer', description: 'Product, UX, brand, motion.' },
-  {
-    value: 'data_analyst',
-    title: 'Data / analytics',
-    description: 'Analyst, scientist, ML engineer.',
-  },
-  { value: 'marketing', title: 'Marketing', description: 'Growth, content, lifecycle, brand.' },
-  { value: 'sales', title: 'Sales', description: 'AE, SDR, partnerships, customer success.' },
-  { value: 'operations', title: 'Operations', description: 'Ops, finance, recruiting, programs.' },
-  { value: 'other', title: 'Something else', description: 'We support more roles every week.' },
 ];
 
 const LEVELS: { value: ExperienceLevel; title: string }[] = [

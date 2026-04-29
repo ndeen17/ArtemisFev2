@@ -19,7 +19,7 @@ export function Hero() {
         </p>
 
         <div className="mt-10">
-          <Button variant="primary" size="lg" href="#start">
+          <Button variant="primary" size="lg" href="/signup">
             Get started
           </Button>
         </div>
