@@ -6,6 +6,7 @@ import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
 import { useInterview, useInterviews } from '@/hooks/useInterviews';
 import { ReadinessScoreCard } from '@/components/dashboard/ReadinessScoreCard';
+import { AnalysingResumeCard } from '@/components/dashboard/AnalysingResumeCard';
 import { ActionList, type WeakInterviewSummary } from '@/components/dashboard/ActionList';
 import { NoGoalPrompt } from '@/components/dashboard/NoGoalPrompt';
 import { useAuthStore } from '@/store/authStore';
@@ -73,7 +74,15 @@ export default function DashboardPage() {
     analysis: analysis.data ? { status: analysis.data.status, result: analysis.data.result } : null,
   });
 
-  const firstName = user?.email?.split('@')[0] ?? 'there';
+  const firstName = (() => {
+    const raw = user?.displayName?.trim();
+    if (raw) return raw.split(/\s+/)[0];
+    return user?.email?.split('@')[0] ?? 'there';
+  })();
+
+  const analysisStatus = analysis.data?.status;
+  const isAnalysing =
+    !!cv.data && (analysisStatus === 'queued' || analysisStatus === 'running');
 
   return (
     <AppShell title="Dashboard" subtitle={copy.dashboardSubtitle}>
@@ -104,7 +113,7 @@ export default function DashboardPage() {
 
       {!hasGoal ? <NoGoalPrompt /> : null}
 
-      <ReadinessScoreCard snapshot={snapshot} />
+      {isAnalysing ? <AnalysingResumeCard /> : <ReadinessScoreCard snapshot={snapshot} />}
 
       <ActionList
         readiness={snapshot}

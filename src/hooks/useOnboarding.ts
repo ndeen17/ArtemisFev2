@@ -101,3 +101,25 @@ export function useGenerateCvFromQuestionnaire() {
     },
   });
 }
+
+export function usePatchCv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      cvId,
+      structured,
+    }: {
+      cvId: string;
+      structured: import('@artemis/shared').StructuredCv;
+    }) => cvApi.patchStructured(cvId, structured),
+    onSuccess() {
+      void qc.invalidateQueries({ queryKey: CV_KEY });
+    },
+  });
+}
+
+export function useCvCoach() {
+  return useMutation({
+    mutationFn: (input: import('@artemis/shared').CvCoachRequest) => cvApi.coach(input),
+  });
+}

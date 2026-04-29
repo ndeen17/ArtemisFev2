@@ -37,6 +37,7 @@ export type OnboardingStep = z.infer<typeof OnboardingStepSchema>;
 /** Patch payload — every field optional so each step can write only what it knows. */
 export const OnboardingPatchSchema = z
   .object({
+    displayName: z.string().trim().min(1).max(80).optional(),
     role: RoleSchema.optional(),
     experienceLevel: ExperienceLevelSchema.optional(),
     goal: GoalSchema.optional(),
@@ -47,6 +48,7 @@ export type OnboardingPatchInput = z.infer<typeof OnboardingPatchSchema>;
 
 /** Snapshot returned by GET /onboarding — drives the wizard's initial state. */
 export const OnboardingStateSchema = z.object({
+  displayName: z.string().nullable(),
   role: RoleSchema.nullable(),
   experienceLevel: ExperienceLevelSchema.nullable(),
   goal: GoalSchema.nullable(),

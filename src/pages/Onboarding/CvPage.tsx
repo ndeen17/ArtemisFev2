@@ -18,7 +18,7 @@ export default function CvPage() {
     setError(null);
     try {
       await upload.mutateAsync(file);
-      navigate('/onboarding/linkedin');
+      navigate('/onboarding/cv/edit');
     } catch (err) {
       const apiErr = extractApiError(err);
       setError(apiErr.message);
@@ -54,7 +54,7 @@ export default function CvPage() {
           I don&apos;t have a CV yet
         </Button>
         {stateQuery.data?.hasCv ? (
-          <Button onClick={() => navigate('/onboarding/linkedin')} size="sm">
+          <Button onClick={() => navigate('/onboarding/cv/edit')} size="sm">
             Continue with current CV
           </Button>
         ) : null}

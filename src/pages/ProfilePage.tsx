@@ -40,6 +40,16 @@ export default function ProfilePage() {
           }
         />
         <DeepLink
+          to="/profile/cv/edit"
+          icon={<FileIcon className="text-[#15803d]" />}
+          title="Edit my CV"
+          subtitle={
+            cv.data
+              ? 'Refine each section with the live editor and AI coach.'
+              : 'Add a CV to start editing.'
+          }
+        />
+        <DeepLink
           to="/profile/linkedin"
           icon={<LinkedInIcon className="text-gray-500" />}
           title="LinkedIn analysis"

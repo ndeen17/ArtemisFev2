@@ -32,7 +32,7 @@ export default function CvBuilderJdPage() {
     }
     try {
       await generate.mutateAsync({ jobDescription: jd.trim() });
-      navigate('/onboarding/linkedin');
+      navigate('/onboarding/cv/edit');
     } catch (err) {
       setError(extractApiError(err).message);
     }

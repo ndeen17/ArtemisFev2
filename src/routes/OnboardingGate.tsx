@@ -45,6 +45,14 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     return <Navigate to="/dashboard" replace />;
   }
   const currentStep = stepForPath(location.pathname);
+  // /onboarding/cv/edit is a sub-route shared by all CV branches — allow it as
+  // long as the user has at least reached the CV step.
+  if (location.pathname === '/onboarding/cv/edit') {
+    if (STEP_ORDER[user.onboardingStep] < STEP_ORDER.cv) {
+      return <Navigate to={stepToPath[user.onboardingStep] ?? '/onboarding/role'} replace />;
+    }
+    return <>{children}</>;
+  }
   if (!currentStep) {
     // Unknown onboarding URL — send user to their canonical step.
     return <Navigate to={stepToPath[user.onboardingStep] ?? '/onboarding/role'} replace />;

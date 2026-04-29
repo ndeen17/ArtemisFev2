@@ -58,7 +58,7 @@ export default function CvBuilderQuestionnairePage() {
         education: values.education.filter((e) => e.school),
       };
       await generate.mutateAsync({ answers: cleaned });
-      navigate('/onboarding/linkedin');
+      navigate('/onboarding/cv/edit');
     } catch (err) {
       setTopError(extractApiError(err).message);
     }

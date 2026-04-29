@@ -5,8 +5,10 @@ import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { Button } from '@/components/ui/Button';
+import { FormField } from '@/components/ui/FormField';
 import { ArrowRightIcon, SpinnerIcon } from '@/components/ui/icons';
 import { useOnboardingState, usePatchOnboarding } from '@/hooks/useOnboarding';
+import { useAuthStore } from '@/store/authStore';
 import { extractApiError } from '@/hooks/useAuth';
 
 const ROLES: { value: Role; title: string; description: string }[] = [
@@ -35,6 +37,9 @@ export default function RolePage() {
   const navigate = useNavigate();
   const stateQuery = useOnboardingState();
   const patch = usePatchOnboarding();
+  const setUser = useAuthStore((s) => s.setUser);
+  const user = useAuthStore((s) => s.user);
+  const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState<Role | null>(null);
   const [level, setLevel] = useState<ExperienceLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,16 +48,25 @@ export default function RolePage() {
     if (stateQuery.data) {
       setRole(stateQuery.data.role);
       setLevel(stateQuery.data.experienceLevel);
+      if (stateQuery.data.displayName) setDisplayName(stateQuery.data.displayName);
     }
   }, [stateQuery.data]);
 
-  const canContinue = Boolean(role && level);
+  const trimmedName = displayName.trim();
+  const canContinue = Boolean(trimmedName.length >= 2 && role && level);
 
   async function next() {
-    if (!role || !level) return;
+    if (!role || !level || trimmedName.length < 2) return;
     setError(null);
     try {
-      await patch.mutateAsync({ role, experienceLevel: level, onboardingStep: 'goal' });
+      await patch.mutateAsync({
+        displayName: trimmedName,
+        role,
+        experienceLevel: level,
+        onboardingStep: 'goal',
+      });
+      // Reflect the new name in the auth store so dashboard greeting is fresh.
+      if (user) setUser({ ...user, displayName: trimmedName });
       navigate('/onboarding/goal');
     } catch (err) {
       setError(extractApiError(err).message);
@@ -65,6 +79,16 @@ export default function RolePage() {
         eyebrow="Step 1"
         title="What do you do?"
         subtitle="We tailor your dashboard, prep questions, and CV feedback to your role and seniority."
+      />
+
+      <FormField
+        id="onb-name"
+        label="What should we call you?"
+        placeholder="Jane"
+        autoComplete="given-name"
+        value={displayName}
+        onChange={(e) => setDisplayName(e.target.value)}
+        hint="We'll use this to greet you across the app."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

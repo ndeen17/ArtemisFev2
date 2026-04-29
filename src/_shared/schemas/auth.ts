@@ -30,6 +30,7 @@ export type GoogleAuthInput = z.infer<typeof GoogleAuthSchema>;
 export const AuthUserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
+  displayName: z.string().nullable(),
   emailVerified: z.boolean(),
   onboardingComplete: z.boolean(),
   onboardingStep: OnboardingStepSchema,

@@ -17,6 +17,8 @@ const CvBuilderJdPage = lazy(() => import('@/pages/Onboarding/CvBuilderJdPage'))
 const CvBuilderQuestionnairePage = lazy(
   () => import('@/pages/Onboarding/CvBuilderQuestionnairePage'),
 );
+const CvEditPage = lazy(() => import('@/pages/Onboarding/CvEditPage'));
+const ProfileCvEditPage = lazy(() => import('@/pages/Profile/CvEditPage'));
 const LinkedInPage = lazy(() => import('@/pages/Onboarding/LinkedInPage'));
 const CompletePage = lazy(() => import('@/pages/Onboarding/CompletePage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
@@ -95,6 +97,14 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: '/onboarding/cv/edit',
+    element: (
+      <OnboardingGate>
+        <CvEditPage />
+      </OnboardingGate>
+    ),
+  },
+  {
     path: '/onboarding/linkedin',
     element: (
       <OnboardingGate>
@@ -143,6 +153,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <CvRewriterPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/profile/cv/edit',
+    element: (
+      <ProtectedRoute>
+        <ProfileCvEditPage />
       </ProtectedRoute>
     ),
   },
