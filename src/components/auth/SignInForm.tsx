@@ -9,6 +9,7 @@ import { OAuthButton } from './OAuthButton';
 import { SpinnerIcon } from '@/components/ui/icons';
 import { extractApiError, useGoogleAuth, useSignIn } from '@/hooks/useAuth';
 import { stepToPath } from '@/store/onboardingStore';
+import { getGoogleIdToken } from '@/lib/googleSignIn';
 import { useState } from 'react';
 
 /** SignInForm — mirrors SignUpForm visually so the auth surface feels symmetrical. */
@@ -46,9 +47,27 @@ export function SignInForm() {
     }
   });
 
-  const onGoogle = () => {
-    void google;
-    setTopError('Google sign-in will be available shortly.');
+  const onGoogle = async () => {
+    setTopError(null);
+    try {
+      const idToken = await getGoogleIdToken();
+      const data = await google.mutateAsync({ idToken });
+      navigate(
+        data.user.onboardingComplete
+          ? '/dashboard'
+          : (stepToPath[data.user.onboardingStep] ?? '/onboarding/role'),
+        { replace: true },
+      );
+    } catch (err) {
+      const apiErr = extractApiError(err);
+      const message =
+        apiErr.message && apiErr.message !== 'Something went wrong. Please try again.'
+          ? apiErr.message
+          : err instanceof Error
+            ? err.message
+            : 'Google sign-in failed. Please try again.';
+      setTopError(message);
+    }
   };
 
   return (

@@ -9,6 +9,7 @@ import { OAuthButton } from './OAuthButton';
 import { SpinnerIcon } from '@/components/ui/icons';
 import { extractApiError, useGoogleAuth, useSignUp } from '@/hooks/useAuth';
 import { stepToPath } from '@/store/onboardingStore';
+import { getGoogleIdToken } from '@/lib/googleSignIn';
 import { useState } from 'react';
 
 /** SignUpForm — email + password + Google. Wired to /auth/signup and /auth/google. */
@@ -48,11 +49,26 @@ export function SignUpForm() {
     }
   });
 
-  // TODO: Phase 1 deferred — wire real Google Identity Services flow on /auth/callback/google.
-  // For now we surface a friendly disabled state so the design renders end-to-end.
-  const onGoogle = () => {
-    void google;
-    setTopError({ message: 'Google sign-up will be available shortly.' });
+  // Google Identity Services flow: request an ID token, POST to /auth/google.
+  const onGoogle = async () => {
+    setTopError(null);
+    try {
+      const idToken = await getGoogleIdToken();
+      const data = await google.mutateAsync({ idToken });
+      const dest = data.user.onboardingComplete
+        ? '/dashboard'
+        : (stepToPath[data.user.onboardingStep] ?? '/onboarding/role');
+      navigate(dest, { replace: true });
+    } catch (err) {
+      const apiErr = extractApiError(err);
+      const message =
+        apiErr.message && apiErr.message !== 'Something went wrong. Please try again.'
+          ? apiErr.message
+          : err instanceof Error
+            ? err.message
+            : 'Google sign-up failed. Please try again.';
+      setTopError({ message });
+    }
   };
 
   return (
