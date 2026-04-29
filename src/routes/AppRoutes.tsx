@@ -1,43 +1,101 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ComponentType } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { OnboardingGate } from './OnboardingGate';
 import { ProtectedRoute } from './ProtectedRoute';
 
-const LandingPage = lazy(() => import('@/pages/Landing/LandingPage'));
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
-const SignUpPage = lazy(() => import('@/pages/Auth/SignUpPage'));
-const SignInPage = lazy(() => import('@/pages/Auth/SignInPage'));
-const VerifyEmailPage = lazy(() => import('@/pages/Auth/VerifyEmailPage'));
-const GoogleCallbackPage = lazy(() => import('@/pages/Auth/GoogleCallbackPage'));
-const RolePage = lazy(() => import('@/pages/Onboarding/RolePage'));
-const GoalPage = lazy(() => import('@/pages/Onboarding/GoalPage'));
-const CvPage = lazy(() => import('@/pages/Onboarding/CvPage'));
-const NoCvPage = lazy(() => import('@/pages/Onboarding/NoCvPage'));
-const CvBuilderJdPage = lazy(() => import('@/pages/Onboarding/CvBuilderJdPage'));
-const CvBuilderQuestionnairePage = lazy(
+/**
+ * Wrap React.lazy with one-shot reload-on-stale-chunk recovery.
+ *
+ * After a redeploy, an open tab is still running the OLD index.html which
+ * references hashed chunk filenames the new build no longer ships, so the
+ * import 404s with "Failed to fetch dynamically imported module: …".
+ * We catch that, set a session-scoped one-shot flag, and reload to fetch the
+ * fresh index.html. On the next successful import we clear the flag so a
+ * future stale deploy can self-heal the same way. Real network/build errors
+ * (i.e. import still fails after a reload) are allowed to bubble.
+ */
+const CHUNK_RELOAD_FLAG = 'artemis:chunk-reloaded';
+
+function isChunkLoadError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message || '';
+  return (
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /error loading dynamically imported module/i.test(msg) ||
+    err.name === 'ChunkLoadError'
+  );
+}
+
+function lazyWithRetry<T extends ComponentType<unknown>>(
+  factory: () => Promise<{ default: T }>,
+) {
+  return lazy(async () => {
+    try {
+      const mod = await factory();
+      try {
+        sessionStorage.removeItem(CHUNK_RELOAD_FLAG);
+      } catch {
+        /* sessionStorage may throw in privacy modes */
+      }
+      return mod;
+    } catch (err) {
+      if (!isChunkLoadError(err)) throw err;
+      let alreadyReloaded = false;
+      try {
+        alreadyReloaded = sessionStorage.getItem(CHUNK_RELOAD_FLAG) === '1';
+      } catch {
+        /* ignore */
+      }
+      if (alreadyReloaded) throw err;
+      try {
+        sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1');
+      } catch {
+        /* ignore */
+      }
+      window.location.reload();
+      return new Promise<{ default: T }>(() => {});
+    }
+  });
+}
+
+const LandingPage = lazyWithRetry(() => import('@/pages/Landing/LandingPage'));
+const NotFoundPage = lazyWithRetry(() => import('@/pages/NotFoundPage'));
+const SignUpPage = lazyWithRetry(() => import('@/pages/Auth/SignUpPage'));
+const SignInPage = lazyWithRetry(() => import('@/pages/Auth/SignInPage'));
+const VerifyEmailPage = lazyWithRetry(() => import('@/pages/Auth/VerifyEmailPage'));
+const GoogleCallbackPage = lazyWithRetry(() => import('@/pages/Auth/GoogleCallbackPage'));
+const RolePage = lazyWithRetry(() => import('@/pages/Onboarding/RolePage'));
+const GoalPage = lazyWithRetry(() => import('@/pages/Onboarding/GoalPage'));
+const CvPage = lazyWithRetry(() => import('@/pages/Onboarding/CvPage'));
+const NoCvPage = lazyWithRetry(() => import('@/pages/Onboarding/NoCvPage'));
+const CvBuilderJdPage = lazyWithRetry(() => import('@/pages/Onboarding/CvBuilderJdPage'));
+const CvBuilderQuestionnairePage = lazyWithRetry(
   () => import('@/pages/Onboarding/CvBuilderQuestionnairePage'),
 );
-const CvEditPage = lazy(() => import('@/pages/Onboarding/CvEditPage'));
-const ProfileCvEditPage = lazy(() => import('@/pages/Profile/CvEditPage'));
-const LinkedInPage = lazy(() => import('@/pages/Onboarding/LinkedInPage'));
-const CompletePage = lazy(() => import('@/pages/Onboarding/CompletePage'));
-const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
-const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
-const CvAnalysisPage = lazy(() => import('@/pages/Profile/CvAnalysisPage'));
-const CvRewriterPage = lazy(() => import('@/pages/Profile/CvRewriterPage'));
-const LinkedInAnalysisPage = lazy(() => import('@/pages/Profile/LinkedInAnalysisPage'));
-const ScoreRevealPage = lazy(() => import('@/pages/Profile/ScoreRevealPage'));
-const ActionPlanPage = lazy(() => import('@/pages/Profile/ActionPlanPage'));
-const ApplicationsPage = lazy(() => import('@/pages/ApplicationsPage'));
-const NewApplicationPage = lazy(() => import('@/pages/Applications/NewApplicationPage'));
-const ApplicationDetailPage = lazy(() => import('@/pages/Applications/ApplicationDetailPage'));
-const JdTargetPage = lazy(() => import('@/pages/Applications/JdTargetPage'));
-const CvReviewPage = lazy(() => import('@/pages/Applications/CvReviewPage'));
-const CoverLetterPage = lazy(() => import('@/pages/Applications/CoverLetterPage'));
-const InterviewsPage = lazy(() => import('@/pages/InterviewsPage'));
-const NewInterviewPage = lazy(() => import('@/pages/Interviews/NewInterviewPage'));
-const InterviewDetailPage = lazy(() => import('@/pages/Interviews/InterviewDetailPage'));
-const SettingsGoalPage = lazy(() => import('@/pages/Settings/SettingsGoalPage'));
+const CvEditPage = lazyWithRetry(() => import('@/pages/Onboarding/CvEditPage'));
+const ProfileCvEditPage = lazyWithRetry(() => import('@/pages/Profile/CvEditPage'));
+const LinkedInPage = lazyWithRetry(() => import('@/pages/Onboarding/LinkedInPage'));
+const CompletePage = lazyWithRetry(() => import('@/pages/Onboarding/CompletePage'));
+const DashboardPage = lazyWithRetry(() => import('@/pages/DashboardPage'));
+const ProfilePage = lazyWithRetry(() => import('@/pages/ProfilePage'));
+const CvAnalysisPage = lazyWithRetry(() => import('@/pages/Profile/CvAnalysisPage'));
+const CvRewriterPage = lazyWithRetry(() => import('@/pages/Profile/CvRewriterPage'));
+const LinkedInAnalysisPage = lazyWithRetry(() => import('@/pages/Profile/LinkedInAnalysisPage'));
+const ScoreRevealPage = lazyWithRetry(() => import('@/pages/Profile/ScoreRevealPage'));
+const ActionPlanPage = lazyWithRetry(() => import('@/pages/Profile/ActionPlanPage'));
+const ApplicationsPage = lazyWithRetry(() => import('@/pages/ApplicationsPage'));
+const NewApplicationPage = lazyWithRetry(() => import('@/pages/Applications/NewApplicationPage'));
+const ApplicationDetailPage = lazyWithRetry(
+  () => import('@/pages/Applications/ApplicationDetailPage'),
+);
+const JdTargetPage = lazyWithRetry(() => import('@/pages/Applications/JdTargetPage'));
+const CvReviewPage = lazyWithRetry(() => import('@/pages/Applications/CvReviewPage'));
+const CoverLetterPage = lazyWithRetry(() => import('@/pages/Applications/CoverLetterPage'));
+const InterviewsPage = lazyWithRetry(() => import('@/pages/InterviewsPage'));
+const NewInterviewPage = lazyWithRetry(() => import('@/pages/Interviews/NewInterviewPage'));
+const InterviewDetailPage = lazyWithRetry(() => import('@/pages/Interviews/InterviewDetailPage'));
+const SettingsGoalPage = lazyWithRetry(() => import('@/pages/Settings/SettingsGoalPage'));
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
