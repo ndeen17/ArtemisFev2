@@ -43,8 +43,15 @@ async function performRefresh(): Promise<string | null> {
     );
     useAuthStore.getState().setAuth({ user: res.data.user, accessToken: res.data.accessToken });
     return res.data.accessToken;
-  } catch {
-    useAuthStore.getState().clearAuth();
+  } catch (err) {
+    // Only sign the user out when the BE explicitly rejects the refresh
+    // (401/403 — invalid or revoked refresh token). Transient errors
+    // (network blip, BE restart, 502/504, timeout) must NOT clear the
+    // session, otherwise the user appears to be randomly signed out.
+    const status = (err as AxiosError).response?.status;
+    if (status === 401 || status === 403) {
+      useAuthStore.getState().clearAuth();
+    }
     return null;
   }
 }
