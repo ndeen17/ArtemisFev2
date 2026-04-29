@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { StructuredCv } from '@artemis/shared';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
@@ -6,22 +6,37 @@ import { StepHeader } from '@/components/onboarding/StepHeader';
 import { CvEditor } from '@/components/cv/CvEditor';
 import { Button } from '@/components/ui/Button';
 import { SpinnerIcon } from '@/components/ui/icons';
-import { useMyCv, usePatchCv } from '@/hooks/useOnboarding';
+import { useMyCv, usePatchCv, useReparseCv } from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
-import { emptyStructuredCv } from '@/lib/structuredCv';
+import { emptyStructuredCv, isStructuredCvSparse } from '@/lib/structuredCv';
 import { cvApi } from '@/features/onboarding/api';
 /**
  * ONB-06C — Interactive editor that runs after a user has drafted (JD or
  * questionnaire) or uploaded a CV. We seed the editor with whatever the
  * backend parsed, the user makes edits with live preview, and on Continue
  * we save and route to the LinkedIn step.
+ *
+ * If the upload-time AI parse failed silently and the structured shape is
+ * empty, auto-reparse once on first open.
  */
 export default function CvEditPage() {
   const navigate = useNavigate();
   const cvQuery = useMyCv();
   const patch = usePatchCv();
+  const reparse = useReparseCv();
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const reparsedRef = useRef(false);
+
+  useEffect(() => {
+    if (reparsedRef.current) return;
+    const cv = cvQuery.data;
+    if (!cv) return;
+    if (cv.source !== 'upload') return;
+    if (!isStructuredCvSparse(cv.structured ?? null)) return;
+    reparsedRef.current = true;
+    reparse.mutate(cv.id);
+  }, [cvQuery.data, reparse]);
 
   useEffect(() => {
     if (cvQuery.data && draft === null) {
@@ -82,7 +97,14 @@ export default function CvEditPage() {
         subtitle="Edits update the live preview on the right. The AI coach is one click away if you get stuck."
       />
 
-      <CvEditor value={draft} onChange={setDraft} />
+      {reparse.isPending ? (
+        <div className="inline-flex items-center gap-2 rounded-full bg-brand-green/10 px-3 py-1.5 text-[12.5px] font-semibold text-[#065f46]">
+          <SpinnerIcon className="animate-spin w-4 h-4" />
+          Auto-filling from your upload…
+        </div>
+      ) : null}
+
+      <CvEditor value={draft} onChange={setDraft} cvId={cvQuery.data.id} />
 
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 

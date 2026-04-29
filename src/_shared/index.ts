@@ -17,3 +17,6 @@ export * from './schemas/application.js';
 export * from './schemas/interview.js';
 export * from './domain/readiness.js';
 export * from './domain/goalCopy.js';
+export * from './domain/actionTargets.js';
+export * from './domain/cvBullets.js';
+export * from './domain/cvRubric.js';

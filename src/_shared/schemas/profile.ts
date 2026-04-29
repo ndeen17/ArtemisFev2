@@ -9,6 +9,23 @@ import { z } from 'zod';
  * scoreRevealSeen flag, LinkedIn placeholder, weekly delta).
  */
 
+/**
+ * One row of the deterministic CV rubric. The displayed cvScore is the average
+ * of `rubricScore` and the LLM `overallScore`, so users can see exactly which
+ * checks are costing them points and drive the score to 100 by completing them.
+ */
+export const RubricItemSchema = z.object({
+  id: z.string().min(1).max(60),
+  label: z.string().min(1).max(120),
+  weight: z.number().int().min(1).max(50),
+  /** Achieved points (0..weight). May be fractional, rounded to 1 decimal. */
+  achieved: z.number().min(0),
+  hint: z.string().min(1).max(240),
+  /** Editor section the user should jump to to fix this item. */
+  section: z.enum(['header', 'summary', 'experience', 'education', 'skills']).nullable(),
+});
+export type RubricItem = z.infer<typeof RubricItemSchema>;
+
 export const ProfileOverviewSchema = z.object({
   cvScore: z.number().int().min(0).max(100).nullable(),
   /** Always null at this phase — LinkedIn ships as "coming soon" only. */
@@ -23,6 +40,13 @@ export const ProfileOverviewSchema = z.object({
   analysisStatus: z.enum(['queued', 'running', 'done', 'failed', 'none']),
   hasCv: z.boolean(),
   hasLinkedIn: z.literal(false),
+  /** Deterministic rubric breakdown used to render the score-reveal & profile UI.
+   *  Empty array when no analysis is available yet. */
+  rubricBreakdown: z.array(RubricItemSchema).default([]),
+  /** Pure rubric score 0..100 (without LLM blending) — used by the breakdown UI. */
+  rubricScore: z.number().int().min(0).max(100).nullable(),
+  /** Raw LLM overallScore 0..100 — kept separate from cvScore so the UI can compare. */
+  llmScore: z.number().int().min(0).max(100).nullable(),
 });
 export type ProfileOverview = z.infer<typeof ProfileOverviewSchema>;
 
@@ -38,6 +62,10 @@ export const ActionPlanItemSchema = z.object({
   detail: z.string().min(1).max(400),
   severity: z.enum(['low', 'medium', 'high']).nullable(),
   completed: z.boolean(),
+  /** Editor section this action targets — drives the "Fix in builder" deep link. */
+  section: z.enum(['header', 'summary', 'experience', 'education', 'skills']).default('experience'),
+  /** Optional bullet text quoted in the action — when present, FE can deep-link a targeted rewrite. */
+  quotedBullet: z.string().max(500).nullable().default(null),
 });
 export type ActionPlanItem = z.infer<typeof ActionPlanItemSchema>;
 
@@ -58,9 +86,26 @@ export const BulletRewriteRequestSchema = z.object({
 });
 export type BulletRewriteRequest = z.infer<typeof BulletRewriteRequestSchema>;
 
+/** Pointer to a specific bullet inside the canonical structured CV. */
+export const BulletPathSchema = z.object({
+  cvId: z.string().min(1),
+  expId: z.string().min(1),
+  bulletIdx: z.number().int().min(0).max(20),
+});
+export type BulletPath = z.infer<typeof BulletPathSchema>;
+
 export const BulletRewriteResponseSchema = z.object({
   original: z.string().min(1).max(500),
   main: z.string().min(1).max(500),
   alternatives: z.array(z.string().min(1).max(500)).length(2),
+  /** Present when the rewrite was scoped to a specific bullet inside the user's CV.
+   *  When null/undefined, the FE renders the legacy free-form rewriter (no Apply CTA). */
+  target: BulletPathSchema.nullable().optional(),
 });
 export type BulletRewriteResponse = z.infer<typeof BulletRewriteResponseSchema>;
+
+/** POST /cv/:cvId/bullets/:expId/:bulletIdx/apply body. */
+export const BulletApplySchema = z.object({
+  text: z.string().min(1).max(500),
+});
+export type BulletApplyInput = z.infer<typeof BulletApplySchema>;

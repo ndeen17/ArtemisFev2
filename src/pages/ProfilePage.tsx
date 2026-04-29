@@ -2,6 +2,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { ProfileOverviewCard } from '@/components/profile/ProfileOverviewCard';
 import { ActionPlan } from '@/components/profile/ActionPlan';
+import { RubricBreakdown } from '@/components/profile/RubricBreakdown';
 import { useMyCv } from '@/hooks/useOnboarding';
 import { useProfileOverview, useActionPlan } from '@/hooks/useProfile';
 import { ArrowRightIcon, FileIcon, LinkedInIcon, LockIcon } from '@/components/ui/icons';
@@ -25,6 +26,14 @@ export default function ProfilePage() {
   return (
     <AppShell title="Profile" subtitle="Your CV, your scores, and what to do next">
       <ProfileOverviewCard overview={overview.data} isLoading={overview.isLoading} />
+
+      {overview.data?.rubricBreakdown && overview.data.rubricBreakdown.length > 0 ? (
+        <RubricBreakdown
+          items={overview.data.rubricBreakdown}
+          rubricScore={overview.data.rubricScore ?? null}
+          llmScore={overview.data.llmScore ?? null}
+        />
+      ) : null}
 
       <ActionPlan plan={plan.data} isLoading={plan.isLoading} />
 

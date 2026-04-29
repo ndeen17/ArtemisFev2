@@ -1,6 +1,16 @@
-import type { ActionPlan as ActionPlanData, ActionPlanItem } from '@artemis/shared';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import type {
+  ActionPlan as ActionPlanData,
+  ActionPlanItem,
+  BulletPath,
+  CvDetail,
+} from '@artemis/shared';
+import { findBulletInStructured } from '@artemis/shared';
 import { CheckIcon, AlertTriangleIcon, LightbulbIcon, SpinnerIcon } from '@/components/ui/icons';
 import { useToggleAction } from '@/hooks/useProfile';
+import { useMyCv } from '@/hooks/useOnboarding';
+import { RewriteDrawer } from './RewriteDrawer';
 
 /**
  * PRF-06 — Unified action plan. Renders gaps (severity-sorted) then suggestions,
@@ -23,6 +33,11 @@ export function ActionPlan({
   isLoading: boolean;
 }) {
   const toggle = useToggleAction();
+  const cv = useMyCv();
+  const [rewriteTarget, setRewriteTarget] = useState<{
+    target: BulletPath;
+    original: string;
+  } | null>(null);
 
   if (isLoading || !plan) {
     return (
@@ -53,11 +68,20 @@ export function ActionPlan({
           <Row
             key={item.id}
             item={item}
+            cv={cv.data ?? null}
             onToggle={() => toggle.mutate({ id: item.id, complete: !item.completed })}
+            onRewriteBullet={(target, original) => setRewriteTarget({ target, original })}
             disabled={toggle.isPending}
           />
         ))}
       </div>
+      {rewriteTarget ? (
+        <RewriteDrawer
+          target={rewriteTarget.target}
+          initialOriginal={rewriteTarget.original}
+          onClose={() => setRewriteTarget(null)}
+        />
+      ) : null}
     </Card>
   );
 }
@@ -89,14 +113,28 @@ function Header({ completed, total }: { completed: number; total: number }) {
 
 function Row({
   item,
+  cv,
   onToggle,
+  onRewriteBullet,
   disabled,
 }: {
   item: ActionPlanItem;
+  cv: CvDetail | null;
   onToggle: () => void;
+  onRewriteBullet: (target: BulletPath, original: string) => void;
   disabled: boolean;
 }) {
   const Icon = item.kind === 'gap' ? AlertTriangleIcon : LightbulbIcon;
+
+  // Resolve a deep-linkable bullet target if the action quotes one and we
+  // can match it in the current structured CV. Recomputed cheaply per render.
+  const bulletTarget = useMemo<BulletPath | null>(() => {
+    if (!cv || !item.quotedBullet) return null;
+    const found = findBulletInStructured(cv.structured ?? null, item.quotedBullet);
+    if (!found) return null;
+    return { cvId: cv.id, expId: found.expId, bulletIdx: found.bulletIdx };
+  }, [cv, item.quotedBullet]);
+
   return (
     <div
       className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
@@ -145,6 +183,25 @@ function Row({
           >
             {item.detail}
           </p>
+          {!item.completed ? (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Link
+                to={`/profile/cv/edit?focus=${encodeURIComponent(item.id)}`}
+                className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline"
+              >
+                Fix in builder →
+              </Link>
+              {bulletTarget ? (
+                <button
+                  type="button"
+                  onClick={() => onRewriteBullet(bulletTarget, item.quotedBullet ?? '')}
+                  className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline"
+                >
+                  ✨ Rewrite this bullet
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

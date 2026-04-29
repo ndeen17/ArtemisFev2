@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type {
   StructuredCv,
   StructuredCvExperience,
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/Label';
 import { Button } from '@/components/ui/Button';
 import { CvPreview } from './CvPreview';
 import { CvCoachChat } from './CvCoachChat';
+import { RewriteDrawer } from '@/components/profile/RewriteDrawer';
 import { cn } from '@/lib/cn';
 
 /**
@@ -37,13 +38,33 @@ const SECTIONS: { id: Section; label: string; coachSection: CvCoachSection }[] =
 export interface CvEditorProps {
   value: StructuredCv;
   onChange: (next: StructuredCv) => void;
+  /** When provided, enables per-bullet "Rewrite" links that open the targeted
+   *  rewrite drawer. Without it, rewrite affordances are hidden. */
+  cvId?: string;
+  /** Optional initial section to focus on mount. Used by ?focus=<actionId> to
+   *  jump the user straight to the relevant tab from the action plan. */
+  initialSection?: Section;
+  /** When set, opens the AI coach drawer on mount with this seed message
+   *  prefilled. Used by the action plan deep-link flow. */
+  seedCoachMessage?: string;
 }
 
-export function CvEditor({ value, onChange }: CvEditorProps) {
-  const [active, setActive] = useState<Section>('header');
-  const [coachOpen, setCoachOpen] = useState(false);
+export function CvEditor({
+  value,
+  onChange,
+  cvId,
+  initialSection,
+  seedCoachMessage,
+}: CvEditorProps) {
+  const [active, setActive] = useState<Section>(initialSection ?? 'header');
+  const [coachOpen, setCoachOpen] = useState<boolean>(Boolean(seedCoachMessage));
   const [previewOpen, setPreviewOpen] = useState(false);
   const activeMeta = SECTIONS.find((s) => s.id === active)!;
+
+  // If the parent updates initialSection (e.g. ?focus=<id> resolved late), respect it.
+  useEffect(() => {
+    if (initialSection) setActive(initialSection);
+  }, [initialSection]);
 
   return (
     <div className="space-y-6">
@@ -108,7 +129,7 @@ export function CvEditor({ value, onChange }: CvEditorProps) {
               {active === 'header' ? <HeaderForm value={value} onChange={onChange} /> : null}
               {active === 'summary' ? <SummaryForm value={value} onChange={onChange} /> : null}
               {active === 'experience' ? (
-                <ExperienceForm value={value} onChange={onChange} />
+                <ExperienceForm value={value} onChange={onChange} cvId={cvId} />
               ) : null}
               {active === 'education' ? (
                 <EducationForm value={value} onChange={onChange} />
@@ -170,6 +191,7 @@ export function CvEditor({ value, onChange }: CvEditorProps) {
           cv={value}
           section={activeMeta.coachSection}
           onClose={() => setCoachOpen(false)}
+          seedMessage={seedCoachMessage}
         />
       ) : null}
     </div>
@@ -268,7 +290,11 @@ function SummaryForm({ value, onChange }: CvEditorProps) {
   );
 }
 
-function ExperienceForm({ value, onChange }: CvEditorProps) {
+function ExperienceForm({
+  value,
+  onChange,
+  cvId,
+}: CvEditorProps) {
   const setItem = (idx: number, patch: Partial<StructuredCvExperience>) => {
     const next = value.experience.map((e, i) => (i === idx ? { ...e, ...patch } : e));
     onChange({ ...value, experience: next });
@@ -293,6 +319,14 @@ function ExperienceForm({ value, onChange }: CvEditorProps) {
   const removeItem = (idx: number) =>
     onChange({ ...value, experience: value.experience.filter((_, i) => i !== idx) });
 
+  // Targeted rewrite drawer state. Only available when a cvId is threaded
+  // through (i.e. the CV has been persisted; not on a brand-new draft).
+  const [rewriteFor, setRewriteFor] = useState<{
+    expId: string;
+    bulletIdx: number;
+    current: string;
+  } | null>(null);
+
   return (
     <div className="space-y-4">
       {value.experience.length === 0 ? (
@@ -302,25 +336,51 @@ function ExperienceForm({ value, onChange }: CvEditorProps) {
         <ExperienceCard
           key={exp.id}
           exp={exp}
+          canRewrite={Boolean(cvId)}
           onChange={(patch) => setItem(idx, patch)}
           onRemove={() => removeItem(idx)}
+          onRewriteBullet={(bulletIdx, current) =>
+            setRewriteFor({ expId: exp.id, bulletIdx, current })
+          }
         />
       ))}
       <Button variant="ghost" type="button" onClick={addItem}>
         + Add role
       </Button>
+
+      {rewriteFor && cvId ? (
+        <RewriteDrawer
+          target={{ cvId, expId: rewriteFor.expId, bulletIdx: rewriteFor.bulletIdx }}
+          initialOriginal={rewriteFor.current}
+          onApplied={(text) => {
+            // Sync local draft so a subsequent Save doesn't clobber the applied text.
+            const nextExperience = value.experience.map((e) => {
+              if (e.id !== rewriteFor.expId) return e;
+              const ach = e.achievements.slice();
+              ach[rewriteFor.bulletIdx] = text;
+              return { ...e, achievements: ach };
+            });
+            onChange({ ...value, experience: nextExperience });
+          }}
+          onClose={() => setRewriteFor(null)}
+        />
+      ) : null}
     </div>
   );
 }
 
 function ExperienceCard({
   exp,
+  canRewrite,
   onChange,
   onRemove,
+  onRewriteBullet,
 }: {
   exp: StructuredCvExperience;
+  canRewrite: boolean;
   onChange: (patch: Partial<StructuredCvExperience>) => void;
   onRemove: () => void;
+  onRewriteBullet: (bulletIdx: number, current: string) => void;
 }) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3">
@@ -375,17 +435,29 @@ function ExperienceCard({
                 placeholder="Increased monthly sales 10% by upselling and cross-selling…"
                 className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-[13px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent"
               />
-              <button
-                type="button"
-                onClick={() => {
-                  const next = exp.achievements.filter((_, idx) => idx !== i);
-                  onChange({ achievements: next.length ? next : [''] });
-                }}
-                aria-label="Remove bullet"
-                className="text-gray-400 hover:text-red-500 px-2"
-              >
-                ×
-              </button>
+              <div className="flex flex-col items-stretch gap-1">
+                {canRewrite && a.trim().length >= 8 ? (
+                  <button
+                    type="button"
+                    onClick={() => onRewriteBullet(i, a)}
+                    className="inline-flex items-center gap-1 rounded-full border border-brand-green/30 bg-brand-green/5 px-2 py-1 text-[11px] font-semibold text-[#065f46] hover:bg-brand-green/10 whitespace-nowrap"
+                    title="AI rewrite this bullet"
+                  >
+                    ✨ Rewrite
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = exp.achievements.filter((_, idx) => idx !== i);
+                    onChange({ achievements: next.length ? next : [''] });
+                  }}
+                  aria-label="Remove bullet"
+                  className="text-gray-400 hover:text-red-500 px-2 text-lg"
+                >
+                  ×
+                </button>
+              </div>
             </div>
           ))}
           <Button

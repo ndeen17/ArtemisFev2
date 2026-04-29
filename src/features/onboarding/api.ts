@@ -1,4 +1,6 @@
 import type {
+  BulletPath,
+  BulletRewriteResponse,
   CvCoachRequest,
   CvDetail,
   CvFromJdInput,
@@ -48,6 +50,29 @@ export const cvApi = {
   },
   async patchStructured(cvId: string, structured: StructuredCv): Promise<CvDetail> {
     const res = await apiClient.patch<{ cv: CvDetail }>(`/cv/${cvId}`, { structured });
+    return res.data.cv;
+  },
+  /** Re-run AI parse on the existing rawText. Used when the upload-time parse failed silently. */
+  async reparse(cvId: string): Promise<CvDetail> {
+    const res = await apiClient.post<{ cv: CvDetail }>(`/cv/${cvId}/parse`);
+    return res.data.cv;
+  },
+  /** Targeted bullet rewrite. Returns rewrite payload with `target` populated. */
+  async rewriteTargetedBullet(target: BulletPath): Promise<BulletRewriteResponse> {
+    const { cvId, expId, bulletIdx } = target;
+    const res = await apiClient.post<{ rewrite: BulletRewriteResponse }>(
+      `/cv/${cvId}/bullets/${expId}/${bulletIdx}/rewrite`,
+      {},
+    );
+    return res.data.rewrite;
+  },
+  /** Apply a rewrite (or any text) to a specific bullet path. Re-queues analysis. */
+  async applyBullet(target: BulletPath, text: string): Promise<CvDetail> {
+    const { cvId, expId, bulletIdx } = target;
+    const res = await apiClient.post<{ cv: CvDetail }>(
+      `/cv/${cvId}/bullets/${expId}/${bulletIdx}/apply`,
+      { text },
+    );
     return res.data.cv;
   },
   async coach(input: CvCoachRequest): Promise<string> {

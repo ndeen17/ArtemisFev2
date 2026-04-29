@@ -119,6 +119,45 @@ export function usePatchCv() {
     }) => cvApi.patchStructured(cvId, structured),
     onSuccess() {
       void qc.invalidateQueries({ queryKey: CV_KEY });
+      void qc.invalidateQueries({ queryKey: ['analysis', 'latest'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'overview'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'action-plan'] });
+    },
+  });
+}
+
+export function useReparseCv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (cvId: string) => cvApi.reparse(cvId),
+    onSuccess() {
+      void qc.invalidateQueries({ queryKey: CV_KEY });
+    },
+  });
+}
+
+export function useRewriteTargetedBullet() {
+  return useMutation({
+    mutationFn: (target: import('@artemis/shared').BulletPath) =>
+      cvApi.rewriteTargetedBullet(target),
+  });
+}
+
+export function useApplyBullet() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      target,
+      text,
+    }: {
+      target: import('@artemis/shared').BulletPath;
+      text: string;
+    }) => cvApi.applyBullet(target, text),
+    onSuccess() {
+      void qc.invalidateQueries({ queryKey: CV_KEY });
+      void qc.invalidateQueries({ queryKey: ['analysis', 'latest'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'overview'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'action-plan'] });
     },
   });
 }

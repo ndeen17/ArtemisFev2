@@ -1,11 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { BulletFeedback as BulletFeedbackItem } from '@artemis/shared';
+import type { BulletFeedback as BulletFeedbackItem, BulletPath } from '@artemis/shared';
+import { findBulletInStructured } from '@artemis/shared';
 import { CheckIcon, AlertTriangleIcon, ArrowRightIcon } from '@/components/ui/icons';
+import { useMyCv } from '@/hooks/useOnboarding';
+import { RewriteDrawer } from './RewriteDrawer';
 
 /**
  * PRF-02 — Bullet-by-bullet feedback list. Each row shows the original bullet,
  * a status pill (good/improve/missing), the coach's note, optional improved example,
- * and a "Rewrite" deep link that prefills the rewriter with this bullet.
+ * and a "Rewrite" CTA. When the bullet text matches a slot in the user's structured
+ * CV we open a targeted RewriteDrawer (with Apply); otherwise we fall back to the
+ * legacy free-form rewriter page so behaviour never regresses.
  */
 const STATUS = {
   good: { label: 'Good', dot: 'bg-[#dcfce7] text-[#15803d]', icon: CheckIcon },
@@ -14,6 +20,9 @@ const STATUS = {
 } as const;
 
 export function BulletFeedbackList({ items }: { items: BulletFeedbackItem[] }) {
+  const cv = useMyCv();
+  const [target, setTarget] = useState<{ target: BulletPath; original: string } | null>(null);
+
   if (items.length === 0) {
     return (
       <div className="text-[14px] text-gray-500">
@@ -23,14 +32,43 @@ export function BulletFeedbackList({ items }: { items: BulletFeedbackItem[] }) {
   }
   return (
     <div className="space-y-4">
-      {items.map((b, i) => (
-        <BulletRow key={i} bullet={b} />
-      ))}
+      {items.map((b, i) => {
+        const found = cv.data
+          ? findBulletInStructured(cv.data.structured ?? null, b.original)
+          : null;
+        const bulletTarget: BulletPath | null =
+          found && cv.data
+            ? { cvId: cv.data.id, expId: found.expId, bulletIdx: found.bulletIdx }
+            : null;
+        return (
+          <BulletRow
+            key={i}
+            bullet={b}
+            bulletTarget={bulletTarget}
+            onRewrite={(t, original) => setTarget({ target: t, original })}
+          />
+        );
+      })}
+      {target ? (
+        <RewriteDrawer
+          target={target.target}
+          initialOriginal={target.original}
+          onClose={() => setTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }
 
-function BulletRow({ bullet }: { bullet: BulletFeedbackItem }) {
+function BulletRow({
+  bullet,
+  bulletTarget,
+  onRewrite,
+}: {
+  bullet: BulletFeedbackItem;
+  bulletTarget: BulletPath | null;
+  onRewrite: (target: BulletPath, original: string) => void;
+}) {
   const meta = STATUS[bullet.status];
   const Icon = meta.icon;
   return (
@@ -58,14 +96,23 @@ function BulletRow({ bullet }: { bullet: BulletFeedbackItem }) {
             )}
           </div>
         </div>
-        {bullet.status !== 'good' && (
-          <Link
-            to={`/profile/cv/rewrite?bullet=${encodeURIComponent(bullet.original)}`}
-            className="shrink-0 inline-flex items-center gap-1 text-[13px] font-semibold text-[#15803d] hover:underline"
-          >
-            Rewrite <ArrowRightIcon className="w-4 h-4" />
-          </Link>
-        )}
+        {bullet.status !== 'good' &&
+          (bulletTarget ? (
+            <button
+              type="button"
+              onClick={() => onRewrite(bulletTarget, bullet.original)}
+              className="shrink-0 inline-flex items-center gap-1 text-[13px] font-semibold text-[#15803d] hover:underline"
+            >
+              Rewrite <ArrowRightIcon className="w-4 h-4" />
+            </button>
+          ) : (
+            <Link
+              to={`/profile/cv/rewrite?bullet=${encodeURIComponent(bullet.original)}`}
+              className="shrink-0 inline-flex items-center gap-1 text-[13px] font-semibold text-[#15803d] hover:underline"
+            >
+              Rewrite <ArrowRightIcon className="w-4 h-4" />
+            </Link>
+          ))}
       </div>
     </div>
   );

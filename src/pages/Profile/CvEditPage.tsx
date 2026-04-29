@@ -1,31 +1,61 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { StructuredCv } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { CvEditor } from '@/components/cv/CvEditor';
 import { Button } from '@/components/ui/Button';
 import { SpinnerIcon } from '@/components/ui/icons';
-import { useMyCv, usePatchCv } from '@/hooks/useOnboarding';
+import { useMyCv, usePatchCv, useReparseCv } from '@/hooks/useOnboarding';
+import { useActionPlan } from '@/hooks/useProfile';
 import { extractApiError } from '@/hooks/useAuth';
-import { emptyStructuredCv } from '@/lib/structuredCv';
+import { emptyStructuredCv, isStructuredCvSparse } from '@/lib/structuredCv';
 import { cvApi } from '@/features/onboarding/api';
 
 /**
  * Profile-side CV editor. Same component as onboarding but lives inside
  * AppShell and returns to /profile on save.
+ *
+ * Two cross-cutting features wired here:
+ *   1. If the loaded CV is `source: 'upload'` and structured is sparse
+ *      (silent parse failure), auto-reparse once on first open.
+ *   2. `?focus=<actionId>` from the action plan: jump to the relevant section
+ *      and open the AI coach pre-loaded with the action's title + detail.
  */
 export default function ProfileCvEditPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const focusActionId = searchParams.get('focus');
   const cvQuery = useMyCv();
   const patch = usePatchCv();
+  const reparse = useReparseCv();
+  const actionPlan = useActionPlan();
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const reparsedRef = useRef(false);
 
+  // Auto-reparse on first open when an uploaded CV has nothing to show.
+  useEffect(() => {
+    if (reparsedRef.current) return;
+    const cv = cvQuery.data;
+    if (!cv) return;
+    if (cv.source !== 'upload') return;
+    if (!isStructuredCvSparse(cv.structured ?? null)) return;
+    reparsedRef.current = true;
+    reparse.mutate(cv.id);
+  }, [cvQuery.data, reparse]);
+
+  // Hydrate local draft once we have data.
   useEffect(() => {
     if (cvQuery.data && draft === null) {
       setDraft(cvQuery.data.structured ?? emptyStructuredCv());
     }
   }, [cvQuery.data, draft]);
+
+  // Resolve the focused action so we can pass initialSection + a coach seed.
+  const focusedAction = useMemo(() => {
+    if (!focusActionId) return null;
+    return actionPlan.data?.items.find((i) => i.id === focusActionId) ?? null;
+  }, [focusActionId, actionPlan.data]);
 
   async function save() {
     setError(null);
@@ -53,6 +83,8 @@ export default function ProfileCvEditPage() {
     }
   }
 
+  const isReparsing = reparse.isPending;
+
   return (
     <AppShell title="Edit your CV" subtitle="Tweak any section, preview live, then save.">
       {cvQuery.isLoading || draft === null ? (
@@ -65,7 +97,38 @@ export default function ProfileCvEditPage() {
         </p>
       ) : (
         <>
-          <CvEditor value={draft} onChange={setDraft} />
+          {isReparsing ? (
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-green/10 px-3 py-1.5 text-[12.5px] font-semibold text-[#065f46]">
+              <SpinnerIcon className="animate-spin w-4 h-4" />
+              Auto-filling from your upload…
+            </div>
+          ) : null}
+          {cvQuery.data.source === 'upload' ? (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  reparsedRef.current = true;
+                  reparse.mutate(cvQuery.data!.id);
+                }}
+                disabled={isReparsing}
+                className="text-[12.5px] font-semibold text-[#15803d] hover:underline disabled:opacity-50"
+              >
+                ↻ Re-pull from your upload
+              </button>
+            </div>
+          ) : null}
+          <CvEditor
+            value={draft}
+            onChange={setDraft}
+            cvId={cvQuery.data.id}
+            initialSection={focusedAction?.section}
+            seedCoachMessage={
+              focusedAction
+                ? `Help me address this from my action plan: "${focusedAction.title}". Detail: ${focusedAction.detail}`
+                : undefined
+            }
+          />
           {error ? <div className="mt-3 text-[13px] text-red-600">{error}</div> : null}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <Button variant="ghost" onClick={downloadPdf}>
