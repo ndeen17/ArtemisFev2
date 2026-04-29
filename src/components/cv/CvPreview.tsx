@@ -15,9 +15,9 @@ export function CvPreview({ cv }: { cv: StructuredCv }) {
   ].filter((s) => s && s.trim());
 
   return (
-    <div className="bg-white shadow-[0_2px_24px_rgba(0,0,0,0.06)] mx-auto w-full max-w-[640px] min-h-[860px] p-10 text-[#111827]">
+    <div className="bg-white rounded-xl shadow-[0_2px_24px_rgba(0,0,0,0.06)] mx-auto w-full max-w-[640px] p-6 sm:p-8 text-[#111827]">
       {cv.header.fullName ? (
-        <h1 className="text-[26px] font-extrabold tracking-tight">{cv.header.fullName}</h1>
+        <h1 className="text-[22px] font-extrabold tracking-tight">{cv.header.fullName}</h1>
       ) : (
         <Placeholder text="Your name" big />
       )}

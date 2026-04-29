@@ -57,7 +57,7 @@ export default function CvEditPage() {
 
   if (cvQuery.isLoading || draft === null) {
     return (
-      <OnboardingLayout step={3} backTo="/onboarding/no-cv">
+      <OnboardingLayout step={3} backTo="/onboarding/no-cv" wide>
         <div className="flex items-center gap-2 text-gray-500">
           <SpinnerIcon /> Loading your draft…
         </div>
@@ -66,7 +66,7 @@ export default function CvEditPage() {
   }
   if (!cvQuery.data) {
     return (
-      <OnboardingLayout step={3} backTo="/onboarding/no-cv">
+      <OnboardingLayout step={3} backTo="/onboarding/no-cv" wide>
         <p className="text-[14px] text-gray-600">
           We could not find your CV. Go back and try drafting again.
         </p>
@@ -75,7 +75,7 @@ export default function CvEditPage() {
   }
 
   return (
-    <OnboardingLayout step={3} backTo="/onboarding/no-cv">
+    <OnboardingLayout step={3} backTo="/onboarding/no-cv" wide>
       <StepHeader
         eyebrow="Your CV draft"
         title="Refine each section, then continue."
