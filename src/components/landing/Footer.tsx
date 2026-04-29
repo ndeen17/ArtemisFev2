@@ -1,6 +1,6 @@
 const columns = [
   {
-    title: 'Plaform',
+    title: 'Platform',
     links: ['Reviews', 'Interviews', 'Mentors'],
   },
   {
@@ -13,11 +13,11 @@ const columns = [
   },
 ];
 
-export default function Footer() {
+/** Landing — site-wide footer with brand block and link columns. */
+export function Footer() {
   return (
     <footer className="w-full bg-white px-6 pb-16 pt-12 lg:px-10">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 md:grid-cols-4 md:gap-10">
-        {/* Brand */}
         <div className="md:col-span-1">
           <div className="flex items-center gap-3">
             <img
@@ -32,7 +32,6 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Link columns */}
         {columns.map((col) => (
           <div key={col.title}>
             <p className="text-[15px] font-medium text-[#9ca3af]">{col.title}</p>

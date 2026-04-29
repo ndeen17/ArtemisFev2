@@ -1,14 +1,18 @@
-import Hero from './components/Hero.jsx';
-import Navbar from './components/Navbar.jsx';
-import ValueProp from './components/ValueProp.jsx';
-import FeatureRow from './components/FeatureRow.jsx';
-import Difference from './components/Difference.jsx';
-import FinalCTA from './components/FinalCTA.jsx';
-import Footer from './components/Footer.jsx';
+import {
+  Hero,
+  Navbar,
+  ValueProp,
+  FeatureRow,
+  Difference,
+  FinalCTA,
+  Footer,
+} from '@/components/landing';
+import { MarketingLayout } from '@/components/layout/MarketingLayout';
 
-export default function App() {
+/** Public marketing landing page (route: `/`). */
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <MarketingLayout>
       <Navbar />
       <Hero />
 
@@ -48,6 +52,6 @@ export default function App() {
       <Difference />
       <FinalCTA />
       <Footer />
-    </div>
+    </MarketingLayout>
   );
 }

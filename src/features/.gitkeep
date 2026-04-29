@@ -1,0 +1,2 @@
+# features/ — domain modules. Each subfolder owns its hooks + API wrappers.
+# e.g. features/auth/useSignUp.ts, features/onboarding/useOnboardingStep.ts

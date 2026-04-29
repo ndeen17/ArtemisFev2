@@ -1,4 +1,5 @@
-export default function ValueProp() {
+/** Landing — large value-proposition headline overlapping the hero band. */
+export function ValueProp() {
   return (
     <section className="relative w-full bg-[#ecedec] pt-28 sm:pt-32 pb-10 -mt-40 sm:-mt-56 lg:-mt-80">
       <div className="relative mx-auto max-w-[900px] px-6 text-center">

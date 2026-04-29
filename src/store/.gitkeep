@@ -1,0 +1,4 @@
+# Zustand stores added per phase:
+# - authStore (Phase 1)
+# - onboardingStore (Phase 2)
+# - goalStore (Phase 6)

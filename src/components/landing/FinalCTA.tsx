@@ -1,14 +1,14 @@
-export default function FinalCTA() {
+/** Landing — green call-to-action banner near the bottom of the page. */
+export function FinalCTA() {
   return (
     <section className="w-full bg-white px-6 py-20 lg:px-10 lg:py-24">
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[32px] bg-[#22c55e] px-8 py-16 sm:px-12 sm:py-20 lg:px-16 lg:py-24">
-        {/* Decorative globe */}
         <img
           src="/assets/globe.png"
           alt=""
           aria-hidden="true"
           className="pointer-events-none absolute -right-16 -bottom-10 hidden w-[520px] max-w-none opacity-90 select-none md:block lg:-right-10 lg:w-[620px]"
-          draggable="false"
+          draggable={false}
         />
 
         <div className="relative max-w-2xl">
@@ -18,8 +18,8 @@ export default function FinalCTA() {
             Start improving with Artemis.
           </h2>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">
-            Most platforms charge a premium and still cannot guarantee quality. Artemis costs
-            less and vets harder.
+            Most platforms charge a premium and still cannot guarantee quality. Artemis costs less
+            and vets harder.
           </p>
 
           <div className="mt-10 flex flex-wrap gap-4">
