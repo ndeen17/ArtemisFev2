@@ -5,7 +5,7 @@ import {
   type Goal,
   sortByGoalPriority,
 } from '@artemis/shared';
-import { ArrowRightIcon, SparklesIcon, AlertTriangleIcon, FileIcon } from '@/components/ui/icons';
+import { ArrowRightIcon, SparklesIcon, AlertTriangleIcon, FileIcon, MicIcon } from '@/components/ui/icons';
 
 export interface ActionItem {
   id: string;
@@ -15,7 +15,17 @@ export interface ActionItem {
   to: string;
   /** Visual emphasis. */
   tone: 'primary' | 'neutral';
-  icon: 'cv' | 'sparkle' | 'gap';
+  icon: 'cv' | 'sparkle' | 'gap' | 'interview';
+}
+
+/** Phase 8F — Surface a weak interview debrief on the dashboard. */
+export interface WeakInterviewSummary {
+  interviewId: string;
+  overallScore: number;
+  /** First entry from `debrief.nextActions`, when present. */
+  nextAction: { title: string; detail: string; link?: string } | null;
+  /** Used as a fallback detail when `nextAction` is missing. */
+  weakness: string | null;
 }
 
 interface Props {
@@ -25,9 +35,16 @@ interface Props {
   hasCv: boolean;
   /** Phase 6 — when set, items are re-ranked using the goal's actionPriority map. */
   goal?: Goal | null;
+  /** Phase 8F — most recent completed interview with overallScore < 70. */
+  weakInterview?: WeakInterviewSummary | null;
 }
 
-function deriveActions({ readiness, analysis, hasCv }: Omit<Props, 'goal'>): ActionItem[] {
+function deriveActions({
+  readiness,
+  analysis,
+  hasCv,
+  weakInterview,
+}: Omit<Props, 'goal'>): ActionItem[] {
   const actions: ActionItem[] = [];
 
   if (!hasCv) {
@@ -94,6 +111,24 @@ function deriveActions({ readiness, analysis, hasCv }: Omit<Props, 'goal'>): Act
     }
   }
 
+  // Phase 8F — latest weak interview debrief surfaces as a flagged action.
+  if (weakInterview) {
+    const next = weakInterview.nextAction;
+    const detail =
+      next?.detail ??
+      weakInterview.weakness ??
+      `Recent interview scored ${weakInterview.overallScore}/100. Open the debrief for a full breakdown.`;
+    actions.push({
+      id: 'interview-weak',
+      title: next?.title ?? `Improve your interview performance (${weakInterview.overallScore}/100)`,
+      detail,
+      cta: 'Open debrief',
+      to: next?.link?.startsWith('/') ? next.link : `/interviews/${weakInterview.interviewId}`,
+      tone: 'primary',
+      icon: 'interview',
+    });
+  }
+
   // Fallback when nothing else applies — encourage finishing remaining factors.
   if (actions.length === 0) {
     const firstUnfinished = readiness.factors.find((f) => !f.done);
@@ -117,6 +152,7 @@ const iconMap = {
   cv: FileIcon,
   sparkle: SparklesIcon,
   gap: AlertTriangleIcon,
+  interview: MicIcon,
 };
 
 export function ActionList(props: Props) {

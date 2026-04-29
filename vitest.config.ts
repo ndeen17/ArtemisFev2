@@ -5,7 +5,10 @@ import path from 'node:path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@artemis/shared': path.resolve(__dirname, './src/_shared/index.ts'),
+    },
   },
   test: {
     environment: 'jsdom',

@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@artemis/shared': path.resolve(__dirname, './src/_shared/index.ts'),
     },
   },
   server: {

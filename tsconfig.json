@@ -20,7 +20,9 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@artemis/shared": ["src/_shared/index.ts"],
+      "@artemis/shared/*": ["src/_shared/*"]
     },
     "types": ["vite/client", "node"]
   },

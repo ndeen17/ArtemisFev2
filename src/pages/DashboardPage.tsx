@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import { deriveReadiness } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
+import { useInterview, useInterviews } from '@/hooks/useInterviews';
 import { ReadinessScoreCard } from '@/components/dashboard/ReadinessScoreCard';
-import { ActionList } from '@/components/dashboard/ActionList';
+import { ActionList, type WeakInterviewSummary } from '@/components/dashboard/ActionList';
 import { NoGoalPrompt } from '@/components/dashboard/NoGoalPrompt';
 import { useAuthStore } from '@/store/authStore';
 import { useGoalCopy } from '@/hooks/useGoal';
 import { ArrowRightIcon } from '@/components/ui/icons';
+
+const INTERVIEW_WEAK_THRESHOLD = 70;
 
 /**
  * Dashboard. Single source of truth for "where am I right now". All numbers
@@ -24,7 +28,42 @@ export default function DashboardPage() {
   const onboarding = useOnboardingState();
   const cv = useMyCv();
   const analysis = useLatestAnalysis();
+  const interviews = useInterviews();
   const { goal, copy, hasGoal } = useGoalCopy();
+
+  // Find the most recent completed interview whose summary score is below the weak threshold.
+  const weakInterviewId = useMemo<string | null>(() => {
+    const list = interviews.data ?? [];
+    const sorted = [...list]
+      .filter(
+        (s) =>
+          s.status === 'completed' &&
+          typeof s.overallScore === 'number' &&
+          s.overallScore < INTERVIEW_WEAK_THRESHOLD,
+      )
+      .sort((a, b) => {
+        const ta = a.endedAt ? new Date(a.endedAt).getTime() : 0;
+        const tb = b.endedAt ? new Date(b.endedAt).getTime() : 0;
+        return tb - ta;
+      });
+    return sorted[0]?.id ?? null;
+  }, [interviews.data]);
+
+  // Pull the full session (with debrief) only when we have a weak candidate.
+  const weakInterviewDetail = useInterview(weakInterviewId ?? undefined);
+
+  const weakInterview = useMemo<WeakInterviewSummary | null>(() => {
+    const s = weakInterviewDetail.data;
+    if (!s || !s.debrief) return null;
+    if (s.debrief.overallScore >= INTERVIEW_WEAK_THRESHOLD) return null;
+    const next = s.debrief.nextActions?.[0] ?? null;
+    return {
+      interviewId: s.id,
+      overallScore: s.debrief.overallScore,
+      nextAction: next ? { title: next.title, detail: next.detail, link: next.link } : null,
+      weakness: s.debrief.weaknesses?.[0] ?? null,
+    };
+  }, [weakInterviewDetail.data]);
 
   const snapshot = deriveReadiness({
     onboarding: onboarding.data
@@ -72,6 +111,7 @@ export default function DashboardPage() {
         analysis={analysis.data ?? null}
         hasCv={!!cv.data}
         goal={goal}
+        weakInterview={weakInterview}
       />
 
       <CvSummaryCard loading={cv.isLoading} cv={cv.data ?? null} />
