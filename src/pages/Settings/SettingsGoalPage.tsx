@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GOAL_COPY, type Goal } from '@artemis/shared';
-import { AppShell } from '@/components/layout/AppShell';
+import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { Button } from '@/components/ui/Button';
 import { ArrowRightIcon, SpinnerIcon, CheckIcon } from '@/components/ui/icons';
@@ -45,7 +45,7 @@ export default function SettingsGoalPage() {
   }
 
   return (
-    <AppShell title="Goal" subtitle="Change what Artemis prioritises for you.">
+    <SettingsLayout subtitle="Change what Artemis prioritises for you.">
       <div>
         <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
           Settings
@@ -115,6 +115,6 @@ export default function SettingsGoalPage() {
           </div>
         </div>
       </section>
-    </AppShell>
+    </SettingsLayout>
   );
 }

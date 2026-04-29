@@ -69,6 +69,11 @@ export function useUploadCv() {
     mutationFn: cvApi.upload,
     async onSuccess() {
       void qc.invalidateQueries({ queryKey: CV_KEY });
+      // Fresh CV → fresh analysis. Invalidate so the dashboard / profile
+      // re-poll and show the analysing state immediately.
+      void qc.invalidateQueries({ queryKey: ['analysis', 'latest'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'overview'] });
+      void qc.invalidateQueries({ queryKey: ['dashboard'] });
       // The backend advances onboardingStep to 'linkedin' on upload. Refetch
       // onboarding state and mirror it into the auth store so the route gate
       // doesn't bounce the user back to /onboarding/cv.

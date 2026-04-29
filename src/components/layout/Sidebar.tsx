@@ -24,7 +24,7 @@ const items: NavItem[] = [
   { to: '/profile', label: 'Profile', icon: UserIcon },
   { to: '/applications', label: 'Applications', icon: BriefcaseIcon },
   { to: '/interviews', label: 'Interviews', icon: MicIcon },
-  { to: '/settings/goal', label: 'Settings', icon: SettingsIcon },
+  { to: '/settings/profile', label: 'Settings', icon: SettingsIcon },
 ];
 
 interface SidebarProps {

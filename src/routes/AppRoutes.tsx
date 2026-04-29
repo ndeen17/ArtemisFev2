@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ComponentType } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { OnboardingGate } from './OnboardingGate';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -96,6 +96,8 @@ const InterviewsPage = lazyWithRetry(() => import('@/pages/InterviewsPage'));
 const NewInterviewPage = lazyWithRetry(() => import('@/pages/Interviews/NewInterviewPage'));
 const InterviewDetailPage = lazyWithRetry(() => import('@/pages/Interviews/InterviewDetailPage'));
 const SettingsGoalPage = lazyWithRetry(() => import('@/pages/Settings/SettingsGoalPage'));
+const SettingsProfilePage = lazyWithRetry(() => import('@/pages/Settings/SettingsProfilePage'));
+const SettingsResumePage = lazyWithRetry(() => import('@/pages/Settings/SettingsResumePage'));
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -319,10 +321,30 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: '/settings',
+    element: <Navigate to="/settings/profile" replace />,
+  },
+  {
+    path: '/settings/profile',
+    element: (
+      <ProtectedRoute>
+        <SettingsProfilePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/settings/goal',
     element: (
       <ProtectedRoute>
         <SettingsGoalPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/settings/resume',
+    element: (
+      <ProtectedRoute>
+        <SettingsResumePage />
       </ProtectedRoute>
     ),
   },
