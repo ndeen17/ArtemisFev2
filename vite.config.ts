@@ -17,6 +17,15 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ''),
       },
+      // WebSocket proxy for the voice-mode interview gateway (Phase 8C/8D).
+      // Browser connects to ws://localhost:5173/ws/interviews/:id/realtime?token=...
+      // and Vite forwards to ws://localhost:4000/interviews/:id/realtime?token=...
+      '/ws': {
+        target: 'ws://localhost:4000',
+        ws: true,
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/ws/, ''),
+      },
     },
   },
 });

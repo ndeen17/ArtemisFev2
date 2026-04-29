@@ -33,10 +33,10 @@ export function Navbar() {
         </ul>
 
         <div className="hidden lg:flex items-center gap-3">
-          <Button variant="primary" href="#start">
+          <Button variant="primary" href="/signup">
             Get started
           </Button>
-          <Button variant="outline" href="#login">
+          <Button variant="outline" href="/signin">
             Login
           </Button>
         </div>
@@ -90,10 +90,10 @@ export function Navbar() {
               </li>
             ))}
             <li className="mt-3 flex flex-col gap-2">
-              <Button variant="primary" href="#start" className="w-full">
+              <Button variant="primary" href="/signup" className="w-full">
                 Get started
               </Button>
-              <Button variant="outline" href="#login" className="w-full">
+              <Button variant="outline" href="/signin" className="w-full">
                 Login
               </Button>
             </li>
