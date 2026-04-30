@@ -13,7 +13,9 @@ import type { AuthUser } from '@artemis/shared';
  * - Injects Bearer access token from `useAuthStore`.
  * - On 401 attempts a single refresh-then-replay; gives up if refresh also fails.
  */
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+// Strip any trailing slashes so URL concatenation in `performRefresh` doesn't
+// produce `//auth/refresh` when VITE_API_BASE_URL is set with a trailing slash.
+const baseURL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '');
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL,
