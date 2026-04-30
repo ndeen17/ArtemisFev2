@@ -41,7 +41,18 @@ export default function ProfileCvEditPage() {
     if (cv.source !== 'upload') return;
     if (!isStructuredCvSparse(cv.structured ?? null)) return;
     reparsedRef.current = true;
-    reparse.mutate(cv.id);
+    reparse.mutate(cv.id, {
+      onSuccess: (next) => {
+        // Force-rehydrate the editor with the freshly-parsed shape; otherwise
+        // the local `draft` state stays stuck on the empty skeleton it was
+        // initialised from.
+        setDraft(next.structured ?? emptyStructuredCv());
+        setError(null);
+      },
+      onError: (err) => {
+        setError(extractApiError(err).message);
+      },
+    });
   }, [cvQuery.data, reparse]);
 
   // Hydrate local draft once we have data.
@@ -109,7 +120,13 @@ export default function ProfileCvEditPage() {
                 type="button"
                 onClick={() => {
                   reparsedRef.current = true;
-                  reparse.mutate(cvQuery.data!.id);
+                  reparse.mutate(cvQuery.data!.id, {
+                    onSuccess: (next) => {
+                      setDraft(next.structured ?? emptyStructuredCv());
+                      setError(null);
+                    },
+                    onError: (err) => setError(extractApiError(err).message),
+                  });
                 }}
                 disabled={isReparsing}
                 className="text-[12.5px] font-semibold text-[#15803d] hover:underline disabled:opacity-50"

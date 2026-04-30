@@ -35,7 +35,16 @@ export default function CvEditPage() {
     if (cv.source !== 'upload') return;
     if (!isStructuredCvSparse(cv.structured ?? null)) return;
     reparsedRef.current = true;
-    reparse.mutate(cv.id);
+    reparse.mutate(cv.id, {
+      onSuccess: (next) => {
+        // Force the editor to pick up the freshly-parsed shape — otherwise the
+        // local `draft` state stays stuck on the empty skeleton it was
+        // initialised from.
+        setDraft(next.structured ?? emptyStructuredCv());
+        setError(null);
+      },
+      onError: (err) => setError(extractApiError(err).message),
+    });
   }, [cvQuery.data, reparse]);
 
   useEffect(() => {
