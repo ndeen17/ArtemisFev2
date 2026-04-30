@@ -52,7 +52,8 @@ async function performRefresh(): Promise<string | null> {
     // session, otherwise the user appears to be randomly signed out.
     const status = (err as AxiosError).response?.status;
     if (status === 401 || status === 403) {
-      useAuthStore.getState().clearAuth();
+      // Server-initiated session end — surfaces the "Session expired" banner on /signin.
+      useAuthStore.getState().expireSession();
     }
     return null;
   }
