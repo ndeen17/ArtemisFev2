@@ -57,6 +57,10 @@ export const cvApi = {
     const res = await apiClient.post<{ cv: CvDetail }>(`/cv/${cvId}/parse`);
     return res.data.cv;
   },
+  /** Hard-delete the user's CV. Used by the onboarding "Remove" / start-over flow. */
+  async remove(cvId: string): Promise<void> {
+    await apiClient.delete(`/cv/${cvId}`);
+  },
   /** Targeted bullet rewrite. Returns rewrite payload with `target` populated. */
   async rewriteTargetedBullet(target: BulletPath): Promise<BulletRewriteResponse> {
     const { cvId, expId, bulletIdx } = target;

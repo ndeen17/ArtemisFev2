@@ -1,8 +1,10 @@
 import type {
   AuthResponse,
   AuthUser,
+  ForgotPasswordInput,
   GoogleAuthInput,
   ResendVerificationInput,
+  ResetPasswordInput,
   SignInInput,
   SignUpInput,
   VerifyEmailInput,
@@ -36,6 +38,20 @@ export const authApi = {
   },
   async resendVerification(input: ResendVerificationInput): Promise<{ ok: true }> {
     const res = await apiClient.post<{ ok: true }>('/auth/resend-verification', input);
+    return res.data;
+  },
+  async forgotPassword(input: ForgotPasswordInput): Promise<{ ok: true }> {
+    const res = await apiClient.post<{ ok: true }>('/auth/forgot-password', input);
+    return res.data;
+  },
+  async checkResetToken(token: string): Promise<{ valid: boolean }> {
+    const res = await apiClient.get<{ valid: boolean }>(
+      `/auth/reset-password/${encodeURIComponent(token)}/check`,
+    );
+    return res.data;
+  },
+  async resetPassword(input: ResetPasswordInput): Promise<{ ok: true }> {
+    const res = await apiClient.post<{ ok: true }>('/auth/reset-password', input);
     return res.data;
   },
 };

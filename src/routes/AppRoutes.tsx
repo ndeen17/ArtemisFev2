@@ -65,6 +65,8 @@ const SignUpPage = lazyWithRetry(() => import('@/pages/Auth/SignUpPage'));
 const SignInPage = lazyWithRetry(() => import('@/pages/Auth/SignInPage'));
 const VerifyEmailPage = lazyWithRetry(() => import('@/pages/Auth/VerifyEmailPage'));
 const GoogleCallbackPage = lazyWithRetry(() => import('@/pages/Auth/GoogleCallbackPage'));
+const ForgotPasswordPage = lazyWithRetry(() => import('@/pages/Auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazyWithRetry(() => import('@/pages/Auth/ResetPasswordPage'));
 const RolePage = lazyWithRetry(() => import('@/pages/Onboarding/RolePage'));
 const GoalPage = lazyWithRetry(() => import('@/pages/Onboarding/GoalPage'));
 const CvPage = lazyWithRetry(() => import('@/pages/Onboarding/CvPage'));
@@ -106,6 +108,8 @@ const router = createBrowserRouter([
   { path: '/signin', element: <SignInPage /> },
   { path: '/verify-email', element: <VerifyEmailPage /> },
   { path: '/auth/callback/google', element: <GoogleCallbackPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/reset-password/:token', element: <ResetPasswordPage /> },
 
   // Phase 2: onboarding wizard (gated — auth + !onboardingComplete + correct step)
   {

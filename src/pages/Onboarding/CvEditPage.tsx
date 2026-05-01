@@ -56,6 +56,28 @@ export default function CvEditPage() {
   async function continueToNext() {
     setError(null);
     if (!cvQuery.data || !draft) return;
+
+    // Hard-required: name + at least one experience entry. Without these the
+    // downstream score and action plan have nothing to work with.
+    const fullName = (draft.header.fullName ?? '').trim();
+    if (!fullName) {
+      setError('Add your full name before continuing.');
+      return;
+    }
+    if (draft.experience.length === 0) {
+      setError('Add at least one experience entry before continuing.');
+      return;
+    }
+
+    // Soft-required: education. Some senior candidates legitimately omit it,
+    // so we ask for confirmation rather than block outright.
+    if (draft.education.length === 0) {
+      const proceed = window.confirm(
+        'Continue without adding any education? You can still proceed, but adding even one entry usually improves your score.',
+      );
+      if (!proceed) return;
+    }
+
     try {
       await patch.mutateAsync({ cvId: cvQuery.data.id, structured: draft });
       navigate('/onboarding/linkedin');
@@ -81,7 +103,7 @@ export default function CvEditPage() {
 
   if (cvQuery.isLoading || draft === null) {
     return (
-      <OnboardingLayout step={3} backTo="/onboarding/no-cv" wide>
+      <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
         <div className="flex items-center gap-2 text-gray-500">
           <SpinnerIcon /> Loading your draft…
         </div>
@@ -90,7 +112,7 @@ export default function CvEditPage() {
   }
   if (!cvQuery.data) {
     return (
-      <OnboardingLayout step={3} backTo="/onboarding/no-cv" wide>
+      <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
         <p className="text-[14px] text-gray-600">
           We could not find your CV. Go back and try drafting again.
         </p>
@@ -99,7 +121,7 @@ export default function CvEditPage() {
   }
 
   return (
-    <OnboardingLayout step={3} backTo="/onboarding/no-cv" wide>
+    <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
       <StepHeader
         eyebrow="Your CV draft"
         title="Refine each section, then continue."

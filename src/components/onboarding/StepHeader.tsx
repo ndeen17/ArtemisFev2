@@ -14,11 +14,12 @@ export function ProgressDots({ current, total, label }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <div
-        className="flex items-center gap-1.5"
+        className="flex items-center gap-2"
         role="progressbar"
         aria-valuemin={1}
         aria-valuemax={total}
         aria-valuenow={current}
+        aria-label={label ?? `Step ${current} of ${total}`}
       >
         {Array.from({ length: total }).map((_, i) => {
           const filled = i < current;
@@ -31,10 +32,6 @@ export function ProgressDots({ current, total, label }: Props) {
             />
           );
         })}
-      </div>
-      <div className="text-[12px] text-gray-500 tracking-wide">
-        Step {current} of {total}
-        {label ? <span className="ml-2 text-gray-400">{label}</span> : null}
       </div>
     </div>
   );
@@ -50,7 +47,7 @@ export function StepHeader({ eyebrow, title, subtitle }: HeaderProps) {
   return (
     <div className="space-y-2">
       {eyebrow ? (
-        <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
+        <div className="text-[14px] font-semibold text-brand-green">
           {eyebrow}
         </div>
       ) : null}

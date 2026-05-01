@@ -57,8 +57,27 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <div className="flex items-center justify-between px-6 h-16 border-b border-gray-100">
           <Link
             to="/dashboard"
-            className="text-[16px] font-extrabold tracking-tight text-[#111827]"
+            className="inline-flex items-center gap-2 text-[16px] font-extrabold tracking-tight text-[#111827]"
+            aria-label="Artemis dashboard"
           >
+            <span
+              aria-hidden="true"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-green/15 ring-1 ring-brand-green/30"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-3.5 w-3.5 text-brand-green"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 18 L20 6" />
+                <path d="M14 6 L20 6 L20 12" />
+                <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+              </svg>
+            </span>
             Artemis
           </Link>
           <button

@@ -14,23 +14,23 @@ import { extractApiError } from '@/hooks/useAuth';
 const ROLES: { value: Role; title: string; description: string }[] = [
   {
     value: 'software_engineer',
-    title: 'Software engineer',
-    description: 'Backend, frontend, full-stack, mobile.',
+    title: 'Software Engineer',
+    description: 'Backend, frontend, full-stack, mobile',
   },
   {
     value: 'product_manager',
-    title: 'Product manager',
-    description: 'Roadmaps, discovery, shipping outcomes.',
+    title: 'Product Manager',
+    description: 'Product Owner, Delivery manager.',
   },
-  { value: 'designer', title: 'Designer', description: 'Product, UX, brand, motion.' },
+  { value: 'designer', title: 'Digital Designer', description: 'Product, UX, Brand, Motion' },
 ];
 
 const LEVELS: { value: ExperienceLevel; title: string }[] = [
-  { value: 'student', title: 'Student / new grad' },
-  { value: 'entry', title: '0–2 years' },
-  { value: 'mid', title: '3–5 years' },
-  { value: 'senior', title: '6–9 years' },
-  { value: 'lead', title: 'Staff / lead (10+)' },
+  { value: 'student', title: 'Student/New grad' },
+  { value: 'entry', title: '0-2 years' },
+  { value: 'mid', title: '3-5 years' },
+  { value: 'senior', title: '6-9 years' },
+  { value: 'lead', title: 'Staff/lead 10+ years' },
 ];
 
 type Stage = 'name' | 'role';
@@ -147,15 +147,17 @@ export default function RolePage() {
     );
   }
 
+  const greetName = (trimmedName || user?.displayName || '').split(' ')[0];
+
   return (
-    <OnboardingLayout step={1} backTo="/">
+    <OnboardingLayout step={1}>
       <StepHeader
-        eyebrow={`Hi ${trimmedName || 'there'} 👋`}
+        eyebrow={greetName ? `Hey ${greetName}!` : 'Hey there!'}
         title="What do you do?"
-        subtitle="We tailor your dashboard, prep questions, and CV feedback to your role and seniority."
+        subtitle="We want to personalize your Artemis experience to your role and level of seniority"
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {ROLES.map((r) => (
           <SelectableCard
             key={r.value}
@@ -168,20 +170,18 @@ export default function RolePage() {
       </div>
 
       <div className="space-y-3">
-        <div className="text-[14px] font-semibold text-[#111827]">
-          How much experience do you have?
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="text-[14px] text-gray-600">How much experience have you got?</div>
+        <div className="flex flex-wrap gap-2">
           {LEVELS.map((l) => (
             <button
               key={l.value}
               type="button"
               onClick={() => setLevel(l.value)}
               aria-pressed={level === l.value}
-              className={`rounded-full px-4 py-2.5 text-[13px] font-semibold border transition-colors ${
+              className={`rounded-full px-4 py-2 text-[13px] font-semibold border transition-colors bg-white text-[#111827] ${
                 level === l.value
-                  ? 'bg-brand-green text-[#111827] border-brand-green ring-2 ring-[#dcfce7]'
-                  : 'bg-white text-[#111827] border-gray-200 hover:border-gray-300'
+                  ? 'border-brand-green ring-2 ring-[#dcfce7]'
+                  : 'border-gray-200 hover:border-gray-300'
               }`}
             >
               {l.title}
@@ -193,22 +193,26 @@ export default function RolePage() {
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
       <div className="flex items-center justify-between gap-3 pt-2">
-        <button
-          type="button"
-          onClick={() => setStage('name')}
-          className="text-[13px] font-semibold text-gray-500 hover:text-[#111827]"
+        <Button
+          variant="outline"
+          size="md"
+          onClick={() => {
+            if (stateQuery.data?.displayName) {
+              navigate('/');
+            } else {
+              setStage('name');
+            }
+          }}
         >
-          ← Change name
-        </button>
-        <Button onClick={submitRole} disabled={!canSubmitRole || patch.isPending}>
+          Back
+        </Button>
+        <Button size="md" onClick={submitRole} disabled={!canSubmitRole || patch.isPending}>
           {patch.isPending ? (
             <span className="inline-flex items-center gap-2">
               <SpinnerIcon /> Saving…
             </span>
           ) : (
-            <span className="inline-flex items-center gap-2">
-              Continue <ArrowRightIcon />
-            </span>
+            'Continue'
           )}
         </Button>
       </div>

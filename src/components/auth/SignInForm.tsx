@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { SignInSchema, type SignInInput } from '@artemis/shared';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
+import { PasswordField } from '@/components/ui/PasswordField';
 import { FormError } from '@/components/ui/FormError';
 import { OAuthButton } from './OAuthButton';
 import { SpinnerIcon } from '@/components/ui/icons';
@@ -81,15 +82,23 @@ export function SignInForm() {
         error={errors.email?.message}
         {...register('email')}
       />
-      <FormField
+      <PasswordField
         id="signin-password"
         label="Password"
-        type="password"
         autoComplete="current-password"
         placeholder="Your password"
         error={errors.password?.message}
         {...register('password')}
       />
+
+      <div className="-mt-2 text-right">
+        <Link
+          to="/forgot-password"
+          className="text-[13px] font-medium text-[#22c55e] hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </div>
 
       {topError ? <FormError>{topError}</FormError> : null}
 

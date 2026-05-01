@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { SignUpSchema, type SignUpInput } from '@artemis/shared';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
+import { PasswordField } from '@/components/ui/PasswordField';
 import { FormError } from '@/components/ui/FormError';
 import { OAuthButton } from './OAuthButton';
 import { SpinnerIcon } from '@/components/ui/icons';
@@ -82,10 +83,9 @@ export function SignUpForm() {
         error={errors.email?.message}
         {...register('email')}
       />
-      <FormField
+      <PasswordField
         id="signup-password"
         label="Password"
-        type="password"
         autoComplete="new-password"
         placeholder="At least 8 characters"
         error={errors.password?.message}

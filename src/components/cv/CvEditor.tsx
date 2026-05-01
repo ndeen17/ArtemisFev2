@@ -236,10 +236,14 @@ function HeaderForm({ value, onChange }: CvEditorProps) {
   const f = value.header;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <Field label="Full name">
-        <Input value={f.fullName} onChange={(e) => set('fullName', e.target.value)} />
+      <Field label="Full name" required>
+        <Input
+          value={f.fullName}
+          onChange={(e) => set('fullName', e.target.value)}
+          aria-required="true"
+        />
       </Field>
-      <Field label="Headline">
+      <Field label="Headline" optional>
         <Input
           placeholder="Senior Frontend Engineer"
           value={f.headline}
@@ -509,7 +513,10 @@ function EducationForm({ value, onChange }: CvEditorProps) {
   return (
     <div className="space-y-4">
       {value.education.length === 0 ? (
-        <p className="text-[13px] text-gray-500">No qualifications yet. Add your first below.</p>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[13px] text-amber-900">
+          <strong className="font-semibold">Tip:</strong> adding at least one education entry
+          typically improves your match score by 8–12 points. You can still continue without one.
+        </div>
       ) : null}
       {value.education.map((ed, idx) => (
         <div key={ed.id} className="rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3">
@@ -619,14 +626,28 @@ function Field({
   label,
   children,
   className,
+  required,
+  optional,
 }: {
   label: string;
   children: React.ReactNode;
   className?: string;
+  required?: boolean;
+  optional?: boolean;
 }) {
   return (
     <div className={className}>
-      <Label className="mb-1 block text-[12.5px] font-medium text-gray-700">{label}</Label>
+      <Label className="mb-1 block text-[12.5px] font-medium text-gray-700">
+        {label}
+        {required ? (
+          <span className="ml-1 text-red-500" aria-hidden="true">
+            *
+          </span>
+        ) : null}
+        {optional ? (
+          <span className="ml-1 text-[11.5px] font-normal text-gray-400">(optional)</span>
+        ) : null}
+      </Label>
       {children}
     </div>
   );

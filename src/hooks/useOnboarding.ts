@@ -136,6 +136,23 @@ export function useReparseCv() {
   });
 }
 
+export function useRemoveCv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (cvId: string) => cvApi.remove(cvId),
+    async onSuccess() {
+      void qc.invalidateQueries({ queryKey: CV_KEY });
+      void qc.invalidateQueries({ queryKey: ['analysis', 'latest'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'overview'] });
+      void qc.invalidateQueries({ queryKey: ['dashboard'] });
+      // The user is back at the "no CV" state. Refetch onboarding so the
+      // route gate sends them back to /onboarding/cv if they were further on.
+      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
+      syncAuthStep(qc, state);
+    },
+  });
+}
+
 export function useRewriteTargetedBullet() {
   return useMutation({
     mutationFn: (target: import('@artemis/shared').BulletPath) =>
