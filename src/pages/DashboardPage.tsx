@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { deriveReadiness } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
@@ -12,6 +12,7 @@ import { NoGoalPrompt } from '@/components/dashboard/NoGoalPrompt';
 import { useAuthStore } from '@/store/authStore';
 import { useGoalCopy } from '@/hooks/useGoal';
 import { ArrowRightIcon } from '@/components/ui/icons';
+import { useToast } from '@/components/ui/Toast';
 
 const INTERVIEW_WEAK_THRESHOLD = 70;
 
@@ -31,6 +32,27 @@ export default function DashboardPage() {
   const analysis = useLatestAnalysis();
   const interviews = useInterviews();
   const { goal, copy, hasGoal } = useGoalCopy();
+  const toast = useToast();
+
+  // One-shot nudge for users who skipped the in-onboarding CV editor. The
+  // flag is set by /onboarding/cv/edit's "Skip for now" button and cleared
+  // here on first dashboard mount.
+  useEffect(() => {
+    let pending = false;
+    try {
+      pending = localStorage.getItem('artemis:cvDraftPending') === '1';
+      if (pending) localStorage.removeItem('artemis:cvDraftPending');
+    } catch {
+      /* storage disabled — non-fatal */
+    }
+    if (!pending) return;
+    toast.push({
+      tone: 'info',
+      title: 'Your CV is still a starter draft',
+      description: 'Polish it whenever you’re ready from Profile → Edit CV.',
+      durationMs: 8000,
+    });
+  }, [toast]);
 
   // Find the most recent completed interview whose summary score is below the weak threshold.
   const weakInterviewId = useMemo<string | null>(() => {
