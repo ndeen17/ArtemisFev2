@@ -33,12 +33,14 @@ export default function ProfileCvEditPage() {
   const [error, setError] = useState<string | null>(null);
   const reparsedRef = useRef(false);
 
-  // Auto-reparse on first open when an uploaded CV has nothing to show.
+  // Auto-reparse on first open when the editor would otherwise be empty.
+  // Applies to all CV sources — uploads can silently fail to parse, and
+  // builder (JD / questionnaire) CVs occasionally come back with an empty
+  // structured shape when the AI text→JSON step trips schema validation.
   useEffect(() => {
     if (reparsedRef.current) return;
     const cv = cvQuery.data;
     if (!cv) return;
-    if (cv.source !== 'upload') return;
     if (!isStructuredCvSparse(cv.structured ?? null)) return;
     reparsedRef.current = true;
     reparse.mutate(cv.id, {

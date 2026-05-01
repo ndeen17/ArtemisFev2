@@ -33,7 +33,11 @@ export default function CvEditPage() {
     if (reparsedRef.current) return;
     const cv = cvQuery.data;
     if (!cv) return;
-    if (cv.source !== 'upload') return;
+    // Rescue an empty editor regardless of source. Uploads can fail to parse
+    // silently, but JD- and questionnaire-built CVs also occasionally come
+    // back with an empty structured shape when the second AI parse step
+    // (text → JSON) trips schema validation. In every case we have a
+    // populated rawText to re-run the parse against.
     if (!isStructuredCvSparse(cv.structured ?? null)) return;
     reparsedRef.current = true;
     reparse.mutate(cv.id, {

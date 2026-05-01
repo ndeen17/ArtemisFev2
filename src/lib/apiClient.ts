@@ -20,7 +20,9 @@ const baseURL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, ''
 export const apiClient: AxiosInstance = axios.create({
   baseURL,
   withCredentials: true, // refresh-token httpOnly cookie
-  timeout: 15_000,
+  // 60s — long enough for AI-chain endpoints (CV-from-JD, action plan, etc.)
+  // which routinely take 20–30s. Anything genuinely stuck past this is broken.
+  timeout: 60_000,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -86,3 +88,20 @@ apiClient.interceptors.response.use(
     return apiClient.request(original as AxiosRequestConfig);
   },
 );
+
+/**
+ * Call once at app boot. If the persisted store says the user is authenticated
+ * but we have no in-memory access token (typical after a full page reload —
+ * the access token is intentionally never persisted), proactively refresh so
+ * the user's first action doesn't have to absorb a 401-then-retry round-trip.
+ *
+ * Safe to call multiple times — coalesces with the lazy refresh path.
+ */
+export async function bootstrapAuth(): Promise<void> {
+  const { isAuthenticated, accessToken } = useAuthStore.getState();
+  if (!isAuthenticated || accessToken) return;
+  refreshPromise ??= performRefresh().finally(() => {
+    refreshPromise = null;
+  });
+  await refreshPromise;
+}
