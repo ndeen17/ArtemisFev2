@@ -6,7 +6,7 @@ import { StepHeader } from '@/components/onboarding/StepHeader';
 import { CvEditor } from '@/components/cv/CvEditor';
 import { Button } from '@/components/ui/Button';
 import { SpinnerIcon } from '@/components/ui/icons';
-import { useMyCv, usePatchCv, useReparseCv } from '@/hooks/useOnboarding';
+import { useMyCv, usePatchCv, usePatchOnboarding, useReparseCv } from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
 import { emptyStructuredCv, isStructuredCvSparse } from '@/lib/structuredCv';
 import { cvApi } from '@/features/onboarding/api';
@@ -23,6 +23,7 @@ export default function CvEditPage() {
   const navigate = useNavigate();
   const cvQuery = useMyCv();
   const patch = usePatchCv();
+  const patchOnboarding = usePatchOnboarding();
   const reparse = useReparseCv();
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +102,23 @@ export default function CvEditPage() {
     }
   }
 
+  async function skipForNow() {
+    setError(null);
+    try {
+      // Flag a one-shot post-onboarding nudge so the dashboard reminds the
+      // user their CV is still a starter draft. Cleared on first display.
+      try {
+        localStorage.setItem('artemis:cvDraftPending', '1');
+      } catch {
+        /* storage disabled — non-fatal */
+      }
+      await patchOnboarding.mutateAsync({ onboardingStep: 'linkedin' });
+      navigate('/onboarding/linkedin');
+    } catch (err) {
+      setError(extractApiError(err).message);
+    }
+  }
+
   if (cvQuery.isLoading || draft === null) {
     return (
       <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
@@ -128,6 +146,14 @@ export default function CvEditPage() {
         subtitle="Edits update the live preview on the right. The AI coach is one click away if you get stuck."
       />
 
+      {cvQuery.data.source === 'jd' || cvQuery.data.source === 'questionnaire' ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13.5px] text-amber-900 leading-relaxed">
+          <span className="font-semibold">This is a starter draft.</span> The AI made some
+          assumptions to fill in the gaps — review each section and tighten what's not quite
+          right. You can also skip ahead and polish it later from your profile.
+        </div>
+      ) : null}
+
       {reparse.isPending ? (
         <div className="inline-flex items-center gap-2 rounded-full bg-brand-green/10 px-3 py-1.5 text-[12.5px] font-semibold text-[#065f46]">
           <SpinnerIcon className="animate-spin w-4 h-4" />
@@ -143,15 +169,32 @@ export default function CvEditPage() {
         <Button variant="ghost" onClick={downloadPdf}>
           Download PDF
         </Button>
-        <Button onClick={continueToNext} disabled={patch.isPending}>
-          {patch.isPending ? (
-            <span className="inline-flex items-center gap-2">
-              <SpinnerIcon /> Saving…
-            </span>
-          ) : (
-            'Save & continue'
-          )}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {cvQuery.data.source === 'jd' || cvQuery.data.source === 'questionnaire' ? (
+            <Button
+              variant="ghost"
+              onClick={skipForNow}
+              disabled={patchOnboarding.isPending || patch.isPending}
+            >
+              {patchOnboarding.isPending ? (
+                <span className="inline-flex items-center gap-2">
+                  <SpinnerIcon /> Skipping…
+                </span>
+              ) : (
+                "Skip for now — I'll polish it later"
+              )}
+            </Button>
+          ) : null}
+          <Button onClick={continueToNext} disabled={patch.isPending}>
+            {patch.isPending ? (
+              <span className="inline-flex items-center gap-2">
+                <SpinnerIcon /> Saving…
+              </span>
+            ) : (
+              'Save & continue'
+            )}
+          </Button>
+        </div>
       </div>
     </OnboardingLayout>
   );

@@ -93,7 +93,7 @@ export default function CvPage() {
       {hasCv && !showReplace ? (
         <CvSummaryCard
           cv={cv!}
-          onEdit={() => navigate('/onboarding/cv-edit')}
+          onEdit={() => navigate('/onboarding/cv/edit')}
           onReplace={() => setShowReplace(true)}
           onRemove={handleRemove}
           removing={remove.isPending}
