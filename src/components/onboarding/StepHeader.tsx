@@ -51,7 +51,7 @@ export function StepHeader({ eyebrow, title, subtitle }: HeaderProps) {
           {eyebrow}
         </div>
       ) : null}
-      <h1 className="text-[22px] sm:text-[24px] font-extrabold tracking-tight text-[#111827] leading-[1.2]">
+      <h1 className="text-[24px] sm:text-[26px] font-black tracking-tight text-[#111827] leading-[1.2]">
         {title}
       </h1>
       {subtitle ? <p className="text-[14px] text-gray-600 leading-relaxed">{subtitle}</p> : null}

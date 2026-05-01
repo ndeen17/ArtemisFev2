@@ -29,30 +29,12 @@ export function OnboardingLayout({ step, total = 5, backTo, wide = false, childr
               <ArrowLeftIcon /> Back
             </Link>
           ) : null}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2.5 text-[20px] font-extrabold tracking-tight text-[#111827]"
-            aria-label="Artemis home"
-          >
-            <span
-              aria-hidden="true"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-green shadow-sm"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M7 7 L17 17" />
-                <path d="M17 7 L7 17" />
-                <path d="M14 7 L17 7 L17 10" />
-              </svg>
-            </span>
-            Artemis
+          <Link to="/" aria-label="Artemis home" className="inline-flex items-center">
+            <img
+              src="/assets/logo.png"
+              alt="Artemis"
+              className="h-9 w-auto object-contain"
+            />
           </Link>
         </div>
 
