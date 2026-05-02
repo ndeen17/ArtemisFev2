@@ -5,6 +5,7 @@ import type {
   CreateApplicationInput,
   UpdateApplicationInput,
   DraftCoverLetterInput,
+  PatchTargetedCvInput,
 } from '@artemis/shared';
 import { apiClient } from '@/lib/apiClient';
 
@@ -53,5 +54,24 @@ export const applicationApi = {
       patch,
     );
     return res.data.application;
+  },
+  async patchTargetedCv(id: string, patch: PatchTargetedCvInput): Promise<Application> {
+    const res = await apiClient.patch<{ application: Application }>(
+      `/applications/${id}/targeted-cv`,
+      patch,
+    );
+    return res.data.application;
+  },
+  async reparseTargetedCv(id: string): Promise<Application> {
+    const res = await apiClient.post<{ application: Application }>(
+      `/applications/${id}/targeted-cv/parse`,
+    );
+    return res.data.application;
+  },
+  async downloadTargetedCvPdf(id: string): Promise<Blob> {
+    const res = await apiClient.get<Blob>(`/applications/${id}/targeted-cv/pdf`, {
+      responseType: 'blob',
+    });
+    return res.data;
   },
 };

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ObjectIdString } from './common.js';
+import { StructuredCvSchema } from './cv.js';
 
 /**
  * Phase 7 — Application tracking.
@@ -65,6 +66,12 @@ export const TargetedCvSchema = z.object({
   diff: z.array(DiffSegmentSchema),
   /** Short rationale explaining what changed and why. */
   rationale: z.string().min(20).max(800),
+  /** User-friendly label (defaults to "<jobTitle> — <company>"). */
+  name: z.string().min(1).max(120).nullable().default(null),
+  /** Editable structured shape — same schema as the base CV. Nullable for
+   *  legacy applications generated before the structured pipeline existed
+   *  and as a graceful fallback when the AI parse step fails. */
+  structured: StructuredCvSchema.nullable().default(null),
 });
 export type TargetedCv = z.infer<typeof TargetedCvSchema>;
 
@@ -135,6 +142,19 @@ export type SetStatusInput = z.infer<typeof SetStatusSchema>;
 
 /** POST /applications/:id/target-cv — body intentionally empty; service uses stored JD + base CV. */
 export const TargetCvRequestSchema = z.object({}).strict();
+
+/** PATCH /applications/:id/targeted-cv — rename and/or replace the structured shape.
+ *  At least one of `name` or `structured` must be provided. */
+export const PatchTargetedCvSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    structured: StructuredCvSchema.optional(),
+  })
+  .strict()
+  .refine((v) => v.name !== undefined || v.structured !== undefined, {
+    message: 'Provide name and/or structured.',
+  });
+export type PatchTargetedCvInput = z.infer<typeof PatchTargetedCvSchema>;
 
 /** POST /applications/:id/cover-letter — optional tone hint. */
 export const DraftCoverLetterSchema = z

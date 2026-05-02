@@ -93,6 +93,9 @@ const ApplicationDetailPage = lazyWithRetry(
 );
 const JdTargetPage = lazyWithRetry(() => import('@/pages/Applications/JdTargetPage'));
 const CvReviewPage = lazyWithRetry(() => import('@/pages/Applications/CvReviewPage'));
+const TargetedCvEditPage = lazyWithRetry(
+  () => import('@/pages/Applications/TargetedCvEditPage'),
+);
 const CoverLetterPage = lazyWithRetry(() => import('@/pages/Applications/CoverLetterPage'));
 const InterviewsPage = lazyWithRetry(() => import('@/pages/InterviewsPage'));
 const NewInterviewPage = lazyWithRetry(() => import('@/pages/Interviews/NewInterviewPage'));
@@ -289,6 +292,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <CvReviewPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/applications/:id/targeted-cv/edit',
+    element: (
+      <ProtectedRoute>
+        <TargetedCvEditPage />
       </ProtectedRoute>
     ),
   },

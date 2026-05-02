@@ -5,6 +5,7 @@ import type {
   ApplicationSummary,
   CreateApplicationInput,
   DraftCoverLetterInput,
+  PatchTargetedCvInput,
   UpdateApplicationInput,
 } from '@artemis/shared';
 import { applicationApi } from '@/features/applications/api';
@@ -104,6 +105,28 @@ export function useEditCoverLetter(id: string) {
   return useMutation({
     mutationFn: (patch: { text: string; hook?: string }) =>
       applicationApi.editCoverLetter(id, patch),
+    onSuccess(app: Application) {
+      qc.setQueryData(DETAIL_KEY(app.id), app);
+      invalidateAll(qc);
+    },
+  });
+}
+
+export function usePatchTargetedCv(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: PatchTargetedCvInput) => applicationApi.patchTargetedCv(id, patch),
+    onSuccess(app: Application) {
+      qc.setQueryData(DETAIL_KEY(app.id), app);
+      invalidateAll(qc);
+    },
+  });
+}
+
+export function useReparseTargetedCv(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => applicationApi.reparseTargetedCv(id),
     onSuccess(app: Application) {
       qc.setQueryData(DETAIL_KEY(app.id), app);
       invalidateAll(qc);
