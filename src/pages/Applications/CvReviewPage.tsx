@@ -4,13 +4,16 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeftIcon, SparklesIcon } from '@/components/ui/icons';
 import { CvDiffViewer } from '@/components/applications/CvDiffViewer';
+import { CvPreview } from '@/components/cv/CvPreview';
 import {
   useApplication,
   usePatchTargetedCv,
+  useReparseTargetedCv,
   useTargetCv,
 } from '@/hooks/useApplications';
 import { applicationApi } from '@/features/applications/api';
 import { extractApiError } from '@/hooks/useAuth';
+import { isStructuredCvSparse } from '@/lib/structuredCv';
 
 /**
  * APP-03 — Targeted CV review. Triggers /applications/:id/target-cv and renders
@@ -24,12 +27,26 @@ export default function CvReviewPage() {
   const query = useApplication(id);
   const target = useTargetCv(id);
   const patchName = usePatchTargetedCv(id);
+  const reparse = useReparseTargetedCv(id);
   const app = query.data;
   const targeted = app?.targetedCv ?? null;
 
   const [name, setName] = useState<string>('');
   const lastSavedNameRef = useRef<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const reparsedRef = useRef(false);
+
+  // Auto-reparse on first open if the targeted CV has no structured payload
+  // (legacy targets created before structured was persisted, or AI returned
+  // a sparse skeleton). This lets us show the same styled preview the editor
+  // and PDF use, instead of the raw monospaced text fallback.
+  useEffect(() => {
+    if (reparsedRef.current) return;
+    if (!targeted) return;
+    if (!isStructuredCvSparse(targeted.structured ?? null)) return;
+    reparsedRef.current = true;
+    reparse.mutate();
+  }, [targeted, reparse]);
 
   // Hydrate the local name input on first load only — subsequent server
   // round-trips (e.g. our own debounced patch landing) shouldn't blow away
@@ -145,12 +162,29 @@ export default function CvReviewPage() {
           </div>
           <CvDiffViewer segments={targeted.diff} />
           <div className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8">
-            <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
-              Final tailored CV
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
+                Final tailored CV
+              </div>
+              {reparse.isPending ? (
+                <span className="text-[12px] font-semibold text-gray-500">
+                  Auto-formatting…
+                </span>
+              ) : null}
             </div>
-            <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-[14px] leading-relaxed text-gray-800">
-              {targeted.text}
-            </pre>
+            {targeted.structured && !isStructuredCvSparse(targeted.structured) ? (
+              // Same styled preview the editor uses on the right pane and the
+              // PDF renders — keeps presentation identical end-to-end.
+              <div className="mt-4">
+                <CvPreview cv={targeted.structured} />
+              </div>
+            ) : (
+              // Fallback while structured isn't available yet (auto-reparse in
+              // flight, or AI couldn't structure the text). Still readable.
+              <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-[14px] leading-relaxed text-gray-800">
+                {targeted.text}
+              </pre>
+            )}
           </div>
         </>
       ) : (

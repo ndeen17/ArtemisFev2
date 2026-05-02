@@ -6,6 +6,8 @@ import type {
   UpdateApplicationInput,
   DraftCoverLetterInput,
   PatchTargetedCvInput,
+  RefineRequest,
+  RefineTurn,
 } from '@artemis/shared';
 import { apiClient } from '@/lib/apiClient';
 
@@ -67,6 +69,13 @@ export const applicationApi = {
       `/applications/${id}/targeted-cv/parse`,
     );
     return res.data.application;
+  },
+  async refineTargetedCv(id: string, body: RefineRequest): Promise<RefineTurn> {
+    const res = await apiClient.post<{ turn: RefineTurn }>(
+      `/applications/${id}/targeted-cv/refine`,
+      body,
+    );
+    return res.data.turn;
   },
   async downloadTargetedCvPdf(id: string): Promise<Blob> {
     const res = await apiClient.get<Blob>(`/applications/${id}/targeted-cv/pdf`, {

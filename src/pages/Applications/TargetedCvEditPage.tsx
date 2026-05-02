@@ -4,7 +4,8 @@ import type { StructuredCv } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { CvEditor } from '@/components/cv/CvEditor';
 import { Button } from '@/components/ui/Button';
-import { SpinnerIcon } from '@/components/ui/icons';
+import { SparklesIcon, SpinnerIcon } from '@/components/ui/icons';
+import { RefineChatDrawer } from '@/components/applications/RefineChatDrawer';
 import {
   useApplication,
   usePatchTargetedCv,
@@ -31,6 +32,7 @@ export default function TargetedCvEditPage() {
 
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refineOpen, setRefineOpen] = useState(false);
   const reparsedRef = useRef(false);
 
   const targeted = appQuery.data?.targetedCv ?? null;
@@ -132,9 +134,16 @@ export default function TargetedCvEditPage() {
           <CvEditor value={draft} onChange={setDraft} />
           {error ? <div className="mt-3 text-[13px] text-red-600">{error}</div> : null}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <Button variant="ghost" onClick={downloadPdf}>
-              Download PDF
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="ghost" onClick={downloadPdf}>
+                Download PDF
+              </Button>
+              <Button variant="outline" onClick={() => setRefineOpen(true)}>
+                <span className="inline-flex items-center gap-1.5">
+                  <SparklesIcon className="w-4 h-4" /> Refine with AI
+                </span>
+              </Button>
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -153,6 +162,16 @@ export default function TargetedCvEditPage() {
               </Button>
             </div>
           </div>
+          {refineOpen && draft ? (
+            <RefineChatDrawer
+              applicationId={id}
+              currentStructured={draft}
+              onApply={(updated) => {
+                setDraft(updated);
+              }}
+              onClose={() => setRefineOpen(false)}
+            />
+          ) : null}
         </>
       )}
     </AppShell>
