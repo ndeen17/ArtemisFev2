@@ -70,7 +70,6 @@ const ResetPasswordPage = lazyWithRetry(() => import('@/pages/Auth/ResetPassword
 const RolePage = lazyWithRetry(() => import('@/pages/Onboarding/RolePage'));
 const GoalPage = lazyWithRetry(() => import('@/pages/Onboarding/GoalPage'));
 const CvPage = lazyWithRetry(() => import('@/pages/Onboarding/CvPage'));
-const NoCvPage = lazyWithRetry(() => import('@/pages/Onboarding/NoCvPage'));
 const CvBuilderJdPage = lazyWithRetry(() => import('@/pages/Onboarding/CvBuilderJdPage'));
 const CvBuilderQuestionnairePage = lazyWithRetry(
   () => import('@/pages/Onboarding/CvBuilderQuestionnairePage'),
@@ -141,11 +140,10 @@ const router = createBrowserRouter([
   },
   {
     path: '/onboarding/no-cv',
-    element: (
-      <OnboardingGate>
-        <NoCvPage />
-      </OnboardingGate>
-    ),
+    // Legacy chooser path — the merged builder always starts at /basics now.
+    // Kept as a redirect so any user mid-flow with this URL bookmarked or
+    // saved as their server-side onboardingStep lands in the right place.
+    element: <Navigate to="/onboarding/cv/basics" replace />,
   },
   {
     path: '/onboarding/cv/jd',
@@ -156,12 +154,17 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/onboarding/cv/builder',
+    path: '/onboarding/cv/basics',
     element: (
       <OnboardingGate>
         <CvBuilderQuestionnairePage />
       </OnboardingGate>
     ),
+  },
+  {
+    // Legacy path (pre-merge) — some users may have it open on a stale tab.
+    path: '/onboarding/cv/builder',
+    element: <Navigate to="/onboarding/cv/basics" replace />,
   },
   {
     path: '/onboarding/cv/edit',

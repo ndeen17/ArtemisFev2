@@ -68,8 +68,10 @@ export default function CvPage() {
   async function dontHaveOne() {
     setError(null);
     try {
-      await patch.mutateAsync({ onboardingStep: 'no_cv' });
-      navigate('/onboarding/no-cv');
+      // Skip the legacy "no CV" chooser — the merged builder always starts
+      // with the basics step, then offers an optional JD-tailoring step.
+      await patch.mutateAsync({ onboardingStep: 'cv_builder_questionnaire' });
+      navigate('/onboarding/cv/basics');
     } catch (err) {
       setError(extractApiError(err).message);
     }

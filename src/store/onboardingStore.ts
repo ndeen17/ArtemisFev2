@@ -53,9 +53,14 @@ export const stepToPath: Record<OnboardingStep, string> = {
   role: '/onboarding/role',
   goal: '/onboarding/goal',
   cv: '/onboarding/cv',
-  no_cv: '/onboarding/no-cv',
+  // The legacy chooser step `no_cv` no longer has a dedicated page — any
+  // user mid-flow on this step is redirected straight into the merged
+  // builder's first step (basics) by the route registered in AppRoutes.
+  no_cv: '/onboarding/cv/basics',
+  // Step 2 of the merged builder: optional JD tailoring.
   cv_builder_jd: '/onboarding/cv/jd',
-  cv_builder_questionnaire: '/onboarding/cv/builder',
+  // Step 1 of the merged builder: capture basics.
+  cv_builder_questionnaire: '/onboarding/cv/basics',
   linkedin: '/onboarding/linkedin',
   complete: '/onboarding/complete',
 };

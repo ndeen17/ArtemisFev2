@@ -119,5 +119,14 @@ export type QuestionnaireAnswers = z.infer<typeof QuestionnaireAnswersSchema>;
 
 export const CvFromQuestionnaireSchema = z.object({
   answers: QuestionnaireAnswersSchema,
+  /** Optional JD pasted on the second step of the merged builder flow.
+   *  When present the AI is instructed to tailor the draft to it; when
+   *  absent we generate a generic CV from the answers alone. */
+  jobDescription: z
+    .string()
+    .trim()
+    .min(100, 'Paste at least 100 characters of the job description')
+    .max(6000)
+    .optional(),
 });
 export type CvFromQuestionnaireInput = z.infer<typeof CvFromQuestionnaireSchema>;

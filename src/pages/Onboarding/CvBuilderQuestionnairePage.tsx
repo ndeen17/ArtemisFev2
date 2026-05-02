@@ -8,18 +8,31 @@ import { StepHeader } from '@/components/onboarding/StepHeader';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
 import { PlusIcon, SpinnerIcon, TrashIcon } from '@/components/ui/icons';
-import { useGenerateCvFromQuestionnaire } from '@/hooks/useOnboarding';
+import { usePatchOnboarding } from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
+import { useCvBuilderDraftStore } from '@/store/cvBuilderDraftStore';
 
+/**
+ * Step 1 of the merged onboarding CV builder. Captures the user's basics
+ * (name, headline, summary, experience, education, skills) and stashes
+ * them in `cvBuilderDraftStore` before handing off to the optional JD
+ * step at /onboarding/cv/jd. No AI call here — generation only happens
+ * once the user clicks Continue on the JD step (with or without a JD).
+ *
+ * Required-to-continue: fullName + at least one experience row with
+ * both title and company filled. All other sections are optional.
+ */
 export default function CvBuilderQuestionnairePage() {
   const navigate = useNavigate();
-  const generate = useGenerateCvFromQuestionnaire();
+  const patch = usePatchOnboarding();
+  const draftAnswers = useCvBuilderDraftStore((s) => s.answers);
+  const setAnswers = useCvBuilderDraftStore((s) => s.setAnswers);
   const [topError, setTopError] = useState<string | null>(null);
   const [skillsInput, setSkillsInput] = useState('');
 
   const form = useForm<QuestionnaireAnswers>({
     resolver: zodResolver(QuestionnaireAnswersSchema),
-    defaultValues: {
+    defaultValues: draftAnswers ?? {
       fullName: '',
       headline: '',
       summary: '',
@@ -50,26 +63,32 @@ export default function CvBuilderQuestionnairePage() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setTopError(null);
+    // Strip empty rows the user added but never filled out, and require at
+    // least one experience row with both title + company before continuing.
+    const cleaned: QuestionnaireAnswers = {
+      ...values,
+      experience: values.experience.filter((e) => e.title.trim() && e.company.trim()),
+      education: values.education.filter((e) => e.school.trim()),
+    };
+    if (cleaned.experience.length === 0) {
+      setTopError('Add at least one role with a title and company so we have something to work with.');
+      return;
+    }
     try {
-      // Strip empty experience rows the user added but never filled out.
-      const cleaned: QuestionnaireAnswers = {
-        ...values,
-        experience: values.experience.filter((e) => e.title && e.company),
-        education: values.education.filter((e) => e.school),
-      };
-      await generate.mutateAsync({ answers: cleaned });
-      navigate('/onboarding/cv/edit');
+      setAnswers(cleaned);
+      await patch.mutateAsync({ onboardingStep: 'cv_builder_jd' });
+      navigate('/onboarding/cv/jd');
     } catch (err) {
       setTopError(extractApiError(err).message);
     }
   });
 
   return (
-    <OnboardingLayout step={3} backTo="/onboarding/no-cv">
+    <OnboardingLayout step={3} backTo="/onboarding/cv">
       <StepHeader
-        eyebrow="CV from your answers"
-        title="A few quick questions."
-        subtitle="The more you share, the cleaner your starter CV. You can edit everything later."
+        eyebrow="Step 3 of 4 · Your basics"
+        title="Tell us about yourself."
+        subtitle="We'll turn this into a clean starter CV. Next, you can optionally tailor it to a specific job description — or just skip ahead."
       />
 
       <form onSubmit={onSubmit} className="space-y-6" noValidate>
@@ -263,13 +282,13 @@ export default function CvBuilderQuestionnairePage() {
         {topError ? <div className="text-[13px] text-red-600">{topError}</div> : null}
 
         <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={generate.isPending}>
-            {generate.isPending ? (
+          <Button type="submit" disabled={patch.isPending}>
+            {patch.isPending ? (
               <span className="inline-flex items-center gap-2">
-                <SpinnerIcon /> Drafting your CV…
+                <SpinnerIcon /> Saving…
               </span>
             ) : (
-              'Draft my CV'
+              'Continue'
             )}
           </Button>
         </div>
