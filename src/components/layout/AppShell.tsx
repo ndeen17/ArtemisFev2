@@ -15,11 +15,11 @@ interface AppShellProps {
 export function AppShell({ children, title, subtitle }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
-    <div className="min-h-screen bg-[#fafafa] flex">
+    <div className="h-screen overflow-hidden bg-[#fafafa] flex">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar title={title} subtitle={subtitle} onOpenSidebar={() => setSidebarOpen(true)} />
-        <main className="flex-1">
+        <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-6xl px-6 lg:px-10 py-8 lg:py-10 space-y-8">{children}</div>
         </main>
       </div>

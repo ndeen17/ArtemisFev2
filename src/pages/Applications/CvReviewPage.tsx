@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { ArrowLeftIcon, SparklesIcon } from '@/components/ui/icons';
 import { CvDiffViewer } from '@/components/applications/CvDiffViewer';
 import { CvPreview } from '@/components/cv/CvPreview';
+import { RefineChatDrawer } from '@/components/applications/RefineChatDrawer';
 import {
   useApplication,
   usePatchTargetedCv,
@@ -34,6 +35,7 @@ export default function CvReviewPage() {
   const [name, setName] = useState<string>('');
   const lastSavedNameRef = useRef<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [refineOpen, setRefineOpen] = useState(false);
   const reparsedRef = useRef(false);
 
   // Auto-reparse on first open if the targeted CV has no structured payload
@@ -141,6 +143,16 @@ export default function CvReviewPage() {
               <Button type="button" onClick={handleDownload}>
                 Download PDF
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRefineOpen(true)}
+                disabled={!targeted.structured || isStructuredCvSparse(targeted.structured)}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <SparklesIcon className="w-4 h-4" /> Refine with AI
+                </span>
+              </Button>
               <Link to={`/applications/${id}/targeted-cv/edit`}>
                 <Button type="button" variant="ghost">
                   Edit this resume
@@ -198,6 +210,18 @@ export default function CvReviewPage() {
           </div>
         )
       )}
+      {refineOpen && targeted?.structured && !isStructuredCvSparse(targeted.structured) ? (
+        <RefineChatDrawer
+          applicationId={id}
+          currentStructured={targeted.structured}
+          onApply={(updated) => {
+            // Persist directly — there's no in-memory editor draft on this
+            // page, so applying = saving.
+            patchName.mutate({ structured: updated });
+          }}
+          onClose={() => setRefineOpen(false)}
+        />
+      ) : null}
     </AppShell>
   );
 }
