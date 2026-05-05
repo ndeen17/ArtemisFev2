@@ -25,12 +25,22 @@ export function TopBar({ title, subtitle, onOpenSidebar, alwaysShowMenu = false 
             type="button"
             onClick={onOpenSidebar}
             className={cn(
-              'text-gray-600 hover:text-gray-900',
+              'relative text-gray-600 hover:text-gray-900',
               alwaysShowMenu ? '' : 'lg:hidden',
             )}
-            aria-label="Open menu"
+            aria-label={alwaysShowMenu ? 'Open menu (closes the CV builder)' : 'Open menu'}
+            title={alwaysShowMenu ? 'Open menu — closes the CV builder' : undefined}
           >
             <MenuIcon />
+            {/* When the builder is open this dot signals that clicking the
+                hamburger will exit the editor. Mirrors the Sidebar/Builder
+                mutual exclusion in AppShell. */}
+            {alwaysShowMenu ? (
+              <span
+                aria-hidden
+                className="absolute -top-0.5 -right-0.5 inline-block h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[#fafafa]"
+              />
+            ) : null}
           </button>
           <div className="min-w-0">
             <h1 className="text-[18px] font-extrabold tracking-tight text-[#111827] leading-tight truncate">

@@ -20,6 +20,7 @@ import { cvApi } from '@/features/onboarding/api';
 import { applicationApi } from '@/features/applications/api';
 import { emptyStructuredCv, isStructuredCvSparse } from '@/lib/structuredCv';
 import type { BuilderSection } from '@/hooks/useBuilderUrlState';
+import { useBuilderDirty } from '@/store/builderDirtyStore';
 
 /**
  * Reusable inline-editing surface for both:
@@ -111,6 +112,15 @@ function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProp
     // else: keep the user's edits. They'll save (which sends their version)
     // or close the builder. The stale snapshot is acceptable here.
   }, [cvQuery.data, draft]);
+
+  // Surface dirtiness to the SplitPaneShell so it can show the Unsaved pill
+  // and gate the Close button.
+  const setDirty = useBuilderDirty((s) => s.setDirty);
+  useEffect(() => {
+    if (draft === null) return;
+    setDirty(JSON.stringify(draft) !== hydratedSnapshotRef.current);
+  }, [draft, setDirty]);
+  useEffect(() => () => setDirty(false), [setDirty]);
 
   const focusedAction = useMemo<ActionPlanItem | null>(() => {
     if (!focus) return null;
@@ -286,6 +296,13 @@ function TargetedBuilder({ applicationId, section, onSaved }: BuilderPanelProps)
       hydratedSnapshotRef.current = nextSerialized;
     }
   }, [targeted, draft]);
+
+  const setDirty = useBuilderDirty((s) => s.setDirty);
+  useEffect(() => {
+    if (draft === null) return;
+    setDirty(JSON.stringify(draft) !== hydratedSnapshotRef.current);
+  }, [draft, setDirty]);
+  useEffect(() => () => setDirty(false), [setDirty]);
 
   async function save() {
     setError(null);
