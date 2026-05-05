@@ -198,6 +198,12 @@ export const ApplicationSchema = z.object({
   statusHistory: z.array(StatusHistoryEntrySchema),
   baseCvId: z.string().nullable(),
   targetedCv: TargetedCvSchema.nullable(),
+  /** Async job state for `targetCv`. AI tailoring runs in the background
+   *  to avoid Vercel/Render proxy timeouts on the long OpenAI call. The FE
+   *  polls this field while it is `running`. */
+  targetedCvStatus: z.enum(['idle', 'running', 'failed']).default('idle'),
+  targetedCvError: z.string().nullable().default(null),
+  targetedCvStartedAt: z.string().nullable().default(null),
   coverLetter: CoverLetterSchema.nullable(),
   /** Phase 1 — cached structured brief of the JD. Populated lazily on first
    *  Targeted CV / Cover Letter / ATS score request. Null until then. */
