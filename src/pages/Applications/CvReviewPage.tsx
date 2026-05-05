@@ -35,6 +35,12 @@ export default function CvReviewPage() {
   const reparse = useReparseTargetedCv(id);
   const app = query.data;
   const targeted = app?.targetedCv ?? null;
+  // The BE runs the AI tailoring as a background job (the POST returns 202
+  // immediately). The mutation's `isPending` only covers the kickoff; while
+  // the worker is running we rely on the polled `targetedCvStatus`.
+  const isTailoring = target.isPending || app?.targetedCvStatus === 'running';
+  const tailorFailureMessage =
+    app?.targetedCvStatus === 'failed' ? app.targetedCvError : null;
 
   const [name, setName] = useState<string>('');
   const lastSavedNameRef = useRef<string | null>(null);
@@ -136,15 +142,31 @@ export default function CvReviewPage() {
         >
           <ArrowLeftIcon className="w-4 h-4" /> Back to application
         </Link>
-        <Button type="button" onClick={() => target.mutate()} disabled={target.isPending}>
+        <Button type="button" onClick={() => target.mutate()} disabled={isTailoring}>
           <SparklesIcon className="w-4 h-4" />
-          {target.isPending ? 'Tailoring…' : targeted ? 'Regenerate' : 'Tailor CV with AI'}
+          {isTailoring ? 'Tailoring…' : targeted ? 'Regenerate' : 'Tailor CV with AI'}
         </Button>
       </div>
 
       {target.isError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-[13px] text-rose-700">
           Could not generate. Make sure you have a CV uploaded on the Profile page, then try again.
+        </div>
+      )}
+
+      {tailorFailureMessage && !target.isError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-[13px] text-rose-700">
+          {tailorFailureMessage}
+        </div>
+      )}
+
+      {isTailoring && !targeted && (
+        <div className="rounded-3xl border border-gray-100 bg-white p-12 text-center">
+          <h2 className="text-[18px] font-semibold text-[#111827]">Tailoring your CV…</h2>
+          <p className="mt-1 text-[13px] text-gray-500">
+            This usually takes 20–40 seconds. You can leave this page open — we’ll show
+            the result automatically.
+          </p>
         </div>
       )}
 
@@ -234,7 +256,7 @@ export default function CvReviewPage() {
           </div>
         </>
       ) : (
-        !target.isPending && (
+        !isTailoring && (
           <div className="rounded-3xl border border-gray-100 bg-white p-12 text-center">
             <h2 className="text-[18px] font-semibold text-[#111827]">Not tailored yet</h2>
             <p className="mt-1 text-[13px] text-gray-500">
