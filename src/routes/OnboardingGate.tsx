@@ -27,10 +27,25 @@ const STEP_ORDER: Record<OnboardingStep, number> = {
 };
 
 function stepForPath(pathname: string): OnboardingStep | null {
-  const entry = (Object.entries(stepToPath) as [OnboardingStep, string][]).find(
-    ([, path]) => pathname === path || pathname.startsWith(`${path}/`),
-  );
-  return entry ? entry[0] : null;
+  // Multiple steps can share the same URL (e.g. `/onboarding/cv/basics` is
+  // shared by `cv_builder_questionnaire` and the legacy `no_cv`). Pick the
+  // canonical (current) step where there's overlap so STEP_ORDER comparisons
+  // line up with the user's actual progress on the server.
+  const PREFER: OnboardingStep[] = [
+    'role',
+    'goal',
+    'cv',
+    'cv_builder_questionnaire',
+    'cv_builder_jd',
+    'linkedin',
+    'complete',
+    'no_cv',
+  ];
+  for (const step of PREFER) {
+    const path = stepToPath[step];
+    if (pathname === path || pathname.startsWith(`${path}/`)) return step;
+  }
+  return null;
 }
 
 export function OnboardingGate({ children }: { children: ReactNode }) {
@@ -44,22 +59,27 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   if (user.onboardingComplete) {
     return <Navigate to="/dashboard" replace />;
   }
+  // Normalise the legacy `no_cv` step to the merged builder's first step.
+  // The server already does this on read, but a stale persisted auth user
+  // (localStorage) could still carry `no_cv` until /auth/me refreshes.
+  const userStep: OnboardingStep =
+    user.onboardingStep === 'no_cv' ? 'cv_builder_questionnaire' : user.onboardingStep;
   const currentStep = stepForPath(location.pathname);
   // /onboarding/cv/edit is a sub-route shared by all CV branches — allow it as
   // long as the user has at least reached the CV step.
   if (location.pathname === '/onboarding/cv/edit') {
-    if (STEP_ORDER[user.onboardingStep] < STEP_ORDER.cv) {
-      return <Navigate to={stepToPath[user.onboardingStep] ?? '/onboarding/role'} replace />;
+    if (STEP_ORDER[userStep] < STEP_ORDER.cv) {
+      return <Navigate to={stepToPath[userStep] ?? '/onboarding/role'} replace />;
     }
     return <>{children}</>;
   }
   if (!currentStep) {
     // Unknown onboarding URL — send user to their canonical step.
-    return <Navigate to={stepToPath[user.onboardingStep] ?? '/onboarding/role'} replace />;
+    return <Navigate to={stepToPath[userStep] ?? '/onboarding/role'} replace />;
   }
   // Block skip-ahead: only allow visiting a step at or before the user's progress.
-  if (STEP_ORDER[currentStep] > STEP_ORDER[user.onboardingStep]) {
-    return <Navigate to={stepToPath[user.onboardingStep] ?? '/onboarding/role'} replace />;
+  if (STEP_ORDER[currentStep] > STEP_ORDER[userStep]) {
+    return <Navigate to={stepToPath[userStep] ?? '/onboarding/role'} replace />;
   }
   return <>{children}</>;
 }

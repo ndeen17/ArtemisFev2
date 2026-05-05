@@ -25,7 +25,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   const isCompletionScreen = location.pathname === '/onboarding/complete';
   if (!user.onboardingComplete && !isCompletionScreen) {
-    const target = stepToPath[user.onboardingStep] ?? '/onboarding/role';
+    // Normalise legacy `no_cv` step to the merged builder's basics page.
+    const step = user.onboardingStep === 'no_cv' ? 'cv_builder_questionnaire' : user.onboardingStep;
+    const target = stepToPath[step] ?? '/onboarding/role';
     return <Navigate to={target} replace />;
   }
 

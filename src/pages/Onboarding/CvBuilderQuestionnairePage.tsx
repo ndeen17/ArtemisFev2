@@ -86,7 +86,7 @@ export default function CvBuilderQuestionnairePage() {
   return (
     <OnboardingLayout step={3} backTo="/onboarding/cv">
       <StepHeader
-        eyebrow="Step 3 of 4 · Your basics"
+        eyebrow="Step 3 · Basics"
         title="Tell us about yourself."
         subtitle="We'll turn this into a clean starter CV. Next, you can optionally tailor it to a specific job description — or just skip ahead."
       />

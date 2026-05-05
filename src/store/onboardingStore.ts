@@ -53,9 +53,12 @@ export const stepToPath: Record<OnboardingStep, string> = {
   role: '/onboarding/role',
   goal: '/onboarding/goal',
   cv: '/onboarding/cv',
-  // The legacy chooser step `no_cv` no longer has a dedicated page — any
-  // user mid-flow on this step is redirected straight into the merged
-  // builder's first step (basics) by the route registered in AppRoutes.
+  // Legacy step — server normalises `no_cv` → `cv_builder_questionnaire` on
+  // read, but we keep an entry here so the type stays exhaustive. This points
+  // at the same URL as `cv_builder_questionnaire` (the merged builder's
+  // basics page) so any code path that still surfaces `no_cv` resolves
+  // sensibly. The non-injectivity is deliberate: lookups in the gate use
+  // STEP_ORDER which collapses both onto the same index.
   no_cv: '/onboarding/cv/basics',
   // Step 2 of the merged builder: optional JD tailoring.
   cv_builder_jd: '/onboarding/cv/jd',

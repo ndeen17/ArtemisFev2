@@ -59,7 +59,7 @@ export default function CvBuilderJdPage() {
   return (
     <OnboardingLayout step={3} backTo="/onboarding/cv/basics">
       <StepHeader
-        eyebrow="Step 3 of 4 · Tailor (optional)"
+        eyebrow="Step 3 · Tailor (optional)"
         title="Targeting a specific role?"
         subtitle="Paste the job description and we'll tailor your draft to match it. Totally optional — you can skip and refine later."
       />

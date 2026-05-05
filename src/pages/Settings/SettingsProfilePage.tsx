@@ -6,7 +6,7 @@ import { FormField } from '@/components/ui/FormField';
 import { ArrowRightIcon, SpinnerIcon, CheckIcon } from '@/components/ui/icons';
 import { useOnboardingState, usePatchOnboarding } from '@/hooks/useOnboarding';
 import { useAuthStore } from '@/store/authStore';
-import { extractApiError } from '@/hooks/useAuth';
+import { extractApiError, useLogout } from '@/hooks/useAuth';
 
 /**
  * SETTINGS-PROFILE — change the display name shown across the app
@@ -24,6 +24,7 @@ export default function SettingsProfilePage() {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const logout = useLogout();
 
   useEffect(() => {
     const seed = stateQuery.data?.displayName ?? user?.displayName ?? '';
@@ -114,6 +115,34 @@ export default function SettingsProfilePage() {
               )}
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Account — sign-out lives here (was previously in the global TopBar).
+          Centralising it keeps the topbar quiet and gives users a predictable
+          home for account-level controls (future: change password, delete
+          account, export data). */}
+      <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8 space-y-4">
+        <div>
+          <h2 className="text-[18px] font-extrabold tracking-tight text-[#111827]">Account</h2>
+          <p className="mt-1 text-[14px] text-gray-600">
+            Signed in as <span className="font-semibold text-[#111827]">{user?.email}</span>.
+          </p>
+        </div>
+        <div className="flex items-center justify-end">
+          <Button
+            variant="outline"
+            onClick={() => logout.mutate()}
+            disabled={logout.isPending}
+          >
+            {logout.isPending ? (
+              <span className="inline-flex items-center gap-2">
+                <SpinnerIcon /> Signing out…
+              </span>
+            ) : (
+              'Sign out'
+            )}
+          </Button>
         </div>
       </section>
     </SettingsLayout>

@@ -54,8 +54,16 @@ export default function RolePage() {
   const setUser = useAuthStore((s) => s.setUser);
   const user = useAuthStore((s) => s.user);
 
-  const [stage, setStage] = useState<Stage>('name');
-  const [displayName, setDisplayName] = useState('');
+  // Initialise stage synchronously from the persisted auth user — avoids the
+  // "name → role" flicker when an already-named user revisits this page after
+  // the onboardingState query refetches. We only fall back to 'name' when we
+  // have no record of a display name anywhere (auth user OR persisted name).
+  const [stage, setStage] = useState<Stage>(() =>
+    useAuthStore.getState().user?.displayName ? 'role' : 'name',
+  );
+  const [displayName, setDisplayName] = useState(
+    () => useAuthStore.getState().user?.displayName ?? '',
+  );
   const [role, setRole] = useState<Role | null>(null);
   const [level, setLevel] = useState<ExperienceLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +76,8 @@ export default function RolePage() {
     }
     setRole((prev) => prev ?? stateQuery.data.role);
     setLevel((prev) => prev ?? stateQuery.data.experienceLevel);
-    if (stateQuery.data.displayName && stage === 'name') {
-      setStage('role');
-    }
+    // Only flip forwards — never regress a user who already advanced to 'role'.
+    setStage((prev) => (prev === 'name' && stateQuery.data!.displayName ? 'role' : prev));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateQuery.data]);
 

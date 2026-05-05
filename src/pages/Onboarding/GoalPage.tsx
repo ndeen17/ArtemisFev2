@@ -31,11 +31,15 @@ export default function GoalPage() {
   const navigate = useNavigate();
   const stateQuery = useOnboardingState();
   const patch = usePatchOnboarding();
-  const [goal, setGoal] = useState<Goal | null>(null);
+  const [goal, setGoal] = useState<Goal | null>(() => stateQuery.data?.goal ?? null);
   const [error, setError] = useState<string | null>(null);
 
+  // One-shot hydrate: only adopt the server value if the user hasn't picked
+  // anything locally yet. Otherwise refetches (window-focus, mutations, etc.)
+  // would clobber an in-flight selection.
   useEffect(() => {
-    if (stateQuery.data) setGoal(stateQuery.data.goal);
+    if (goal === null && stateQuery.data?.goal) setGoal(stateQuery.data.goal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateQuery.data]);
 
   async function next() {

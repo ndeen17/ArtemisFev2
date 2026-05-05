@@ -4,13 +4,26 @@ import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { Button } from '@/components/ui/Button';
 import { ArrowRightIcon, LinkedInIcon, SpinnerIcon } from '@/components/ui/icons';
-import { useCompleteOnboarding } from '@/hooks/useOnboarding';
+import { useCompleteOnboarding, useMyCv } from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
 
 export default function LinkedInPage() {
   const navigate = useNavigate();
   const complete = useCompleteOnboarding();
+  const cvQuery = useMyCv();
   const [error, setError] = useState<string | null>(null);
+
+  // Send users back along the same CV branch they came in on. Uploaders go
+  // back to the upload page; questionnaire/JD users land on the editor where
+  // they can keep tweaking their generated CV. Falls back to /cv (the chooser
+  // surface) while the query is still loading.
+  const cvSource = cvQuery.data?.source;
+  const backTo =
+    cvSource === 'upload'
+      ? '/onboarding/cv'
+      : cvSource === 'questionnaire' || cvSource === 'jd'
+        ? '/onboarding/cv/edit'
+        : '/onboarding/cv';
 
   async function finish() {
     setError(null);
@@ -23,7 +36,7 @@ export default function LinkedInPage() {
   }
 
   return (
-    <OnboardingLayout step={4} backTo="/onboarding/cv">
+    <OnboardingLayout step={4} backTo={backTo}>
       <StepHeader
         eyebrow="Step 4"
         title="Connect LinkedIn"

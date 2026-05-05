@@ -1,6 +1,4 @@
 import { useAuthStore } from '@/store/authStore';
-import { useLogout } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/Button';
 import { MenuIcon } from '@/components/ui/icons';
 
 interface TopBarProps {
@@ -11,7 +9,6 @@ interface TopBarProps {
 
 export function TopBar({ title, subtitle, onOpenSidebar }: TopBarProps) {
   const user = useAuthStore((s) => s.user);
-  const logout = useLogout();
 
   return (
     <header className="sticky top-0 z-20 bg-[#fafafa]/95 backdrop-blur border-b border-gray-100">
@@ -36,12 +33,11 @@ export function TopBar({ title, subtitle, onOpenSidebar }: TopBarProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Sign out lives in Settings → Profile (Account section) — having two
+              entry points was noisy and a fat-finger risk on mobile. */}
           <span className="text-[13px] text-gray-500 hidden sm:inline truncate max-w-[180px]">
             {user?.email}
           </span>
-          <Button variant="outline" size="sm" onClick={() => logout.mutate()}>
-            Sign out
-          </Button>
         </div>
       </div>
     </header>
