@@ -5,6 +5,7 @@ import {
   useApplyBullet,
   useRewriteTargetedBullet,
 } from '@/hooks/useOnboarding';
+import { useUndoStackStore } from '@/store/undoStackStore';
 
 /**
  * One-click "Fix" affordance for action plan items that quote a specific
@@ -29,6 +30,7 @@ export function FixButton({
 }) {
   const rewrite = useRewriteTargetedBullet();
   const apply = useApplyBullet();
+  const pushUndo = useUndoStackStore((s) => s.push);
   const [appliedText, setAppliedText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,8 +45,17 @@ export function FixButton({
       const next = r.main;
       await apply.mutateAsync({ target, text: next });
       setAppliedText(next);
-      // Auto-clear the affordance after a minute so it doesn't linger
-      // forever on a quiet page.
+      // Register a 5-min global undo so the user can revert from anywhere
+      // (e.g. after navigating away from the action plan list).
+      pushUndo({
+        label: 'Bullet rewritten by AI',
+        undo: async () => {
+          await apply.mutateAsync({ target, text: original });
+          setAppliedText(null);
+        },
+      });
+      // Auto-clear the inline affordance after a minute so it doesn't linger
+      // forever on a quiet page. The global toast lasts longer (5 min).
       window.setTimeout(() => {
         setAppliedText((cur) => (cur === next ? null : cur));
       }, 60_000);

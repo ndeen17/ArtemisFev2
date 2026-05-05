@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { UndoToastHost } from '@/components/feedback/UndoToastHost';
 
 interface AppShellProps {
   children: ReactNode;
@@ -23,6 +24,7 @@ export function AppShell({ children, title, subtitle }: AppShellProps) {
           <div className="mx-auto max-w-6xl px-6 lg:px-10 py-8 lg:py-10 space-y-8">{children}</div>
         </main>
       </div>
+      <UndoToastHost />
     </div>
   );
 }
