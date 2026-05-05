@@ -15,6 +15,11 @@ export function useOnboardingState() {
     queryKey: KEY,
     queryFn: onboardingApi.getState,
     staleTime: 30_000,
+    // Poll while the AI is drafting a CV in the background so the editor
+    // page can flip from the "drafting" loader to the editor as soon as
+    // the job finishes (success → status='idle', or failure → 'failed').
+    refetchInterval: (q) =>
+      q.state.data?.cvGenerationStatus === 'running' ? 3000 : false,
   });
   useEffect(() => {
     if (query.data) hydrate(query.data);

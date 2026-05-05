@@ -6,7 +6,13 @@ import { StepHeader } from '@/components/onboarding/StepHeader';
 import { CvEditor } from '@/components/cv/CvEditor';
 import { Button } from '@/components/ui/Button';
 import { SpinnerIcon } from '@/components/ui/icons';
-import { useMyCv, usePatchCv, usePatchOnboarding, useReparseCv } from '@/hooks/useOnboarding';
+import {
+  useMyCv,
+  useOnboardingState,
+  usePatchCv,
+  usePatchOnboarding,
+  useReparseCv,
+} from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
 import { emptyStructuredCv, isStructuredCvSparse } from '@/lib/structuredCv';
 import { cvApi } from '@/features/onboarding/api';

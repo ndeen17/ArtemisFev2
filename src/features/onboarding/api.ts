@@ -41,13 +41,15 @@ export const cvApi = {
     });
     return res.data.cv;
   },
-  async fromJd(input: CvFromJdInput): Promise<CvDetail> {
-    const res = await apiClient.post<{ cv: CvDetail }>('/cv/from-jd', input);
-    return res.data.cv;
+  async fromJd(input: CvFromJdInput): Promise<{ queued: true }> {
+    // 202 Accepted — generation runs in the background to avoid Vercel
+    // rewrite-proxy timeouts. The FE polls onboarding state for status.
+    await apiClient.post<{ queued: true }>('/cv/from-jd', input);
+    return { queued: true };
   },
-  async fromQuestionnaire(input: CvFromQuestionnaireInput): Promise<CvDetail> {
-    const res = await apiClient.post<{ cv: CvDetail }>('/cv/from-questionnaire', input);
-    return res.data.cv;
+  async fromQuestionnaire(input: CvFromQuestionnaireInput): Promise<{ queued: true }> {
+    await apiClient.post<{ queued: true }>('/cv/from-questionnaire', input);
+    return { queued: true };
   },
   async patchStructured(cvId: string, structured: StructuredCv): Promise<CvDetail> {
     const res = await apiClient.patch<{ cv: CvDetail }>(`/cv/${cvId}`, { structured });
