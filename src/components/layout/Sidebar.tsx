@@ -30,19 +30,35 @@ const items: NavItem[] = [
 ];
 
 interface SidebarProps {
-  /** Mobile drawer state. Desktop ignores both. */
+  /** Mobile drawer state. */
   open: boolean;
   onClose: () => void;
+  /**
+   * When true, the sidebar collapses out of view at every breakpoint —
+   * used while the inline CV builder is open so the editor gets the full
+   * width. The mobile drawer (`open`) still wins, so the user can summon
+   * the sidebar back via the hamburger.
+   */
+  collapsed?: boolean;
 }
 
-export function Sidebar({ open, onClose }: SidebarProps) {
+export function Sidebar({ open, onClose, collapsed = false }: SidebarProps) {
+  // When collapsed, the sidebar should stop occupying space in the desktop
+  // flex layout. We accomplish that by switching from `lg:static` (in-flow)
+  // to fixed-positioning + translate-out — which preserves the same DOM and
+  // animation while removing the 16rem column from the row.
+  const showAsDrawer = collapsed; // even on lg+, behave like a slide-in drawer
+  const visible = open; // mobile/explicit-open state
+
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* Backdrop — mobile by default, plus any time we're behaving as a
+          drawer (i.e. while the builder is open) and the user opens it. */}
       <div
         className={cn(
-          'fixed inset-0 z-30 bg-black/30 transition-opacity lg:hidden',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
+          'fixed inset-0 z-30 bg-black/30 transition-opacity',
+          showAsDrawer ? '' : 'lg:hidden',
+          visible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={onClose}
         aria-hidden
@@ -51,10 +67,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-100 flex flex-col',
-          'transition-transform duration-200 ease-out lg:translate-x-0',
-          open ? 'translate-x-0' : '-translate-x-full',
-          'lg:static lg:translate-x-0',
+          'transition-transform duration-200 ease-out',
+          visible ? 'translate-x-0' : '-translate-x-full',
+          // In normal mode the sidebar is in-flow on lg+. In collapsed
+          // (drawer) mode it stays fixed/translated out at every breakpoint.
+          showAsDrawer ? '' : 'lg:static lg:translate-x-0',
         )}
+        aria-hidden={!visible && showAsDrawer ? true : undefined}
       >
         <div className="flex items-center justify-between px-6 h-16 border-b border-gray-100">
           <Link
@@ -70,7 +89,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </Link>
           <button
             type="button"
-            className="lg:hidden text-gray-500 hover:text-gray-800"
+            className={cn(
+              'text-gray-500 hover:text-gray-800',
+              // Show the close button on mobile, AND whenever the sidebar
+              // is acting as a drawer (builder mode) so the user can dismiss
+              // it without clicking the backdrop.
+              showAsDrawer ? '' : 'lg:hidden',
+            )}
             onClick={onClose}
             aria-label="Close menu"
           >

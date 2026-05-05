@@ -1,13 +1,20 @@
 import { useAuthStore } from '@/store/authStore';
 import { MenuIcon } from '@/components/ui/icons';
+import { cn } from '@/lib/cn';
 
 interface TopBarProps {
   title: string;
   subtitle?: string;
   onOpenSidebar: () => void;
+  /**
+   * When true the hamburger is shown at every breakpoint — used when the
+   * sidebar is hidden (e.g. inline CV builder is open) so the user always
+   * has a way back to navigation.
+   */
+  alwaysShowMenu?: boolean;
 }
 
-export function TopBar({ title, subtitle, onOpenSidebar }: TopBarProps) {
+export function TopBar({ title, subtitle, onOpenSidebar, alwaysShowMenu = false }: TopBarProps) {
   const user = useAuthStore((s) => s.user);
 
   return (
@@ -17,7 +24,10 @@ export function TopBar({ title, subtitle, onOpenSidebar }: TopBarProps) {
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="lg:hidden text-gray-600 hover:text-gray-900"
+            className={cn(
+              'text-gray-600 hover:text-gray-900',
+              alwaysShowMenu ? '' : 'lg:hidden',
+            )}
             aria-label="Open menu"
           >
             <MenuIcon />
