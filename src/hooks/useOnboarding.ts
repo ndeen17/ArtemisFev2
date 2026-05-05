@@ -112,6 +112,23 @@ export function useGenerateCvFromQuestionnaire() {
   });
 }
 
+/**
+ * Form-only path: persist a CV directly from the questionnaire answers.
+ * Synchronous (no AI), so the returned CV is final and the editor can
+ * mount immediately on success.
+ */
+export function useCreateCvFromAnswers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: cvApi.fromAnswers,
+    async onSuccess() {
+      void qc.invalidateQueries({ queryKey: CV_KEY });
+      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
+      syncAuthStep(qc, state);
+    },
+  });
+}
+
 export function usePatchCv() {
   const qc = useQueryClient();
   return useMutation({

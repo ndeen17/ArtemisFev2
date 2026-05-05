@@ -4,6 +4,7 @@ import type {
   BulletRewriteResponse,
   CvCoachRequest,
   CvDetail,
+  CvFromAnswersInput,
   CvFromJdInput,
   CvFromQuestionnaireInput,
   OnboardingPatchInput,
@@ -50,6 +51,11 @@ export const cvApi = {
   async fromQuestionnaire(input: CvFromQuestionnaireInput): Promise<{ queued: true }> {
     await apiClient.post<{ queued: true }>('/cv/from-questionnaire', input);
     return { queued: true };
+  },
+  /** Form-only path — no AI, returns the persisted CV synchronously. */
+  async fromAnswers(input: CvFromAnswersInput): Promise<CvDetail> {
+    const res = await apiClient.post<{ cv: CvDetail }>('/cv/from-answers', input);
+    return res.data.cv;
   },
   async patchStructured(cvId: string, structured: StructuredCv): Promise<CvDetail> {
     const res = await apiClient.patch<{ cv: CvDetail }>(`/cv/${cvId}`, { structured });

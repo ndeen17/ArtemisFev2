@@ -119,14 +119,22 @@ export type QuestionnaireAnswers = z.infer<typeof QuestionnaireAnswersSchema>;
 
 export const CvFromQuestionnaireSchema = z.object({
   answers: QuestionnaireAnswersSchema,
-  /** Optional JD pasted on the second step of the merged builder flow.
-   *  When present the AI is instructed to tailor the draft to it; when
-   *  absent we generate a generic CV from the answers alone. */
+  /** JD pasted on the AI-tailored path of the merged builder. The AI is
+   *  required to use this as the source of truth for what the CV should
+   *  emphasise. The form-only path uses `/cv/from-answers` instead and
+   *  never hits this endpoint. */
   jobDescription: z
     .string()
     .trim()
     .min(100, 'Paste at least 100 characters of the job description')
-    .max(6000)
-    .optional(),
+    .max(6000),
 });
 export type CvFromQuestionnaireInput = z.infer<typeof CvFromQuestionnaireSchema>;
+
+/** Form-only path: build a CV directly from the questionnaire answers,
+ *  no AI involved. Used when the user wants to skip the JD-tailored AI
+ *  generation and just use whatever they typed into the form. */
+export const CvFromAnswersSchema = z.object({
+  answers: QuestionnaireAnswersSchema,
+});
+export type CvFromAnswersInput = z.infer<typeof CvFromAnswersSchema>;
