@@ -4,8 +4,10 @@ import { deriveReadiness, roleLabel } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
+import { useProfileOverview } from '@/hooks/useProfile';
 import { useInterview, useInterviews } from '@/hooks/useInterviews';
-import { ReadinessScoreCard } from '@/components/dashboard/ReadinessScoreCard';
+import { ProfileScoreCard } from '@/components/dashboard/ProfileScoreCard';
+import { SetupProgressCard } from '@/components/dashboard/SetupProgressCard';
 import { AnalysingResumeCard } from '@/components/dashboard/AnalysingResumeCard';
 import { ActionList, type WeakInterviewSummary } from '@/components/dashboard/ActionList';
 import { NoGoalPrompt } from '@/components/dashboard/NoGoalPrompt';
@@ -30,6 +32,7 @@ export default function DashboardPage() {
   const onboarding = useOnboardingState();
   const cv = useMyCv();
   const analysis = useLatestAnalysis();
+  const overview = useProfileOverview();
   const interviews = useInterviews();
   const { goal, copy, hasGoal } = useGoalCopy();
   const toast = useToast();
@@ -143,7 +146,16 @@ export default function DashboardPage() {
 
       {!hasGoal ? <NoGoalPrompt /> : null}
 
-      {isAnalysing ? <AnalysingResumeCard /> : <ReadinessScoreCard snapshot={snapshot} />}
+      {isAnalysing ? (
+        <AnalysingResumeCard />
+      ) : (
+        <ProfileScoreCard overview={overview.data} isLoading={overview.isLoading} />
+      )}
+
+      {/* Old "Readiness" ring is now framed as the setup checklist it always
+          really tracked. Distinct from the Profile readiness score above so
+          the two numbers no longer compete for the same mental slot. */}
+      <SetupProgressCard snapshot={snapshot} />
 
       <ActionList
         readiness={snapshot}

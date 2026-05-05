@@ -8,6 +8,16 @@ body,
   height: 100%;
 }
 
+/* Belt-and-braces guard against any inner element accidentally introducing
+   horizontal scroll on small screens. The shell already clips, but this
+   makes a runaway long string or inline-flex gap unable to make the whole
+   page slide off-screen on mobile. */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   background-color: #ffffff;
   color: #0f172a;

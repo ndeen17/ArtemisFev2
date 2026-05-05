@@ -34,7 +34,30 @@ export default function ProfilePage() {
     return <Navigate to="/profile/score-reveal" replace />;
   }
 
-  const left = (
+  const builderOpen = builder.state.isOpen;
+
+  // When the inline builder is open we show a deliberately slim left
+  // column so the editor has room to breathe. Only the essentials remain:
+  // a compact readiness chip (so the user keeps eyes on the score) and the
+  // action plan (because that's where most "Fix" CTAs live, and clicking
+  // any of them updates which section the builder is editing).
+  //
+  // The full overview card, rubric breakdown, and deep-link tiles are
+  // hidden until the builder is closed — they're navigation/context the
+  // user doesn't need while they're mid-edit.
+  const left = builderOpen ? (
+    <div className="space-y-5">
+      <CompactReadinessChip
+        score={overview.data?.readinessScore ?? null}
+        weeklyDelta={overview.data?.weeklyDelta ?? null}
+      />
+      <ActionPlan
+        plan={plan.data}
+        isLoading={plan.isLoading}
+        onOpenBuilder={builder.open}
+      />
+    </div>
+  ) : (
     <div className="space-y-6">
       <ProfileOverviewCard overview={overview.data} isLoading={overview.isLoading} />
 

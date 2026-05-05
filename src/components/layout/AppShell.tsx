@@ -20,8 +20,13 @@ export function AppShell({ children, title, subtitle }: AppShellProps) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar title={title} subtitle={subtitle} onOpenSidebar={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-6xl px-6 lg:px-10 py-8 lg:py-10 space-y-8">{children}</div>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          {/* Tighter side padding on mobile so cards don't get clipped at
+              the gutter. The horizontal-scroll guard above prevents any
+              runaway child from sliding the whole viewport. */}
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 space-y-8 min-w-0">
+            {children}
+          </div>
         </main>
       </div>
       <UndoToastHost />
