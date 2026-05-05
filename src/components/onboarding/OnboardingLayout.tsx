@@ -20,15 +20,7 @@ export function OnboardingLayout({ step, total = 5, backTo, wide = false, childr
   return (
     <div className="min-h-screen bg-[#fafafa] flex items-start justify-center px-4 py-12 sm:py-16">
       <div className={wide ? 'w-full max-w-6xl' : 'w-full max-w-2xl'}>
-        <div className="relative flex items-center justify-center mb-8">
-          {backTo ? (
-            <Link
-              to={backTo}
-              className="absolute left-0 inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-[#111827] transition-colors"
-            >
-              <ArrowLeftIcon /> Back
-            </Link>
-          ) : null}
+        <div className="flex items-center justify-center mb-8">
           <Link to="/" aria-label="Artemis home" className="inline-flex items-center">
             <img
               src="/assets/logo.png"
@@ -46,6 +38,19 @@ export function OnboardingLayout({ step, total = 5, backTo, wide = false, childr
         >
           <ProgressDots current={step} total={total} />
           {children}
+          {backTo ? (
+            // Bottom-left back link — sits adjacent to each page's primary
+            // Continue button so navigation lives in one visual zone instead
+            // of being split between the page header and footer.
+            <div className="pt-2">
+              <Link
+                to={backTo}
+                className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-[#111827] transition-colors"
+              >
+                <ArrowLeftIcon /> Back
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
