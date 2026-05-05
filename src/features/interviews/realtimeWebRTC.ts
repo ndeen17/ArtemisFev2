@@ -487,6 +487,7 @@ export const REALTIME_CLOSE_MESSAGES: Record<number, string> = {
   4403: 'This session is not in voice mode or is no longer active.',
   4404: 'Interview not found.',
   4408: 'No audio detected for a while — we ended the session.',
+  4409: 'This interview was opened in another tab or device. Only one voice session at a time.',
   4429: "You've used today's voice practice minutes.",
   4500: 'Realtime service failed. Please try again.',
   4502: 'Voice unavailable on this network. Try text mode.',
