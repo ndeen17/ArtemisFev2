@@ -173,7 +173,7 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     });
   }
 
-  // 5. quantified_bullets (15)
+  // 5. quantified_bullets (10) — rebalanced from 15 to make room for ATS items.
   {
     const bullets = (structured?.experience ?? []).flatMap((e) =>
       e.achievements.filter((a) => a.trim().length > 0),
@@ -181,18 +181,18 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     const quantified = bullets.filter((b) => QUANTIFIER_RE.test(b)).length;
     const ratio = pct(quantified, Math.max(bullets.length, 1));
     // full credit at >= 60%
-    const achieved = round1(15 * Math.min(1, ratio / 0.6));
+    const achieved = round1(10 * Math.min(1, ratio / 0.6));
     items.push({
       id: 'quantified_bullets',
       label: 'Bullets quantify impact',
-      weight: 15,
+      weight: 10,
       achieved: bullets.length === 0 ? 0 : achieved,
       hint: 'Add a number, percentage, or currency to each achievement.',
       section: 'experience',
     });
   }
 
-  // 6. strong_action_verbs (10)
+  // 6. strong_action_verbs (5) — rebalanced from 10.
   {
     const bullets = (structured?.experience ?? []).flatMap((e) =>
       e.achievements.filter((a) => a.trim().length > 0),
@@ -203,11 +203,11 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     }).length;
     const ratio = pct(strong, Math.max(bullets.length, 1));
     // full credit at >= 70%
-    const achieved = round1(10 * Math.min(1, ratio / 0.7));
+    const achieved = round1(5 * Math.min(1, ratio / 0.7));
     items.push({
       id: 'strong_action_verbs',
       label: 'Bullets start with strong verbs',
-      weight: 10,
+      weight: 5,
       achieved: bullets.length === 0 ? 0 : achieved,
       hint: 'Open each bullet with Led / Built / Shipped / Reduced / Increased…',
       section: 'experience',
@@ -241,7 +241,7 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     });
   }
 
-  // 9. keyword_gaps_closed (15) — % of keywordGaps now present in raw text
+  // 9. keyword_gaps_closed (10) — rebalanced from 15.
   {
     const gaps = latest?.keywordGaps ?? [];
     const text = (rawText ?? '').toLowerCase();
@@ -251,8 +251,8 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     items.push({
       id: 'keyword_gaps_closed',
       label: 'Keyword gaps closed',
-      weight: 15,
-      achieved: round1(15 * ratio),
+      weight: 10,
+      achieved: round1(10 * ratio),
       hint:
         gaps.length === 0
           ? 'No keyword gaps flagged.'
@@ -282,7 +282,7 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     });
   }
 
-  // 11. actions_completed (10) — % of suggestions completed
+  // 11. actions_completed (5) — rebalanced from 10.
   {
     const sugs: AnalysisSuggestion[] = latest?.suggestions ?? [];
     const completed = new Set(completedActionIds);
@@ -293,13 +293,112 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     items.push({
       id: 'actions_completed',
       label: 'Suggested actions completed',
-      weight: 10,
-      achieved: round1(10 * ratio),
+      weight: 5,
+      achieved: round1(5 * ratio),
       hint:
         sugs.length === 0
           ? 'No outstanding suggestions.'
           : 'Work through your action plan — each tick lifts your score.',
       section: null,
+    });
+  }
+
+  // 12. ats_section_headers (5) — ATS engines need standard section labels.
+  //     Penalise non-standard equivalents like "Career History" or "Competencies".
+  {
+    const text = rawText ?? '';
+    const present = countAtsStandardHeaders(text);
+    const offending = countAtsNonStandardHeaders(text);
+    // Need at least Experience + Education + Skills equivalents present.
+    let achieved = 0;
+    if (present >= 3) achieved = 5;
+    else if (present === 2) achieved = 3;
+    else if (present === 1) achieved = 1;
+    if (offending > 0 && achieved > 1) achieved = Math.max(1, achieved - 2);
+    items.push({
+      id: 'ats_section_headers',
+      label: 'Uses ATS-standard section headers',
+      weight: 5,
+      achieved: round1(achieved),
+      hint:
+        offending > 0
+          ? 'Rename non-standard sections (e.g. "Career History" → "Experience", "Competencies" → "Skills").'
+          : 'Use Experience, Education, and Skills as section headers — applicant tracking systems look for those exact labels.',
+      section: null,
+    });
+  }
+
+  // 13. ats_date_consistency (5) — all role dates parse to a consistent format.
+  {
+    const exp = structured?.experience ?? [];
+    const tokens = exp.flatMap((e) => [e.startDate, e.endDate].filter((d) => d.trim().length > 0));
+    if (tokens.length === 0) {
+      items.push({
+        id: 'ats_date_consistency',
+        label: 'Dates use a consistent format',
+        weight: 5,
+        achieved: 0,
+        hint: 'Add start/end dates for each role using a consistent format (e.g. MM/YYYY).',
+        section: 'experience',
+      });
+    } else {
+      const formats = new Set(tokens.map(classifyDateFormat));
+      formats.delete('unknown');
+      const dominant = countDominantFormat(tokens);
+      const ratio = pct(dominant, tokens.length);
+      // Full credit at one consistent format. Partial as it fragments.
+      const achieved = formats.size <= 1 ? 5 : round1(5 * Math.max(0.4, ratio));
+      items.push({
+        id: 'ats_date_consistency',
+        label: 'Dates use a consistent format',
+        weight: 5,
+        achieved,
+        hint:
+          formats.size <= 1
+            ? 'Date formatting is consistent across roles.'
+            : 'Use one date format across every role (e.g. all MM/YYYY, or all "Jan 2020").',
+        section: 'experience',
+      });
+    }
+  }
+
+  // 14. ats_no_layout_traps (5) — flag tab-tables, pipe columns, ASCII art.
+  {
+    const text = rawText ?? '';
+    const traps = detectAtsLayoutTraps(text);
+    const achieved = traps.length === 0 ? 5 : Math.max(0, round1(5 - traps.length * 1.5));
+    items.push({
+      id: 'ats_no_layout_traps',
+      label: 'No ATS-breaking layout',
+      weight: 5,
+      achieved,
+      hint:
+        traps.length === 0
+          ? 'No tables, pipe-columns, or icon-only sections detected.'
+          : `Detected ${traps.join(', ')}. ATS engines often skip content laid out this way — switch to plain bullet lists.`,
+      section: null,
+    });
+  }
+
+  // 15. verb_repetition (5) — penalise repeating the same opener within a role.
+  {
+    const exp = structured?.experience ?? [];
+    const offenders = collectRepeatedVerbs(exp);
+    let achieved = 5;
+    if (offenders.length === 1) achieved = 3;
+    else if (offenders.length >= 2) achieved = round1(Math.max(0, 5 - offenders.length * 1.5));
+    items.push({
+      id: 'verb_repetition',
+      label: 'No verb repeats more than twice in a role',
+      weight: 5,
+      achieved,
+      hint:
+        offenders.length === 0
+          ? 'Bullet openers feel varied across each role.'
+          : `Repeated openers detected: ${offenders
+              .map((o) => `"${o.verb}" ×${o.count} in ${o.roleLabel}`)
+              .join('; ')}. Mix in fresh verbs from the same category.`,
+      section: 'experience',
     });
   }
 
@@ -310,4 +409,209 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
+}
+
+// ---------- ATS heuristics ----------
+
+/** Standard ATS-recognised section header tokens. Match is case-insensitive. */
+const ATS_STANDARD_HEADERS = [
+  /^\s*(?:work\s+)?experience\b/i,
+  /^\s*employment\s+history\b/i,
+  /^\s*professional\s+experience\b/i,
+  /^\s*education\b/i,
+  /^\s*skills\b/i,
+  /^\s*technical\s+skills\b/i,
+  /^\s*summary\b/i,
+  /^\s*professional\s+summary\b/i,
+];
+
+/** Headers ATS systems frequently fail to map to the canonical sections. */
+const ATS_NONSTANDARD_HEADERS = [
+  /^\s*career\s+history\b/i,
+  /^\s*career\s+highlights\b/i,
+  /^\s*career\s+story\b/i,
+  /^\s*competencies\b/i,
+  /^\s*key\s+competencies\b/i,
+  /^\s*core\s+competencies\b/i,
+  /^\s*proficiencies\b/i,
+  /^\s*expertise\b/i,
+  /^\s*credentials\b/i,
+  /^\s*qualifications\b/i, // ambiguous — not the same as Education to many ATS
+];
+
+function countAtsStandardHeaders(text: string): number {
+  if (!text) return 0;
+  const lines = text.split(/\r?\n/);
+  let hits = 0;
+  const seenCategories = new Set<string>();
+  for (const line of lines) {
+    for (const re of ATS_STANDARD_HEADERS) {
+      if (re.test(line)) {
+        // Bucket by canonical category so duplicates don't inflate the count.
+        const cat = canonicalHeaderCategory(line);
+        if (cat && !seenCategories.has(cat)) {
+          seenCategories.add(cat);
+          hits += 1;
+        }
+        break;
+      }
+    }
+  }
+  return hits;
+}
+
+function canonicalHeaderCategory(line: string): string | null {
+  if (/experience|employment/i.test(line)) return 'experience';
+  if (/education/i.test(line)) return 'education';
+  if (/skill/i.test(line)) return 'skills';
+  if (/summary/i.test(line)) return 'summary';
+  return null;
+}
+
+function countAtsNonStandardHeaders(text: string): number {
+  if (!text) return 0;
+  const lines = text.split(/\r?\n/);
+  let hits = 0;
+  for (const line of lines) {
+    if (ATS_NONSTANDARD_HEADERS.some((re) => re.test(line))) hits += 1;
+  }
+  return hits;
+}
+
+/**
+ * Classify a single date token into a coarse format bucket so we can detect
+ * inconsistency across roles. Returns 'unknown' for tokens we can't parse —
+ * those are excluded from consistency checks.
+ */
+type DateFormat = 'mmYYYY' | 'monthYYYY' | 'YYYY' | 'present' | 'unknown';
+function classifyDateFormat(token: string): DateFormat {
+  const t = token.trim().toLowerCase();
+  if (!t) return 'unknown';
+  if (/^(present|current|now|ongoing)$/i.test(t)) return 'present';
+  if (/^\d{1,2}\s*[\/\-.]\s*\d{4}$/.test(t)) return 'mmYYYY';
+  if (
+    /^(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z.]*\s+\d{4}$/i.test(t)
+  )
+    return 'monthYYYY';
+  if (/^\d{4}$/.test(t)) return 'YYYY';
+  return 'unknown';
+}
+
+function countDominantFormat(tokens: string[]): number {
+  const counts: Record<string, number> = {};
+  for (const t of tokens) {
+    const f = classifyDateFormat(t);
+    if (f === 'unknown' || f === 'present') continue;
+    counts[f] = (counts[f] ?? 0) + 1;
+  }
+  let max = 0;
+  for (const k of Object.keys(counts)) max = Math.max(max, counts[k]);
+  return max;
+}
+
+/**
+ * Detect text patterns that suggest layout choices known to break ATS parsing.
+ * Returns a list of human-readable descriptors of what was found.
+ */
+function detectAtsLayoutTraps(text: string): string[] {
+  const traps: string[] = [];
+  if (!text) return traps;
+  const lines = text.split(/\r?\n/);
+  // Pipe-as-column: lines with 2+ pipes and short cell-like segments.
+  let pipeLines = 0;
+  for (const line of lines) {
+    if ((line.match(/\|/g) ?? []).length >= 2) pipeLines += 1;
+  }
+  if (pipeLines >= 3) traps.push('pipe-delimited columns');
+
+  // Tab-as-column: lines with 2+ tabs.
+  let tabLines = 0;
+  for (const line of lines) {
+    if ((line.match(/\t/g) ?? []).length >= 2) tabLines += 1;
+  }
+  if (tabLines >= 3) traps.push('tab-aligned tables');
+
+  // ASCII box art / decorations.
+  if (/[┌┐└┘├┤┬┴┼─│]/.test(text)) traps.push('ASCII box art');
+
+  // Heavy use of decorative symbols often used as bullet replacements.
+  const decorative = (text.match(/[●◆◼■□▪►▶★☆✓✔✦]/g) ?? []).length;
+  if (decorative >= 8) traps.push('icon-only bullet markers');
+
+  return traps;
+}
+
+// ---------- Verb repetition ----------
+
+export interface RepeatedVerb {
+  verb: string;
+  count: number;
+  roleLabel: string;
+  /** 0-based index of the role within the structured CV's experience array. */
+  roleIndex: number;
+}
+
+/**
+ * Find verbs that open more than two bullets within the same role.
+ * Surfaced in the rubric hint and on the FE bullet-feedback chips.
+ */
+export function findRepeatedVerbs(
+  experience: ReadonlyArray<{ title?: string; company?: string; achievements: string[] }>,
+): RepeatedVerb[] {
+  return collectRepeatedVerbs(experience);
+}
+
+function collectRepeatedVerbs(
+  experience: ReadonlyArray<{ title?: string; company?: string; achievements: string[] }>,
+): RepeatedVerb[] {
+  const out: RepeatedVerb[] = [];
+  experience.forEach((role, idx) => {
+    const counts = new Map<string, number>();
+    for (const bullet of role.achievements) {
+      const verb = bullet
+        .trim()
+        .split(/\s+/)[0]
+        ?.toLowerCase()
+        .replace(/[^a-z]/g, '');
+      if (!verb || verb.length < 3) continue;
+      counts.set(verb, (counts.get(verb) ?? 0) + 1);
+    }
+    for (const [verb, count] of counts) {
+      if (count > 2) {
+        out.push({
+          verb,
+          count,
+          roleLabel:
+            [role.title, role.company].filter((s) => s && s.trim().length > 0).join(' @ ') ||
+            `Role ${idx + 1}`,
+          roleIndex: idx,
+        });
+      }
+    }
+  });
+  return out;
+}
+
+// ---------- ATS sub-score (consumed by FE) ----------
+
+/** Items that compose the user-facing "ATS readiness" sub-band. */
+export const ATS_RUBRIC_ITEM_IDS: ReadonlyArray<string> = [
+  'ats_section_headers',
+  'ats_date_consistency',
+  'ats_no_layout_traps',
+  'verb_repetition',
+];
+
+/**
+ * Aggregate the four ATS-flavoured rubric items into a 0–100 sub-score.
+ * Returns null if none of the items are present in the breakdown (e.g. an
+ * older analysis run before Phase 0 shipped).
+ */
+export function atsSubScore(items: ReadonlyArray<RubricItem>): number | null {
+  const ats = items.filter((i) => ATS_RUBRIC_ITEM_IDS.includes(i.id));
+  if (ats.length === 0) return null;
+  const totalWeight = ats.reduce((sum, i) => sum + i.weight, 0);
+  const totalAchieved = ats.reduce((sum, i) => sum + i.achieved, 0);
+  if (totalWeight === 0) return null;
+  return Math.round((totalAchieved / totalWeight) * 100);
 }

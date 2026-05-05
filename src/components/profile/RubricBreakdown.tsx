@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { RubricItem } from '@artemis/shared';
+import { atsSubScore } from '@artemis/shared';
 import { CheckIcon } from '@/components/ui/icons';
 
 /**
@@ -19,6 +20,15 @@ export function RubricBreakdown({
   if (!items.length) {
     return null;
   }
+  const atsScore = atsSubScore(items);
+  const atsBand =
+    atsScore === null
+      ? null
+      : atsScore >= 80
+      ? { label: 'Strong', tone: 'bg-emerald-50 text-emerald-700 ring-emerald-200' }
+      : atsScore >= 60
+      ? { label: 'Needs work', tone: 'bg-amber-50 text-amber-700 ring-amber-200' }
+      : { label: 'At risk', tone: 'bg-rose-50 text-rose-700 ring-rose-200' };
   return (
     <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
       <div className="flex items-end justify-between gap-4 flex-wrap">
@@ -43,6 +53,16 @@ export function RubricBreakdown({
           {llmScore !== null ? (
             <div className="text-[12px] text-gray-500">
               AI grade <span className="font-semibold text-[#111827]">{llmScore}</span>/100
+            </div>
+          ) : null}
+          {atsScore !== null && atsBand ? (
+            <div className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]">
+              <span
+                className={`inline-flex items-center rounded-full ring-1 px-2 py-0.5 ${atsBand.tone}`}
+                title="ATS readiness combines section headers, date consistency, layout traps, and verb variety."
+              >
+                ATS readiness · {atsScore}/100 · {atsBand.label}
+              </span>
             </div>
           ) : null}
         </div>

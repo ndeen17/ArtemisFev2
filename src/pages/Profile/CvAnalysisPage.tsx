@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
+import { roleLabel } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { AnalysisCard } from '@/components/analysis/AnalysisCard';
 import { BulletFeedbackList } from '@/components/profile/BulletFeedback';
 import { KeywordGapList } from '@/components/profile/KeywordGapList';
-import { useMyCv } from '@/hooks/useOnboarding';
+import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
 import { ArrowRightIcon, ArrowLeftIcon, SparklesIcon } from '@/components/ui/icons';
 
@@ -15,7 +16,9 @@ import { ArrowRightIcon, ArrowLeftIcon, SparklesIcon } from '@/components/ui/ico
 export default function CvAnalysisPage() {
   const cv = useMyCv();
   const analysis = useLatestAnalysis();
+  const onboarding = useOnboardingState();
   const result = analysis.data?.status === 'done' ? analysis.data.result : null;
+  const userRoleLabel = roleLabel(onboarding.data?.role);
 
   return (
     <AppShell title="CV analysis" subtitle="Bullet-by-bullet feedback from Artemis">
@@ -62,7 +65,11 @@ export default function CvAnalysisPage() {
               Skills the role expects but your CV doesn&apos;t mention
             </h2>
             <div className="mt-6">
-              <KeywordGapList keywords={result.keywordGaps ?? []} />
+              <KeywordGapList
+                keywords={result.keywordGaps ?? []}
+                source="role"
+                roleLabel={userRoleLabel}
+              />
             </div>
           </section>
         </>

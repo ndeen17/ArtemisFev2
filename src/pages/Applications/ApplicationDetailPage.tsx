@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeftIcon, ArrowRightIcon, SparklesIcon, TrashIcon } from '@/components/ui/icons';
 import { StatusPicker } from '@/components/applications/StatusPicker';
+import { OutcomePrompt } from '@/components/applications/OutcomePrompt';
 import {
   useApplication,
   useDeleteApplication,
@@ -70,6 +71,8 @@ export default function ApplicationDetailPage() {
               </div>
             </div>
           </div>
+
+          <OutcomePrompt app={app} />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <ActionTile

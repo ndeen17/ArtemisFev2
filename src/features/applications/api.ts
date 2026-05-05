@@ -8,6 +8,7 @@ import type {
   PatchTargetedCvInput,
   RefineRequest,
   RefineTurn,
+  SetOutcomeInput,
 } from '@artemis/shared';
 import { apiClient } from '@/lib/apiClient';
 
@@ -34,6 +35,13 @@ export const applicationApi = {
     const res = await apiClient.post<{ application: Application }>(`/applications/${id}/status`, {
       status,
     });
+    return res.data.application;
+  },
+  async setOutcome(id: string, input: SetOutcomeInput): Promise<Application> {
+    const res = await apiClient.post<{ application: Application }>(
+      `/applications/${id}/outcome`,
+      input,
+    );
     return res.data.application;
   },
   async remove(id: string): Promise<void> {

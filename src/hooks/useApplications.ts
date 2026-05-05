@@ -6,6 +6,7 @@ import type {
   CreateApplicationInput,
   DraftCoverLetterInput,
   PatchTargetedCvInput,
+  SetOutcomeInput,
   UpdateApplicationInput,
 } from '@artemis/shared';
 import { applicationApi } from '@/features/applications/api';
@@ -61,6 +62,17 @@ export function useSetApplicationStatus(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (status: ApplicationStatus) => applicationApi.setStatus(id, status),
+    onSuccess(app: Application) {
+      qc.setQueryData(DETAIL_KEY(app.id), app);
+      invalidateAll(qc);
+    },
+  });
+}
+
+export function useSetOutcome(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SetOutcomeInput) => applicationApi.setOutcome(id, input),
     onSuccess(app: Application) {
       qc.setQueryData(DETAIL_KEY(app.id), app);
       invalidateAll(qc);

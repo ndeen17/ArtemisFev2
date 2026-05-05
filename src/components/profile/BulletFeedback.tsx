@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { BulletFeedback as BulletFeedbackItem, BulletPath } from '@artemis/shared';
-import { findBulletInStructured } from '@artemis/shared';
+import { findBulletInStructured, findRepeatedVerbs, suggestVerbAlternatives } from '@artemis/shared';
 import { CheckIcon, AlertTriangleIcon, ArrowRightIcon } from '@/components/ui/icons';
 import { useMyCv } from '@/hooks/useOnboarding';
 import { RewriteDrawer } from './RewriteDrawer';
@@ -23,6 +23,10 @@ export function BulletFeedbackList({ items }: { items: BulletFeedbackItem[] }) {
   const cv = useMyCv();
   const [target, setTarget] = useState<{ target: BulletPath; original: string } | null>(null);
 
+  const repeatedVerbs = cv.data?.structured?.experience
+    ? findRepeatedVerbs(cv.data.structured.experience)
+    : [];
+
   if (items.length === 0) {
     return (
       <div className="text-[14px] text-gray-500">
@@ -32,6 +36,44 @@ export function BulletFeedbackList({ items }: { items: BulletFeedbackItem[] }) {
   }
   return (
     <div className="space-y-4">
+      {repeatedVerbs.length > 0 ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+            Verb variety
+          </div>
+          <p className="mt-1 text-[13px] text-amber-900">
+            Some bullet openers repeat within the same role — applicant tracking systems and
+            reviewers both pick this up. Try swapping in fresh alternatives:
+          </p>
+          <ul className="mt-3 space-y-2">
+            {repeatedVerbs.map((rv) => {
+              const alts = suggestVerbAlternatives(rv.verb, [rv.verb], 4);
+              return (
+                <li key={`${rv.roleIndex}-${rv.verb}`} className="text-[13px]">
+                  <span className="font-semibold text-amber-900">
+                    “{rv.verb}” × {rv.count}
+                  </span>{' '}
+                  <span className="text-amber-800">in {rv.roleLabel}</span>
+                  {alts.length > 0 ? (
+                    <span className="ml-1 text-amber-800">
+                      → try{' '}
+                      {alts.map((a, idx) => (
+                        <span
+                          key={a}
+                          className="inline-flex items-center rounded-full bg-white ring-1 ring-amber-200 px-2 py-0.5 mr-1 text-[12px] font-medium text-amber-900"
+                        >
+                          {a}
+                          {idx < alts.length - 1 ? '' : ''}
+                        </span>
+                      ))}
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
       {items.map((b, i) => {
         const found = cv.data
           ? findBulletInStructured(cv.data.structured ?? null, b.original)

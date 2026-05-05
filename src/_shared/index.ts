@@ -23,3 +23,6 @@ export * from './domain/roleCopy.js';
 export * from './domain/actionTargets.js';
 export * from './domain/cvBullets.js';
 export * from './domain/cvRubric.js';
+export * from './domain/verbBank.js';
+export * from './domain/atsScore.js';
+export * from './domain/roleKeywords.js';

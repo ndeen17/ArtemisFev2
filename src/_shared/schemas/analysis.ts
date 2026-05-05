@@ -64,8 +64,10 @@ export const AnalysisResultSchema = z.object({
   yearsExperience: z.number().min(0).max(60),
   /** Optional — older analyses won't have it; new ones include up to 12 bullets. */
   bulletFeedback: z.array(BulletFeedbackSchema).max(12).optional(),
-  /** Optional — keyword gaps surfaced separately from `gaps` so they can be displayed as chips. */
-  keywordGaps: z.array(z.string().min(1).max(60)).max(20).optional(),
+  /** Required from Phase 0 onward — keyword gaps drive the deterministic
+   *  rubric and the role-aware ATS surfaces. May be empty when the CV
+   *  already covers the expected keyword set. */
+  keywordGaps: z.array(z.string().min(1).max(60)).max(20).default([]),
 });
 export type AnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
