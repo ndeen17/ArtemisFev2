@@ -29,6 +29,15 @@ export function useApplication(id: string | undefined) {
     queryFn: () => applicationApi.get(id as string),
     enabled: !!id,
     staleTime: 30_000,
+    // The targeted-CV generator runs in the background on the BE (so the
+    // initial POST returns before Vercel's ~30s proxy timeout). While it's
+    // running, poll every 3s so the UI flips to the result as soon as the
+    // worker writes it. No-op once status returns to `idle` or `failed`.
+    refetchInterval: (query) => {
+      const status = (query.state.data as { targetedCvStatus?: string } | undefined)
+        ?.targetedCvStatus;
+      return status === 'running' ? 3_000 : false;
+    },
   });
 }
 
