@@ -54,6 +54,11 @@ export interface CvEditorProps {
    *  this to a partial patch so users get explicit confirmation that the
    *  current section persisted, without having to commit the whole CV. */
   onSaveSection?: (section: Section, cv: StructuredCv) => Promise<void>;
+  /** When provided, the "Preview" button navigates here instead of opening
+   *  an in-component drawer. Used by the inline builder so we never stack
+   *  the form and the preview in the same SplitPaneShell column (which on
+   *  smaller xl viewports would force them to overlap). */
+  onPreview?: () => void;
 }
 
 export function CvEditor({
@@ -63,6 +68,7 @@ export function CvEditor({
   initialSection,
   seedCoachMessage,
   onSaveSection,
+  onPreview,
 }: CvEditorProps) {
   const [active, setActive] = useState<Section>(initialSection ?? 'header');
   const [coachOpen, setCoachOpen] = useState<boolean>(Boolean(seedCoachMessage));
@@ -185,8 +191,10 @@ export function CvEditor({
         </ol>
       </nav>
 
-      {/* Body: two-pane on xl, single column below with toggleable preview */}
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)] gap-6">
+      {/* Body: single column. The form gets the full builder pane width so
+          the editor never has to share space with the preview (the preview
+          lives on its own dedicated route — see `onPreview`). */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Form column */}
         <section className="space-y-4 min-w-0">
           <div
@@ -207,8 +215,8 @@ export function CvEditor({
               </div>
               <button
                 type="button"
-                onClick={() => setPreviewOpen(true)}
-                className="xl:hidden shrink-0 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-gray-700 hover:bg-gray-50"
+                onClick={() => (onPreview ? onPreview() : setPreviewOpen(true))}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-gray-700 hover:bg-gray-50"
               >
                 Preview
               </button>
@@ -270,18 +278,14 @@ export function CvEditor({
             <span className="text-[12px] font-semibold whitespace-nowrap">Open chat →</span>
           </button>
         </section>
-
-        {/* Preview column — always rendered on xl, off-canvas on smaller screens */}
-        <aside className="hidden xl:block">
-          <div className="sticky top-6 rounded-3xl border border-gray-100 bg-gray-50 p-4 max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <CvPreview cv={value} />
-          </div>
-        </aside>
       </div>
 
-      {/* Mobile/tablet preview drawer */}
-      {previewOpen ? (
-        <div className="xl:hidden fixed inset-0 z-40 flex">
+      {/* Fallback in-component preview drawer — only used when no `onPreview`
+          handler is wired. The inline builder always passes one, so this is
+          just a safety net for any host that embeds CvEditor outside the
+          SplitPaneShell flow. */}
+      {previewOpen && !onPreview ? (
+        <div className="fixed inset-0 z-40 flex">
           <div
             className="absolute inset-0 bg-black/30"
             onClick={() => setPreviewOpen(false)}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { StructuredCv, ActionPlanItem } from '@artemis/shared';
 import { CvEditor } from '@/components/cv/CvEditor';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,8 @@ import {
   useReparseTargetedCv,
 } from '@/hooks/useApplications';
 import { extractApiError } from '@/hooks/useAuth';
+import { cvApi } from '@/features/onboarding/api';
+import { applicationApi } from '@/features/applications/api';
 import { emptyStructuredCv, isStructuredCvSparse } from '@/lib/structuredCv';
 import type { BuilderSection } from '@/hooks/useBuilderUrlState';
 
@@ -52,6 +55,10 @@ function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProp
   const patch = usePatchCv();
   const reparse = useReparseCv();
   const actionPlan = useActionPlan();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -173,9 +180,49 @@ function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProp
         onSaveSection={async (_section, next) => {
           await patch.mutateAsync({ cvId: cvQuery.data!.id, structured: next });
         }}
+        onPreview={() => {
+          // Encode the current builder URL so the preview page can offer
+          // a one-click "Continue editing" back to exactly where we left off.
+          const back = `${location.pathname}${location.search}`;
+          navigate(`/profile/cv/preview?back=${encodeURIComponent(back)}`);
+        }}
       />
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
+      {downloadError ? (
+        <div className="text-[13px] text-red-600">{downloadError}</div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-3">
+        <Button
+          variant="outline"
+          type="button"
+          disabled={downloading}
+          onClick={async () => {
+            if (!cvQuery.data) return;
+            setDownloadError(null);
+            setDownloading(true);
+            try {
+              const blob = await cvApi.downloadPdf(cvQuery.data.id);
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'my-cv.pdf';
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch (err) {
+              setDownloadError(extractApiError(err).message);
+            } finally {
+              setDownloading(false);
+            }
+          }}
+        >
+          {downloading ? (
+            <span className="inline-flex items-center gap-2">
+              <SpinnerIcon /> Preparing…
+            </span>
+          ) : (
+            'Download PDF'
+          )}
+        </Button>
         <Button onClick={save} disabled={patch.isPending}>
           {patch.isPending ? (
             <span className="inline-flex items-center gap-2">
@@ -195,6 +242,10 @@ function TargetedBuilder({ applicationId, section, onSaved }: BuilderPanelProps)
   const appQuery = useApplication(id);
   const patch = usePatchTargetedCv(id);
   const reparse = useReparseTargetedCv(id);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -273,9 +324,52 @@ function TargetedBuilder({ applicationId, section, onSaved }: BuilderPanelProps)
           Auto-filling from the tailored text…
         </div>
       ) : null}
-      <CvEditor value={draft} onChange={setDraft} initialSection={initialSection} />
+      <CvEditor
+        value={draft}
+        onChange={setDraft}
+        initialSection={initialSection}
+        onPreview={() => {
+          const back = `${location.pathname}${location.search}`;
+          navigate(
+            `/applications/${id}/cv-review/preview?back=${encodeURIComponent(back)}`,
+          );
+        }}
+      />
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
+      {downloadError ? (
+        <div className="text-[13px] text-red-600">{downloadError}</div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-3">
+        <Button
+          variant="outline"
+          type="button"
+          disabled={downloading}
+          onClick={async () => {
+            setDownloadError(null);
+            setDownloading(true);
+            try {
+              const blob = await applicationApi.downloadTargetedCvPdf(id);
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'targeted-cv.pdf';
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch (err) {
+              setDownloadError(extractApiError(err).message);
+            } finally {
+              setDownloading(false);
+            }
+          }}
+        >
+          {downloading ? (
+            <span className="inline-flex items-center gap-2">
+              <SpinnerIcon /> Preparing…
+            </span>
+          ) : (
+            'Download PDF'
+          )}
+        </Button>
         <Button onClick={save} disabled={patch.isPending}>
           {patch.isPending ? (
             <span className="inline-flex items-center gap-2">

@@ -95,6 +95,10 @@ const CvReviewPage = lazyWithRetry(() => import('@/pages/Applications/CvReviewPa
 const TargetedCvEditPage = lazyWithRetry(
   () => import('@/pages/Applications/TargetedCvEditPage'),
 );
+const ProfileCvPreviewPage = lazyWithRetry(() => import('@/pages/Profile/CvPreviewPage'));
+const TargetedCvPreviewPage = lazyWithRetry(
+  () => import('@/pages/Applications/CvPreviewPage'),
+);
 const CoverLetterPage = lazyWithRetry(() => import('@/pages/Applications/CoverLetterPage'));
 const InterviewsPage = lazyWithRetry(() => import('@/pages/InterviewsPage'));
 const NewInterviewPage = lazyWithRetry(() => import('@/pages/Interviews/NewInterviewPage'));
@@ -235,6 +239,14 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: '/profile/cv/preview',
+    element: (
+      <ProtectedRoute>
+        <ProfileCvPreviewPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/profile/linkedin',
     element: (
       <ProtectedRoute>
@@ -303,6 +315,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <TargetedCvEditPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/applications/:id/cv-review/preview',
+    element: (
+      <ProtectedRoute>
+        <TargetedCvPreviewPage />
       </ProtectedRoute>
     ),
   },
