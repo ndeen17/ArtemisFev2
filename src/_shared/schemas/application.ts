@@ -110,29 +110,32 @@ export type CoverLetter = z.infer<typeof CoverLetterSchema>;
  * Letter, ATS score, annotated diff).
  */
 export const KeywordFrequencySchema = z.object({
-  term: z.string().min(1).max(80),
-  count: z.number().int().min(1).max(50),
+  term: z.string().min(1).max(160),
+  // The LLM regularly returns counts as strings or floats; coerce + clamp
+  // so a single odd entry doesn't fail JD analysis (and therefore tailoring).
+  count: z.coerce.number().int().min(0).max(1000).catch(1),
 });
 export type KeywordFrequency = z.infer<typeof KeywordFrequencySchema>;
 
 export const JdAnalysisSchema = z.object({
   /** The role title as stated in the JD — used by the title-mirroring rule. */
-  jobTitle: z.string().min(1).max(160),
+  jobTitle: z.string().min(1).max(240),
   /** Must-have keywords/qualifications/tools the JD insists on. */
-  hardRequirements: z.array(z.string().min(1).max(120)).max(30).default([]),
+  hardRequirements: z.array(z.string().min(1).max(240)).max(40).default([]),
   /** Seniority/culture cues that don't gate the application but flavour the fit. */
-  softSignals: z.array(z.string().min(1).max(120)).max(20).default([]),
+  softSignals: z.array(z.string().min(1).max(240)).max(30).default([]),
   /** Top keyword frequencies in the JD, sorted desc. Drives Rule C. */
-  keywordFrequency: z.array(KeywordFrequencySchema).max(20).default([]),
+  keywordFrequency: z.array(KeywordFrequencySchema).max(40).default([]),
   /** Requirements implied but not spelled out (e.g. "managed budget" → P&L responsibility). */
-  implicitRequirements: z.array(z.string().min(1).max(160)).max(15).default([]),
+  implicitRequirements: z.array(z.string().min(1).max(240)).max(20).default([]),
   /** Optional ATS hints surfaced if the JD itself mentions them. */
   atsHints: z
     .object({
-      dateFormatHint: z.string().min(1).max(80).optional(),
-      headerStyleHint: z.string().min(1).max(120).optional(),
+      dateFormatHint: z.string().min(1).max(160).optional(),
+      headerStyleHint: z.string().min(1).max(200).optional(),
     })
     .partial()
+    .nullable()
     .optional(),
 });
 export type JdAnalysis = z.infer<typeof JdAnalysisSchema>;

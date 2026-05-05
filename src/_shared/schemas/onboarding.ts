@@ -52,5 +52,11 @@ export const OnboardingStateSchema = z.object({
   onboardingComplete: z.boolean(),
   hasCv: z.boolean(),
   cvId: z.string().nullable(),
+  /** Async job state for `/cv/from-questionnaire` and `/cv/from-jd`. The
+   *  endpoints return 202 immediately and run the AI generation in the
+   *  background, so the FE polls this to know when the CV is ready or
+   *  why it failed. */
+  cvGenerationStatus: z.enum(['idle', 'running', 'failed']).default('idle'),
+  cvGenerationError: z.string().nullable().default(null),
 });
 export type OnboardingState = z.infer<typeof OnboardingStateSchema>;
