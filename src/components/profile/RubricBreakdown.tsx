@@ -1,7 +1,10 @@
-import { Link } from 'react-router-dom';
 import type { RubricItem } from '@artemis/shared';
 import { atsSubScore } from '@artemis/shared';
 import { CheckIcon } from '@/components/ui/icons';
+import type {
+  BuilderSection,
+  OpenBuilderOptions,
+} from '@/hooks/useBuilderUrlState';
 
 /**
  * Phase C UI — shows the deterministic rubric the user can drive to 100.
@@ -12,10 +15,12 @@ export function RubricBreakdown({
   items,
   rubricScore,
   llmScore,
+  onOpenBuilder,
 }: {
   items: RubricItem[];
   rubricScore: number | null;
   llmScore: number | null;
+  onOpenBuilder: (opts: OpenBuilderOptions) => void;
 }) {
   if (!items.length) {
     return null;
@@ -109,12 +114,17 @@ export function RubricBreakdown({
                     <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-[12.5px] text-gray-600">{item.hint}</p>
                       {item.section ? (
-                        <Link
-                          to={`/profile/cv/edit#${item.section}`}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onOpenBuilder({
+                              section: item.section as BuilderSection,
+                            })
+                          }
                           className="text-[12px] font-semibold text-[#15803d] hover:underline whitespace-nowrap"
                         >
                           Fix in builder →
-                        </Link>
+                        </button>
                       ) : null}
                     </div>
                   ) : null}

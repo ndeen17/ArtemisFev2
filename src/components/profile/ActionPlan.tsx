@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import type {
   ActionPlan as ActionPlanData,
   ActionPlanItem,
   BulletPath,
   CvDetail,
 } from '@artemis/shared';
+import type { OpenBuilderOptions } from '@/hooks/useBuilderUrlState';
 import { findBulletInStructured } from '@artemis/shared';
 import { CheckIcon, AlertTriangleIcon, LightbulbIcon, SpinnerIcon } from '@/components/ui/icons';
 import { useToggleAction } from '@/hooks/useProfile';
 import { useMyCv } from '@/hooks/useOnboarding';
 import { RewriteDrawer } from './RewriteDrawer';
+import { FixButton } from './FixButton';
 
 /**
  * PRF-06 — Unified action plan. Renders gaps (severity-sorted) then suggestions,
@@ -28,9 +29,12 @@ const SEVERITY_DOT: Record<'high' | 'medium' | 'low', string> = {
 export function ActionPlan({
   plan,
   isLoading,
+  onOpenBuilder,
 }: {
   plan: ActionPlanData | undefined;
   isLoading: boolean;
+  /** Required: open the inline builder pane focused on the given action. */
+  onOpenBuilder: (opts: OpenBuilderOptions) => void;
 }) {
   const toggle = useToggleAction();
   const cv = useMyCv();
@@ -71,6 +75,7 @@ export function ActionPlan({
             cv={cv.data ?? null}
             onToggle={() => toggle.mutate({ id: item.id, complete: !item.completed })}
             onRewriteBullet={(target, original) => setRewriteTarget({ target, original })}
+            onOpenBuilder={onOpenBuilder}
             disabled={toggle.isPending}
           />
         ))}
@@ -116,12 +121,14 @@ function Row({
   cv,
   onToggle,
   onRewriteBullet,
+  onOpenBuilder,
   disabled,
 }: {
   item: ActionPlanItem;
   cv: CvDetail | null;
   onToggle: () => void;
   onRewriteBullet: (target: BulletPath, original: string) => void;
+  onOpenBuilder: (opts: OpenBuilderOptions) => void;
   disabled: boolean;
 }) {
   const Icon = item.kind === 'gap' ? AlertTriangleIcon : LightbulbIcon;
@@ -185,19 +192,32 @@ function Row({
           </p>
           {!item.completed ? (
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Link
-                to={`/profile/cv/edit?focus=${encodeURIComponent(item.id)}`}
+              {bulletTarget ? (
+                <FixButton
+                  target={bulletTarget}
+                  original={item.quotedBullet ?? ''}
+                />
+              ) : null}
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenBuilder({
+                    section: item.section,
+                    focus: item.id,
+                    coach: true,
+                  })
+                }
                 className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline"
               >
-                Fix in builder →
-              </Link>
+                {bulletTarget ? 'Open in builder' : 'Fix in builder'} →
+              </button>
               {bulletTarget ? (
                 <button
                   type="button"
                   onClick={() => onRewriteBullet(bulletTarget, item.quotedBullet ?? '')}
-                  className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline"
+                  className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-gray-500 hover:text-[#15803d] hover:underline"
                 >
-                  ✨ Rewrite this bullet
+                  See alternatives
                 </button>
               ) : null}
             </div>

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
+import { SplitPaneShell } from '@/components/layout/SplitPaneShell';
+import { BuilderPanel } from '@/components/cv/BuilderPanel';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeftIcon, SparklesIcon } from '@/components/ui/icons';
 import { CvDiffViewer } from '@/components/applications/CvDiffViewer';
@@ -16,6 +18,7 @@ import {
 import { applicationApi } from '@/features/applications/api';
 import { extractApiError } from '@/hooks/useAuth';
 import { isStructuredCvSparse } from '@/lib/structuredCv';
+import { useBuilderUrlState } from '@/hooks/useBuilderUrlState';
 
 /**
  * APP-03 — Targeted CV review. Triggers /applications/:id/target-cv and renders
@@ -38,6 +41,7 @@ export default function CvReviewPage() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [refineOpen, setRefineOpen] = useState(false);
   const reparsedRef = useRef(false);
+  const builder = useBuilderUrlState();
 
   // Auto-reparse on first open if the targeted CV has no structured payload
   // (legacy targets created before structured was persisted, or AI returned
@@ -100,6 +104,23 @@ export default function CvReviewPage() {
 
   return (
     <AppShell title="Targeted CV" subtitle={app?.jobTitle}>
+      <SplitPaneShell
+        open={builder.state.isOpen}
+        onClose={builder.close}
+        rightTitle="Edit targeted CV"
+        rightSubtitle={
+          app ? `${app.jobTitle} · ${app.company}` : undefined
+        }
+        right={
+          <BuilderPanel
+            mode="targeted"
+            applicationId={id}
+            section={builder.state.section}
+            onSaved={builder.close}
+          />
+        }
+        left={
+          <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <Link
           to={`/applications/${id}`}
@@ -154,11 +175,14 @@ export default function CvReviewPage() {
                   <SparklesIcon className="w-4 h-4" /> Refine with AI
                 </span>
               </Button>
-              <Link to={`/applications/${id}/targeted-cv/edit`}>
-                <Button type="button" variant="ghost">
-                  Edit this resume
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => builder.open({})}
+                disabled={!targeted.structured || isStructuredCvSparse(targeted.structured)}
+              >
+                Edit this resume
+              </Button>
             </div>
             {downloadError ? (
               <div className="mt-3 text-[13px] text-rose-600">{downloadError}</div>
@@ -224,6 +248,9 @@ export default function CvReviewPage() {
           onClose={() => setRefineOpen(false)}
         />
       ) : null}
+          </div>
+        }
+      />
     </AppShell>
   );
 }
