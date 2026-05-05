@@ -56,6 +56,12 @@ function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProp
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reparsedRef = useRef(false);
+  // Snapshot of the server state we last hydrated from. We compare against
+  // the current draft to detect "user has unsaved local edits"; when the
+  // server state changes (e.g. Fix button just applied a rewrite), we
+  // refresh the draft only if the user hasn't started editing yet —
+  // otherwise we'd clobber their typing.
+  const hydratedSnapshotRef = useRef<string | null>(null);
 
   // Auto-reparse once if structured is sparse.
   useEffect(() => {
@@ -66,18 +72,37 @@ function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProp
     reparsedRef.current = true;
     reparse.mutate(cv.id, {
       onSuccess: (next) => {
-        setDraft(next.structured ?? emptyStructuredCv());
+        const struct = next.structured ?? emptyStructuredCv();
+        setDraft(struct);
+        hydratedSnapshotRef.current = JSON.stringify(struct);
         setError(null);
       },
       onError: (err) => setError(extractApiError(err).message),
     });
   }, [cvQuery.data, reparse]);
 
-  // Hydrate local draft once.
+  // Hydrate / re-hydrate from server. Initial hydration always runs; later
+  // server updates (e.g. one-click Fix) only refresh the draft if the user
+  // has no unsaved edits in flight.
   useEffect(() => {
-    if (cvQuery.data && draft === null) {
-      setDraft(cvQuery.data.structured ?? emptyStructuredCv());
+    const cv = cvQuery.data;
+    if (!cv) return;
+    const next = cv.structured ?? emptyStructuredCv();
+    const nextSerialized = JSON.stringify(next);
+    if (draft === null) {
+      setDraft(next);
+      hydratedSnapshotRef.current = nextSerialized;
+      return;
     }
+    if (nextSerialized === hydratedSnapshotRef.current) return; // server unchanged
+    const draftSerialized = JSON.stringify(draft);
+    if (draftSerialized === hydratedSnapshotRef.current) {
+      // Local draft matches what we last hydrated → safe to refresh.
+      setDraft(next);
+      hydratedSnapshotRef.current = nextSerialized;
+    }
+    // else: keep the user's edits. They'll save (which sends their version)
+    // or close the builder. The stale snapshot is acceptable here.
   }, [cvQuery.data, draft]);
 
   const focusedAction = useMemo<ActionPlanItem | null>(() => {
@@ -174,6 +199,7 @@ function TargetedBuilder({ applicationId, section, onSaved }: BuilderPanelProps)
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reparsedRef = useRef(false);
+  const hydratedSnapshotRef = useRef<string | null>(null);
 
   const targeted = appQuery.data?.targetedCv ?? null;
 
@@ -184,7 +210,9 @@ function TargetedBuilder({ applicationId, section, onSaved }: BuilderPanelProps)
     reparsedRef.current = true;
     reparse.mutate(undefined, {
       onSuccess: (next) => {
-        setDraft(next.targetedCv?.structured ?? emptyStructuredCv());
+        const struct = next.targetedCv?.structured ?? emptyStructuredCv();
+        setDraft(struct);
+        hydratedSnapshotRef.current = JSON.stringify(struct);
         setError(null);
       },
       onError: (err) => setError(extractApiError(err).message),
@@ -192,8 +220,19 @@ function TargetedBuilder({ applicationId, section, onSaved }: BuilderPanelProps)
   }, [targeted, reparse]);
 
   useEffect(() => {
-    if (targeted && draft === null) {
-      setDraft(targeted.structured ?? emptyStructuredCv());
+    if (!targeted) return;
+    const next = targeted.structured ?? emptyStructuredCv();
+    const nextSerialized = JSON.stringify(next);
+    if (draft === null) {
+      setDraft(next);
+      hydratedSnapshotRef.current = nextSerialized;
+      return;
+    }
+    if (nextSerialized === hydratedSnapshotRef.current) return;
+    const draftSerialized = JSON.stringify(draft);
+    if (draftSerialized === hydratedSnapshotRef.current) {
+      setDraft(next);
+      hydratedSnapshotRef.current = nextSerialized;
     }
   }, [targeted, draft]);
 

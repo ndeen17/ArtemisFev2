@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { BulletPath } from '@artemis/shared';
 import { SparklesIcon, SpinnerIcon, CheckIcon } from '@/components/ui/icons';
 import {
-  useApplyBullet,
+  useApplyAction,
   useRewriteTargetedBullet,
 } from '@/hooks/useOnboarding';
 import { useUndoStackStore } from '@/store/undoStackStore';
@@ -23,13 +23,16 @@ import { useUndoStackStore } from '@/store/undoStackStore';
 export function FixButton({
   target,
   original,
+  actionId,
 }: {
   target: BulletPath;
   /** The bullet text we're replacing — captured before we apply so Undo works. */
   original: string;
+  /** Optional action-plan item id used by the BE to dedupe duplicate POSTs. */
+  actionId?: string;
 }) {
   const rewrite = useRewriteTargetedBullet();
-  const apply = useApplyBullet();
+  const apply = useApplyAction();
   const pushUndo = useUndoStackStore((s) => s.push);
   const [appliedText, setAppliedText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,14 +46,33 @@ export function FixButton({
       // Use the AI's strongest rewrite. The 2 alternatives stay accessible
       // through the longer-form RewriteDrawer if the user wants to compare.
       const next = r.main;
-      await apply.mutateAsync({ target, text: next });
+      await apply.mutateAsync({
+        cvId: target.cvId,
+        action: {
+          op: 'replaceBullet',
+          expId: target.expId,
+          bulletIdx: target.bulletIdx,
+          text: next,
+        },
+        actionId,
+      });
       setAppliedText(next);
       // Register a 5-min global undo so the user can revert from anywhere
       // (e.g. after navigating away from the action plan list).
       pushUndo({
         label: 'Bullet rewritten by AI',
         undo: async () => {
-          await apply.mutateAsync({ target, text: original });
+          await apply.mutateAsync({
+            cvId: target.cvId,
+            action: {
+              op: 'replaceBullet',
+              expId: target.expId,
+              bulletIdx: target.bulletIdx,
+              text: original,
+            },
+            // Intentionally omit actionId on undo — we want this to apply
+            // even though the actionId was already recorded.
+          });
           setAppliedText(null);
         },
       });
@@ -68,7 +90,15 @@ export function FixButton({
     if (!appliedText) return;
     setError(null);
     try {
-      await apply.mutateAsync({ target, text: original });
+      await apply.mutateAsync({
+        cvId: target.cvId,
+        action: {
+          op: 'replaceBullet',
+          expId: target.expId,
+          bulletIdx: target.bulletIdx,
+          text: original,
+        },
+      });
       setAppliedText(null);
     } catch {
       setError('Could not undo. Try editing the bullet manually.');

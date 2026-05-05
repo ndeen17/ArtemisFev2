@@ -25,7 +25,7 @@ import { useBuilderUrlState } from '@/hooks/useBuilderUrlState';
  * the diff returned by the backend. Also exposes:
  *   - Inline name field (debounced PATCH so the user can rename the resume).
  *   - Download PDF (uses the same branded template as the base CV).
- *   - Edit this resume → opens the structured editor at /targeted-cv/edit.
+ *   - Edit this resume → opens the inline builder pane (?builder=1).
  */
 export default function CvReviewPage() {
   const { id = '' } = useParams<{ id: string }>();

@@ -93,7 +93,7 @@ export default function SettingsResumePage() {
             </div>
             <div className="flex items-center gap-2">
               <Link
-                to="/profile/cv/edit"
+                to="/profile?builder=1"
                 className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-[13px] font-semibold text-[#111827] hover:bg-gray-50"
               >
                 Edit in builder

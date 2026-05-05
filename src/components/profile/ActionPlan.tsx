@@ -196,6 +196,7 @@ function Row({
                 <FixButton
                   target={bulletTarget}
                   original={item.quotedBullet ?? ''}
+                  actionId={item.id}
                 />
               ) : null}
               <button
