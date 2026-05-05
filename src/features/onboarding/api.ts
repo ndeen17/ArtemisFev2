@@ -1,4 +1,5 @@
 import type {
+  ApplyActionInput,
   BulletPath,
   BulletRewriteResponse,
   CvCoachRequest,
@@ -76,6 +77,22 @@ export const cvApi = {
     const res = await apiClient.post<{ cv: CvDetail }>(
       `/cv/${cvId}/bullets/${expId}/${bulletIdx}/apply`,
       { text },
+    );
+    return res.data.cv;
+  },
+  /**
+   * Generic action applier — covers non-bullet ops (rewriteSummary, addSkill,
+   * addBullet, updateHeader) plus replaceBullet for callers that prefer the
+   * unified shape. Re-queues analysis on success.
+   */
+  async applyAction(
+    cvId: string,
+    action: ApplyActionInput,
+    actionId?: string,
+  ): Promise<CvDetail> {
+    const res = await apiClient.post<{ cv: CvDetail }>(
+      `/cv/${cvId}/actions/apply`,
+      { action, ...(actionId ? { actionId } : {}) },
     );
     return res.data.cv;
   },

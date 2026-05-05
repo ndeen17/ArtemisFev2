@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   StructuredCv,
   StructuredCvExperience,
@@ -70,6 +70,8 @@ export function CvEditor({
   const [savingSection, setSavingSection] = useState<Section | null>(null);
   const [savedSection, setSavedSection] = useState<Section | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [flashing, setFlashing] = useState(false);
+  const formPanelRef = useRef<HTMLDivElement | null>(null);
   const activeMeta = SECTIONS.find((s) => s.id === active)!;
 
   // Compute completeness once per render so the tab dots and the section
@@ -115,6 +117,24 @@ export function CvEditor({
   // If the parent updates initialSection (e.g. ?focus=<id> resolved late), respect it.
   useEffect(() => {
     if (initialSection) setActive(initialSection);
+  }, [initialSection]);
+
+  // Flash the form panel for ~1.5s whenever the focused section changes from
+  // outside (Fix-in-builder click). Gives the user an unmistakable visual
+  // cue about where the change has landed inside the editor.
+  useEffect(() => {
+    if (!initialSection) return;
+    setFlashing(true);
+    // On small screens the editor sits below the page header, so when the
+    // builder opens as a sheet we also scroll the form panel into view so
+    // the user doesn't have to hunt for it.
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        formPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+    const handle = window.setTimeout(() => setFlashing(false), 1500);
+    return () => window.clearTimeout(handle);
   }, [initialSection]);
 
   return (
@@ -169,7 +189,15 @@ export function CvEditor({
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)] gap-6">
         {/* Form column */}
         <section className="space-y-4 min-w-0">
-          <div className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+          <div
+            ref={formPanelRef}
+            className={cn(
+              'rounded-3xl border bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-700',
+              flashing
+                ? 'border-brand-green ring-2 ring-brand-green/30'
+                : 'border-gray-100',
+            )}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-[20px] font-semibold tracking-tight">

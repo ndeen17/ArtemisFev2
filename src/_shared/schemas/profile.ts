@@ -109,3 +109,55 @@ export const BulletApplySchema = z.object({
   text: z.string().min(1).max(500),
 });
 export type BulletApplyInput = z.infer<typeof BulletApplySchema>;
+
+/**
+ * Generic apply-action input. Powers the action-plan one-click "Fix" for
+ * non-bullet operations (summary, skills, header, add-experience, etc).
+ *
+ * Discriminated by `op`. The bullet ops are still handled by the dedicated
+ * bullet endpoints — this schema covers the rest.
+ */
+export const ApplyActionSchema = z.discriminatedUnion('op', [
+  z.object({
+    op: z.literal('replaceBullet'),
+    expId: z.string().min(1),
+    bulletIdx: z.number().int().min(0).max(20),
+    text: z.string().min(1).max(500),
+  }),
+  z.object({
+    op: z.literal('addBullet'),
+    expId: z.string().min(1),
+    text: z.string().min(1).max(500),
+  }),
+  z.object({
+    op: z.literal('rewriteSummary'),
+    text: z.string().min(1).max(1500),
+  }),
+  z.object({
+    op: z.literal('addSkill'),
+    skill: z.string().trim().min(1).max(60),
+  }),
+  z.object({
+    op: z.literal('updateHeader'),
+    patch: z
+      .object({
+        fullName: z.string().trim().max(120).optional(),
+        headline: z.string().trim().max(160).optional(),
+        email: z.string().trim().max(160).optional(),
+        phone: z.string().trim().max(40).optional(),
+        location: z.string().trim().max(160).optional(),
+        linkedin: z.string().trim().max(200).optional(),
+        website: z.string().trim().max(200).optional(),
+      })
+      .refine((p) => Object.keys(p).length > 0, 'Empty header patch'),
+  }),
+]);
+export type ApplyActionInput = z.infer<typeof ApplyActionSchema>;
+
+/** Wrapper body for POST /cv/:cvId/actions/apply — the FE may also pass an
+ *  `actionId` so the server can record idempotency on the Cv document. */
+export const ApplyActionRequestSchema = z.object({
+  actionId: z.string().min(1).max(80).optional(),
+  action: ApplyActionSchema,
+});
+export type ApplyActionRequest = z.infer<typeof ApplyActionRequestSchema>;

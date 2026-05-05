@@ -179,6 +179,33 @@ export function useApplyBullet() {
   });
 }
 
+/**
+ * Generic action applier — POST /cv/:cvId/actions/apply. Used by the action
+ * plan one-click "Fix" for non-bullet ops (rewriteSummary, addSkill,
+ * addBullet, updateHeader). On success the canonical CV + downstream
+ * analysis/profile queries are invalidated.
+ */
+export function useApplyAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      cvId,
+      action,
+      actionId,
+    }: {
+      cvId: string;
+      action: import('@artemis/shared').ApplyActionInput;
+      actionId?: string;
+    }) => cvApi.applyAction(cvId, action, actionId),
+    onSuccess() {
+      void qc.invalidateQueries({ queryKey: CV_KEY });
+      void qc.invalidateQueries({ queryKey: ['analysis', 'latest'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'overview'] });
+      void qc.invalidateQueries({ queryKey: ['profile', 'action-plan'] });
+    },
+  });
+}
+
 export function useCvCoach() {
   return useMutation({
     mutationFn: (input: import('@artemis/shared').CvCoachRequest) => cvApi.coach(input),
