@@ -16,6 +16,17 @@ export default function App() {
     // doesn't eat a 401-then-retry round-trip (or, on long AI endpoints,
     // a timeout). The access token is intentionally never persisted.
     void bootstrapAuth();
+
+    // Tabs left idle for hours can have an expired in-memory access token
+    // by the time the user returns. Re-bootstrapping when the tab regains
+    // focus pre-empts the visible 401 → refresh → replay flow on the very
+    // first action after switching back. `bootstrapAuth` is a no-op when
+    // we still have a token, so this is cheap.
+    function onFocus() {
+      void bootstrapAuth();
+    }
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, []);
 
   return (

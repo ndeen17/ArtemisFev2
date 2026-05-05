@@ -39,26 +39,41 @@ type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 let refreshPromise: Promise<string | null> | null = null;
 
 async function performRefresh(): Promise<string | null> {
-  try {
-    const res = await axios.post<{ user: AuthUser; accessToken: string }>(
-      `${baseURL}/auth/refresh`,
-      {},
-      { withCredentials: true, timeout: 15_000 },
-    );
-    useAuthStore.getState().setAuth({ user: res.data.user, accessToken: res.data.accessToken });
-    return res.data.accessToken;
-  } catch (err) {
-    // Only sign the user out when the BE explicitly rejects the refresh
-    // (401/403 — invalid or revoked refresh token). Transient errors
-    // (network blip, BE restart, 502/504, timeout) must NOT clear the
-    // session, otherwise the user appears to be randomly signed out.
-    const status = (err as AxiosError).response?.status;
-    if (status === 401 || status === 403) {
-      // Server-initiated session end — surfaces the "Session expired" banner on /signin.
-      useAuthStore.getState().expireSession();
+  // Render's free tier (and any cold-starting backend) can answer the very
+  // first request after idle with a 502/503/504 from its proxy while the
+  // service is spinning up. Retry the refresh up to twice with a short
+  // backoff so a cold start doesn't appear to the user as "session expired".
+  // We do NOT retry the original failing request here — only the refresh.
+  const TRANSIENT_STATUSES = new Set([502, 503, 504]);
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const res = await axios.post<{ user: AuthUser; accessToken: string }>(
+        `${baseURL}/auth/refresh`,
+        {},
+        { withCredentials: true, timeout: 15_000 },
+      );
+      useAuthStore.getState().setAuth({ user: res.data.user, accessToken: res.data.accessToken });
+      return res.data.accessToken;
+    } catch (err) {
+      const status = (err as AxiosError).response?.status;
+      // Server-explicit auth failure — clear the session and stop retrying.
+      if (status === 401 || status === 403) {
+        useAuthStore.getState().expireSession();
+        return null;
+      }
+      const transient = status === undefined || TRANSIENT_STATUSES.has(status);
+      if (!transient || attempt === MAX_ATTEMPTS) {
+        // Network/transient failure on the final attempt — leave the session
+        // intact (per the rationale below) and return null. The caller will
+        // surface the original error to the user; they can retry the action.
+        return null;
+      }
+      // Backoff: 750ms, 1500ms.
+      await new Promise((resolve) => setTimeout(resolve, 750 * attempt));
     }
-    return null;
   }
+  return null;
 }
 
 apiClient.interceptors.response.use(
