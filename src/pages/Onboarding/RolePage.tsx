@@ -23,6 +23,11 @@ const ROLES: { value: Role; title: string; description: string }[] = [
     description: 'Product Owner, Delivery manager.',
   },
   { value: 'designer', title: 'Digital Designer', description: 'Product, UX, Brand, Motion' },
+  {
+    value: 'data_analyst',
+    title: 'Data Analyst',
+    description: 'Analytics, BI, dashboards, SQL',
+  },
 ];
 
 const LEVELS: { value: ExperienceLevel; title: string }[] = [

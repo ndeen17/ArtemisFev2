@@ -20,7 +20,9 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: HomeIcon },
+  // The route stays /dashboard so deep links / bookmarks keep working — only
+  // the visible label changes to "Home" per the product copy update.
+  { to: '/dashboard', label: 'Home', icon: HomeIcon },
   { to: '/profile', label: 'Profile', icon: UserIcon },
   { to: '/applications', label: 'Applications', icon: BriefcaseIcon },
   { to: '/interviews', label: 'Interviews', icon: MicIcon },

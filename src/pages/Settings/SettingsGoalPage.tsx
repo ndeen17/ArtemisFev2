@@ -91,7 +91,7 @@ export default function SettingsGoalPage() {
             to="/dashboard"
             className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#111827] hover:underline"
           >
-            Back to dashboard
+            Back to home
           </Link>
           <div className="flex items-center gap-3">
             <Button

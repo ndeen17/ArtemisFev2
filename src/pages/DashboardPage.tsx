@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo } from 'react';
-import { deriveReadiness } from '@artemis/shared';
+import { deriveReadiness, roleLabel } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
@@ -107,7 +107,7 @@ export default function DashboardPage() {
     !!cv.data && (analysisStatus === 'queued' || analysisStatus === 'running');
 
   return (
-    <AppShell title="Dashboard" subtitle={copy.dashboardSubtitle}>
+    <AppShell title="Home" subtitle={copy.dashboardSubtitle}>
       <div>
         <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
           {copy.dashboardEyebrow}
@@ -115,6 +115,14 @@ export default function DashboardPage() {
         <h1 className="mt-1 text-[32px] font-extrabold tracking-tight text-[#111827] leading-[1.1]">
           Hi, {firstName}.
         </h1>
+        {/* Surface the user's career choice right under the greeting so the
+            home page reflects who they're optimising for at a glance. */}
+        {roleLabel(onboarding.data?.role) ? (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-[12px] font-semibold text-[#111827]">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-green" aria-hidden="true" />
+            {roleLabel(onboarding.data?.role)}
+          </div>
+        ) : null}
         <p className="mt-2 text-[15px] text-gray-600 max-w-xl">{copy.dashboardSubtitle}</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link
