@@ -28,12 +28,18 @@ import { cvApi } from '@/features/onboarding/api';
 export default function CvEditPage() {
   const navigate = useNavigate();
   const cvQuery = useMyCv();
+  const onboarding = useOnboardingState();
   const patch = usePatchCv();
   const patchOnboarding = usePatchOnboarding();
   const reparse = useReparseCv();
   const [draft, setDraft] = useState<StructuredCv | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reparsedRef = useRef(false);
+
+  const genStatus = onboarding.data?.cvGenerationStatus ?? 'idle';
+  const genError = onboarding.data?.cvGenerationError ?? null;
+  const isGenerating = genStatus === 'running';
+  const generationFailed = genStatus === 'failed';
 
   useEffect(() => {
     if (reparsedRef.current) return;
@@ -63,6 +69,18 @@ export default function CvEditPage() {
       setDraft(cvQuery.data.structured ?? emptyStructuredCv());
     }
   }, [cvQuery.data, draft]);
+
+  // When the BE flips cvGenerationStatus from 'running' → 'idle', the CV
+  // doc has just been written. Refetch /cv/me so the editor mounts with
+  // the new structured shape instead of a stale "no cv" state.
+  const prevGenStatusRef = useRef<string>(genStatus);
+  useEffect(() => {
+    const prev = prevGenStatusRef.current;
+    prevGenStatusRef.current = genStatus;
+    if (prev === 'running' && genStatus !== 'running') {
+      void cvQuery.refetch();
+    }
+  }, [genStatus, cvQuery]);
 
   async function continueToNext() {
     setError(null);
