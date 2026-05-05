@@ -1,6 +1,6 @@
 # @artemis/frontend (ArtemisFev2)
 
-React 18 + TypeScript + Vite + Tailwind frontend for Artemis.
+React 18 + TypeScript + Vite + Tailwind frontend 
 
 ## Folder structure
 
