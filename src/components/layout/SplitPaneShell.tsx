@@ -86,23 +86,25 @@ export function SplitPaneShell({
   }, [open]);
 
   return (
-    <div
-      className={cn(
-        'grid gap-6 grid-cols-1',
-        open ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]' : '',
-      )}
-    >
-      <div className="min-w-0">{left}</div>
+    <>
+      {/* When the builder is closed, only the page content renders inline.
+          When it's open the page content steps aside entirely \u2014 the builder
+          takes the full content width at every breakpoint so the editor isn't
+          cramped into a 1.4fr column. The host page also collapses the
+          sidebar (see AppShell) so the user gets the full viewport. */}
+      {open ? null : <div className="min-w-0">{left}</div>}
       {open ? (
         <aside
           className={cn(
             'min-w-0',
+            // Below xl: full-screen sheet over the page.
             'fixed inset-0 z-40 bg-[#fafafa]',
-            'xl:static xl:bg-transparent xl:sticky xl:top-4 xl:z-auto',
+            // xl+: in-flow, full width of the AppShell content area.
+            'xl:static xl:bg-transparent',
           )}
           aria-label={rightTitle}
         >
-          <div className="flex h-full flex-col xl:max-h-[calc(100vh-2rem)] xl:rounded-3xl xl:border xl:border-gray-100 xl:bg-white xl:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+          <div className="flex h-full flex-col xl:h-auto xl:rounded-3xl xl:border xl:border-gray-100 xl:bg-white xl:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
             <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-gray-100 bg-white px-4 py-3 sm:px-6 xl:rounded-t-3xl">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -130,10 +132,12 @@ export function SplitPaneShell({
                 Close
               </Button>
             </header>
-            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">{right}</div>
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 xl:overflow-visible">
+              {right}
+            </div>
           </div>
         </aside>
       ) : null}
-    </div>
+    </>
   );
 }
