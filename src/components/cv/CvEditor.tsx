@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
   StructuredCv,
   StructuredCvExperience,
@@ -8,9 +8,12 @@ import type {
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Button } from '@/components/ui/Button';
+import { CityAutocomplete } from '@/components/ui/CityAutocomplete';
+import { SpinnerIcon } from '@/components/ui/icons';
 import { CvPreview } from './CvPreview';
 import { CvCoachChat } from './CvCoachChat';
 import { RewriteDrawer } from '@/components/profile/RewriteDrawer';
+import { sectionStatus, type SectionStatus } from '@/lib/cv/sectionValidity';
 import { cn } from '@/lib/cn';
 
 /**
@@ -47,6 +50,10 @@ export interface CvEditorProps {
   /** When set, opens the AI coach drawer on mount with this seed message
    *  prefilled. Used by the action plan deep-link flow. */
   seedCoachMessage?: string;
+  /** When provided, renders a per-section "Save section" button. Parents wire
+   *  this to a partial patch so users get explicit confirmation that the
+   *  current section persisted, without having to commit the whole CV. */
+  onSaveSection?: (section: Section, cv: StructuredCv) => Promise<void>;
 }
 
 export function CvEditor({
@@ -55,11 +62,55 @@ export function CvEditor({
   cvId,
   initialSection,
   seedCoachMessage,
+  onSaveSection,
 }: CvEditorProps) {
   const [active, setActive] = useState<Section>(initialSection ?? 'header');
   const [coachOpen, setCoachOpen] = useState<boolean>(Boolean(seedCoachMessage));
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [savingSection, setSavingSection] = useState<Section | null>(null);
+  const [savedSection, setSavedSection] = useState<Section | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const activeMeta = SECTIONS.find((s) => s.id === active)!;
+
+  // Compute completeness once per render so the tab dots and the section
+  // panel can read from the same source of truth.
+  const statusById = useMemo(() => {
+    const out: Record<Section, SectionStatus> = {
+      header: sectionStatus('header', value),
+      summary: sectionStatus('summary', value),
+      experience: sectionStatus('experience', value),
+      education: sectionStatus('education', value),
+      skills: sectionStatus('skills', value),
+    };
+    return out;
+  }, [value]);
+
+  async function handleSaveSection() {
+    if (!onSaveSection || savingSection) return;
+    setSaveError(null);
+    setSavingSection(active);
+    try {
+      await onSaveSection(active, value);
+      setSavedSection(active);
+      // Auto-clear the "Saved" affordance after a short beat so the next
+      // edit feels fresh. The user can also dismiss by editing further.
+      window.setTimeout(() => {
+        setSavedSection((cur) => (cur === active ? null : cur));
+      }, 2400);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not save this section.';
+      setSaveError(message);
+    } finally {
+      setSavingSection(null);
+    }
+  }
+
+  // Clear the transient "Saved" pip whenever the user switches sections or
+  // makes further edits to the active section.
+  useEffect(() => {
+    setSavedSection(null);
+    setSaveError(null);
+  }, [active]);
 
   // If the parent updates initialSection (e.g. ?focus=<id> resolved late), respect it.
   useEffect(() => {
@@ -76,12 +127,14 @@ export function CvEditor({
         <ol className="flex items-center gap-2 px-1 min-w-max">
           {SECTIONS.map((s, i) => {
             const isActive = s.id === active;
+            const status = statusById[s.id];
             return (
               <li key={s.id}>
                 <button
                   type="button"
                   onClick={() => setActive(s.id)}
                   aria-current={isActive ? 'step' : undefined}
+                  aria-label={`${s.label} — ${statusLabel(status)}`}
                   className={cn(
                     'inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors whitespace-nowrap',
                     isActive
@@ -98,6 +151,13 @@ export function CvEditor({
                     {i + 1}
                   </span>
                   {s.label}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'inline-block w-1.5 h-1.5 rounded-full',
+                      statusDotClass(status, isActive),
+                    )}
+                  />
                 </button>
               </li>
             );
@@ -136,6 +196,38 @@ export function CvEditor({
               ) : null}
               {active === 'skills' ? <SkillsForm value={value} onChange={onChange} /> : null}
             </div>
+            {onSaveSection ? (
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                <div className="min-h-[20px] text-[12.5px]">
+                  {saveError ? (
+                    <span className="text-red-600">{saveError}</span>
+                  ) : savedSection === active ? (
+                    <span className="inline-flex items-center gap-1.5 text-[#065f46]">
+                      <span aria-hidden>✓</span>
+                      <span>Saved</span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">
+                      Saving keeps your progress without leaving this step.
+                    </span>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSaveSection}
+                  disabled={savingSection !== null}
+                >
+                  {savingSection === active ? (
+                    <span className="inline-flex items-center gap-2">
+                      <SpinnerIcon /> Saving…
+                    </span>
+                  ) : (
+                    'Save section'
+                  )}
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           <button
@@ -257,10 +349,10 @@ function HeaderForm({ value, onChange }: CvEditorProps) {
         <Input value={f.phone} onChange={(e) => set('phone', e.target.value)} />
       </Field>
       <Field label="Location">
-        <Input
-          placeholder="Lagos, Nigeria"
+        <CityAutocomplete
           value={f.location}
-          onChange={(e) => set('location', e.target.value)}
+          onChange={(next) => set('location', next)}
+          placeholder="Start typing your city…"
         />
       </Field>
       <Field label="LinkedIn">
@@ -620,6 +712,23 @@ function SkillsForm({ value, onChange }: CvEditorProps) {
       </div>
     </div>
   );
+}
+
+function statusLabel(s: SectionStatus): string {
+  switch (s) {
+    case 'empty':
+      return 'not started';
+    case 'partial':
+      return 'in progress';
+    case 'complete':
+      return 'looking good';
+  }
+}
+
+function statusDotClass(s: SectionStatus, isActive: boolean): string {
+  if (s === 'complete') return isActive ? 'bg-white' : 'bg-emerald-500';
+  if (s === 'partial') return isActive ? 'bg-white/60' : 'bg-amber-400';
+  return isActive ? 'bg-white/30' : 'bg-gray-300';
 }
 
 function Field({

@@ -147,6 +147,9 @@ export default function ProfileCvEditPage() {
                 ? `Help me address this from my action plan: "${focusedAction.title}". Detail: ${focusedAction.detail}`
                 : undefined
             }
+            onSaveSection={async (_section, next) => {
+              await patch.mutateAsync({ cvId: cvQuery.data!.id, structured: next });
+            }}
           />
           {error ? <div className="mt-3 text-[13px] text-red-600">{error}</div> : null}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

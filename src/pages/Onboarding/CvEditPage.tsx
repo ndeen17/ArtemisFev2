@@ -165,7 +165,17 @@ export default function CvEditPage() {
         </div>
       ) : null}
 
-      <CvEditor value={draft} onChange={setDraft} cvId={cvQuery.data.id} />
+      <CvEditor
+        value={draft}
+        onChange={setDraft}
+        cvId={cvQuery.data.id}
+        onSaveSection={async (_section, next) => {
+          // Section saves persist the whole structured CV (it's one Mongo doc).
+          // The label and toast in CvEditor make it feel section-scoped, while
+          // the patch keeps Mongo and React state in sync.
+          await patch.mutateAsync({ cvId: cvQuery.data!.id, structured: next });
+        }}
+      />
 
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
