@@ -12,7 +12,7 @@ export function TopBar({ title, subtitle, onOpenSidebar }: TopBarProps) {
 
   return (
     <header className="sticky top-0 z-20 bg-[#fafafa]/95 backdrop-blur border-b border-gray-100">
-      <div className="flex items-center justify-between gap-4 h-16 px-6 lg:px-10">
+      <div className="flex items-center justify-between gap-4 h-16 px-4 sm:px-6 lg:px-10">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"

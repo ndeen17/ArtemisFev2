@@ -169,7 +169,7 @@ export default function RolePage() {
         subtitle="We want to personalize your Artemis experience to your role and level of seniority"
       />
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {ROLES.map((r) => (
           <SelectableCard
             key={r.value}

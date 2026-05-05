@@ -211,3 +211,46 @@ function TileBody({
     </div>
   );
 }
+
+/**
+ * Slim score indicator shown at the top of the profile column **only**
+ * while the inline builder is open. Keeps the readiness number visible
+ * without the visual weight of the full ProfileOverviewCard.
+ */
+function CompactReadinessChip({
+  score,
+  weeklyDelta,
+}: {
+  score: number | null;
+  weeklyDelta: number | null;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
+      <div className="min-w-0">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-green">
+          Profile readiness
+        </div>
+        <div className="mt-0.5 flex items-baseline gap-2">
+          <span className="text-[22px] font-extrabold tabular-nums text-[#111827]">
+            {score === null ? '—' : score}
+          </span>
+          <span className="text-[12px] text-gray-500">/ 100</span>
+          {typeof weeklyDelta === 'number' && weeklyDelta !== 0 ? (
+            <span
+              className={
+                'text-[11px] font-semibold ' +
+                (weeklyDelta > 0 ? 'text-emerald-600' : 'text-rose-600')
+              }
+            >
+              {weeklyDelta > 0 ? '+' : ''}
+              {weeklyDelta}
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <span className="text-[11px] text-gray-400">
+        Editing your CV — close to see breakdown
+      </span>
+    </div>
+  );
+}
