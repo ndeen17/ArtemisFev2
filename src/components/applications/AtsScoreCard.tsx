@@ -64,6 +64,12 @@ export function AtsScoreCard({ score, variant = 'cv' }: Props) {
             Rules-based score against the JD&apos;s structured brief. Real ATS engines
             vary — treat this as guidance, not a verdict.
           </p>
+          <p className="mt-2 text-[12.5px] text-gray-600 max-w-xl leading-relaxed">
+            <span className="font-semibold text-[#111827]">Heads up:</span> we never
+            fabricate experience, employers, qualifications or skills you haven&apos;t
+            actually got. Anything missing below is yours to decide on — add it
+            manually in the editor only if it&apos;s genuinely true of you.
+          </p>
         </div>
         <span
           className={`inline-flex items-center rounded-full ring-1 px-3 py-1 text-[12px] font-semibold ${style.bg} ${style.text} ${style.ring}`}
@@ -86,7 +92,11 @@ export function AtsScoreCard({ score, variant = 'cv' }: Props) {
           value={`${Math.round(score.contextualPlacement * 100)}%`}
           hint="How many matched keywords appear inside experience bullets, not just the skills list."
         />
-        <Row label="Title alignment" value={TITLE_LABEL[score.titleAlignment]} />
+        <Row
+          label="Title alignment"
+          value={TITLE_LABEL[score.titleAlignment]}
+          hint="Whether your most recent role title matches the JD's. If you've genuinely held an equivalent title, update it in the editor; never invent one you haven't."
+        />
         {variant === 'cv' ? (
           <>
             <Row
@@ -107,6 +117,12 @@ export function AtsScoreCard({ score, variant = 'cv' }: Props) {
           <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-gray-500 mb-2">
             Top missing JD keywords
           </div>
+          <p className="text-[12.5px] text-gray-600 mb-3 leading-relaxed">
+            These keywords appear in the JD but not in your CV. If any genuinely
+            apply to you — a tool you&apos;ve used, a qualification you hold —
+            add it yourself in the editor (Skills, or weave it into a bullet
+            where it fits). We won&apos;t insert claims on your behalf.
+          </p>
           <div className="flex flex-wrap gap-2">
             {score.missingTopKeywords.map((kw) => (
               <span
