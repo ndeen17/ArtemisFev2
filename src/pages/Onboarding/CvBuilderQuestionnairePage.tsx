@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { QuestionnaireAnswersSchema, type QuestionnaireAnswers } from '@artemis/shared';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
+import { OnboardingBackButton } from '@/components/onboarding/OnboardingBackButton';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
@@ -313,7 +314,8 @@ export default function CvBuilderQuestionnairePage() {
           </div>
         ) : null}
 
-        <div className="flex justify-end pt-2">
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <OnboardingBackButton to="/onboarding/cv" />
           <Button type="submit" disabled={patch.isPending}>
             {patch.isPending ? (
               <span className="inline-flex items-center gap-2">

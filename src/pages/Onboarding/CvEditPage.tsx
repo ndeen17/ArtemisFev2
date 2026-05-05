@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { StructuredCv } from '@artemis/shared';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
+import { OnboardingBackButton } from '@/components/onboarding/OnboardingBackButton';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { CvEditor } from '@/components/cv/CvEditor';
 import { Button } from '@/components/ui/Button';
@@ -153,6 +154,9 @@ export default function CvEditPage() {
         <div className="flex items-center gap-2 text-gray-500">
           <SpinnerIcon /> Loading your draft…
         </div>
+        <div className="pt-2">
+          <OnboardingBackButton to="/onboarding/cv" />
+        </div>
       </OnboardingLayout>
     );
   }
@@ -172,6 +176,9 @@ export default function CvEditPage() {
           <SpinnerIcon className="animate-spin w-4 h-4" />
           Working on it…
         </div>
+        <div className="pt-2">
+          <OnboardingBackButton to="/onboarding/cv" />
+        </div>
       </OnboardingLayout>
     );
   }
@@ -187,7 +194,8 @@ export default function CvEditPage() {
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13.5px] text-rose-900 leading-relaxed">
           {genError ?? 'Something went wrong while generating your CV. Please try again.'}
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <OnboardingBackButton to="/onboarding/cv" />
           <Button onClick={() => navigate('/onboarding/cv')}>Go back and try again</Button>
         </div>
       </OnboardingLayout>
@@ -200,6 +208,9 @@ export default function CvEditPage() {
         <p className="text-[14px] text-gray-600">
           We could not find your CV. Go back and try drafting again.
         </p>
+        <div className="pt-2">
+          <OnboardingBackButton to="/onboarding/cv" />
+        </div>
       </OnboardingLayout>
     );
   }
@@ -246,9 +257,12 @@ export default function CvEditPage() {
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        <Button variant="ghost" onClick={downloadPdf}>
-          Download PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <OnboardingBackButton to="/onboarding/cv" disabled={patch.isPending} />
+          <Button variant="ghost" onClick={downloadPdf}>
+            Download PDF
+          </Button>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {cvQuery.data.source === 'jd' || cvQuery.data.source === 'questionnaire' ? (
             <Button

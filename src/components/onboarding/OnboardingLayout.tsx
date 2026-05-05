@@ -1,11 +1,17 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ProgressDots } from './StepHeader';
-import { ArrowLeftIcon } from '@/components/ui/icons';
 
 interface Props {
   step: number;
   total?: number;
+  /**
+   * Deprecated — the layout no longer renders its own Back link. Each
+   * onboarding page now places `<OnboardingBackButton />` inline with its
+   * Continue button so the two stay vertically aligned. Kept on the props
+   * type as an unused passthrough until all callers are migrated, then
+   * removed.
+   */
   backTo?: string;
   /** Use a wider container — useful for the multi-pane CV editor step. */
   wide?: boolean;
@@ -16,7 +22,7 @@ interface Props {
  * Frame around every onboarding page — soft cream background, centered card with
  * progress, and an optional back link. Mirrors the landing's calm, generous spacing.
  */
-export function OnboardingLayout({ step, total = 5, backTo, wide = false, children }: Props) {
+export function OnboardingLayout({ step, total = 5, wide = false, children }: Props) {
   return (
     <div className="min-h-screen bg-[#fafafa] flex items-start justify-center px-4 py-12 sm:py-16">
       <div className={wide ? 'w-full max-w-6xl' : 'w-full max-w-2xl'}>
@@ -38,19 +44,6 @@ export function OnboardingLayout({ step, total = 5, backTo, wide = false, childr
         >
           <ProgressDots current={step} total={total} />
           {children}
-          {backTo ? (
-            // Bottom-left back link — sits adjacent to each page's primary
-            // Continue button so navigation lives in one visual zone instead
-            // of being split between the page header and footer.
-            <div className="pt-2">
-              <Link
-                to={backTo}
-                className="inline-flex items-center gap-1.5 text-[14px] text-gray-500 hover:text-[#111827] transition-colors"
-              >
-                <ArrowLeftIcon /> Back
-              </Link>
-            </div>
-          ) : null}
         </div>
       </div>
     </div>

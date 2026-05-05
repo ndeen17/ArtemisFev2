@@ -10,6 +10,7 @@ import {
 } from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
 import { useCvBuilderDraftStore } from '@/store/cvBuilderDraftStore';
+import { OnboardingBackButton } from '@/components/onboarding/OnboardingBackButton';
 
 const MIN = 100;
 const MAX = 6000;
@@ -170,6 +171,13 @@ export default function CvBuilderJdPage() {
           soon as it's ready.
         </div>
       ) : null}
+
+      {/* Footer row \u2014 the page's primary actions are inside the option
+          cards above, so Back sits on its own here, styled to match the
+          back buttons on every other onboarding step. */}
+      <div className="flex items-center justify-start pt-2">
+        <OnboardingBackButton to="/onboarding/cv/basics" disabled={isPending} />
+      </div>
     </OnboardingLayout>
   );
 }

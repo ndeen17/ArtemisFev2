@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
+import { OnboardingBackButton } from '@/components/onboarding/OnboardingBackButton';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { CvUploader } from '@/components/onboarding/CvUploader';
 import { Button } from '@/components/ui/Button';
@@ -109,6 +110,7 @@ export default function CvPage() {
       )}
 
       <div className="flex items-center justify-between gap-3 pt-2">
+        <OnboardingBackButton to="/onboarding/goal" />
         {hasCv ? (
           showReplace ? (
             <Button variant="ghost" size="sm" onClick={() => setShowReplace(false)}>

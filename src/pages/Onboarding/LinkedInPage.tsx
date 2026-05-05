@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
+import { OnboardingBackButton } from '@/components/onboarding/OnboardingBackButton';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { Button } from '@/components/ui/Button';
 import { ArrowRightIcon, LinkedInIcon, SpinnerIcon } from '@/components/ui/icons';
@@ -63,21 +64,24 @@ export default function LinkedInPage() {
 
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
-      <div className="flex items-center justify-between pt-2">
-        <Button variant="ghost" size="sm" onClick={finish} disabled={complete.isPending}>
-          Skip for now
-        </Button>
-        <Button onClick={finish} disabled={complete.isPending}>
-          {complete.isPending ? (
-            <span className="inline-flex items-center gap-2">
-              <SpinnerIcon /> Wrapping up…
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2">
-              Finish setup <ArrowRightIcon />
-            </span>
-          )}
-        </Button>
+      <div className="flex items-center justify-between gap-3 pt-2">
+        <OnboardingBackButton to={backTo} disabled={complete.isPending} />
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={finish} disabled={complete.isPending}>
+            Skip for now
+          </Button>
+          <Button onClick={finish} disabled={complete.isPending}>
+            {complete.isPending ? (
+              <span className="inline-flex items-center gap-2">
+                <SpinnerIcon /> Wrapping up…
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                Finish setup <ArrowRightIcon />
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
     </OnboardingLayout>
   );

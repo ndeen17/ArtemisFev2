@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ExperienceLevel, Role } from '@artemis/shared';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
+import { OnboardingBackButton } from '@/components/onboarding/OnboardingBackButton';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
-import { ArrowRightIcon, SpinnerIcon } from '@/components/ui/icons';
+import { ArrowLeftIcon, ArrowRightIcon, SpinnerIcon } from '@/components/ui/icons';
 import { useOnboardingState, usePatchOnboarding } from '@/hooks/useOnboarding';
 import { useAuthStore } from '@/store/authStore';
 import { extractApiError } from '@/hooks/useAuth';
@@ -141,7 +142,8 @@ export default function RolePage() {
 
           {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-between gap-3 pt-2">
+            <OnboardingBackButton to="/" />
             <Button type="submit" disabled={!canSubmitName || patch.isPending}>
               {patch.isPending ? (
                 <span className="inline-flex items-center gap-2">
@@ -205,9 +207,14 @@ export default function RolePage() {
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
       <div className="flex items-center justify-between gap-3 pt-2">
+        {/* The role stage is reached either from /onboarding via the name
+            stage, or from a re-entry where displayName already exists. Use
+            an inline Back styled identically to OnboardingBackButton so the
+            two-stage flow stays intact without leaning on navigate(-1). */}
         <Button
           variant="outline"
           size="md"
+          type="button"
           onClick={() => {
             if (stateQuery.data?.displayName) {
               navigate('/');
@@ -216,7 +223,9 @@ export default function RolePage() {
             }
           }}
         >
-          Back
+          <span className="inline-flex items-center gap-2">
+            <ArrowLeftIcon /> Back
+          </span>
         </Button>
         <Button size="md" onClick={submitRole} disabled={!canSubmitRole || patch.isPending}>
           {patch.isPending ? (

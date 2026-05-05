@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Goal } from '@artemis/shared';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
+import { OnboardingBackButton } from '@/components/onboarding/OnboardingBackButton';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { Button } from '@/components/ui/Button';
@@ -75,7 +76,8 @@ export default function GoalPage() {
 
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <OnboardingBackButton to="/onboarding/role" />
         <Button onClick={next} disabled={!goal || patch.isPending}>
           {patch.isPending ? (
             <span className="inline-flex items-center gap-2">
