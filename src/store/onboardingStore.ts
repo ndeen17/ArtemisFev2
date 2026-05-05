@@ -54,16 +54,14 @@ export const stepToPath: Record<OnboardingStep, string> = {
   goal: '/onboarding/goal',
   cv: '/onboarding/cv',
   // Legacy step — server normalises `no_cv` → `cv_builder_questionnaire` on
-  // read, but we keep an entry here so the type stays exhaustive. This points
-  // at the same URL as `cv_builder_questionnaire` (the merged builder's
-  // basics page) so any code path that still surfaces `no_cv` resolves
-  // sensibly. The non-injectivity is deliberate: lookups in the gate use
-  // STEP_ORDER which collapses both onto the same index.
-  no_cv: '/onboarding/cv/basics',
-  // Step 2 of the merged builder: optional JD tailoring.
-  cv_builder_jd: '/onboarding/cv/jd',
-  // Step 1 of the merged builder: capture basics.
-  cv_builder_questionnaire: '/onboarding/cv/basics',
+  // read. Both legacy steps and the deprecated questionnaire/jd steps now
+  // resolve to the unified conversational builder URL. The non-injectivity
+  // here is deliberate: STEP_ORDER in the gate collapses them onto the same
+  // index and the URL is the same regardless of which legacy step the
+  // server still has persisted.
+  no_cv: '/onboarding/cv/builder',
+  cv_builder_jd: '/onboarding/cv/builder',
+  cv_builder_questionnaire: '/onboarding/cv/builder',
   linkedin: '/onboarding/linkedin',
   complete: '/onboarding/complete',
 };

@@ -233,3 +233,21 @@ export function useCvCoach() {
     mutationFn: (input: import('@artemis/shared').CvCoachRequest) => cvApi.coach(input),
   });
 }
+
+export function useCvBuilderChat() {
+  return useMutation({
+    mutationFn: (input: import('@artemis/shared').CvBuilderChatRequest) =>
+      cvApi.builderChat(input),
+  });
+}
+
+export function useCreateBlankCv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (opts: { fullName?: string }) => cvApi.createBlank(opts),
+    onSuccess() {
+      void qc.invalidateQueries({ queryKey: CV_KEY });
+      void qc.invalidateQueries({ queryKey: ['onboarding'] });
+    },
+  });
+}

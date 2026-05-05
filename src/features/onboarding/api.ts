@@ -3,6 +3,8 @@ import type {
   BulletPath,
   BulletRewriteResponse,
   CvCoachRequest,
+  CvBuilderChatRequest,
+  CvBuilderChatResponse,
   CvDetail,
   CvFromAnswersInput,
   CvFromJdInput,
@@ -107,6 +109,16 @@ export const cvApi = {
   async coach(input: CvCoachRequest): Promise<string> {
     const res = await apiClient.post<{ reply: string }>('/cv/coach', input);
     return res.data.reply;
+  },
+  /** Builder flow: create an empty CV record (idempotent — returns existing if any). */
+  async createBlank(opts: { fullName?: string } = {}): Promise<CvDetail> {
+    const res = await apiClient.post<{ cv: CvDetail }>('/cv/blank', opts);
+    return res.data.cv;
+  },
+  /** Builder flow: stateless multi-turn chat with structured actions. */
+  async builderChat(input: CvBuilderChatRequest): Promise<CvBuilderChatResponse> {
+    const res = await apiClient.post<CvBuilderChatResponse>('/cv/builder-chat', input);
+    return res.data;
   },
   pdfUrl(cvId: string): string {
     return `/cv/${cvId}/pdf`;

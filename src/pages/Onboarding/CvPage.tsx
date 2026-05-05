@@ -69,10 +69,10 @@ export default function CvPage() {
   async function dontHaveOne() {
     setError(null);
     try {
-      // Skip the legacy "no CV" chooser — the merged builder always starts
-      // with the basics step, then offers an optional JD-tailoring step.
+      // Conversational builder — single page with editor + AI chat. Replaces
+      // the legacy questionnaire + JD-paste pages.
       await patch.mutateAsync({ onboardingStep: 'cv_builder_questionnaire' });
-      navigate('/onboarding/cv/basics');
+      navigate('/onboarding/cv/builder');
     } catch (err) {
       setError(extractApiError(err).message);
     }

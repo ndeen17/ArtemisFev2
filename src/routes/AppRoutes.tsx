@@ -70,10 +70,7 @@ const ResetPasswordPage = lazyWithRetry(() => import('@/pages/Auth/ResetPassword
 const RolePage = lazyWithRetry(() => import('@/pages/Onboarding/RolePage'));
 const GoalPage = lazyWithRetry(() => import('@/pages/Onboarding/GoalPage'));
 const CvPage = lazyWithRetry(() => import('@/pages/Onboarding/CvPage'));
-const CvBuilderJdPage = lazyWithRetry(() => import('@/pages/Onboarding/CvBuilderJdPage'));
-const CvBuilderQuestionnairePage = lazyWithRetry(
-  () => import('@/pages/Onboarding/CvBuilderQuestionnairePage'),
-);
+const CvBuilderPage = lazyWithRetry(() => import('@/pages/Onboarding/CvBuilderPage'));
 const CvEditPage = lazyWithRetry(() => import('@/pages/Onboarding/CvEditPage'));
 const ProfileCvEditPage = lazyWithRetry(() => import('@/pages/Profile/CvEditPage'));
 const LinkedInPage = lazyWithRetry(() => import('@/pages/Onboarding/LinkedInPage'));
@@ -144,31 +141,26 @@ const router = createBrowserRouter([
   },
   {
     path: '/onboarding/no-cv',
-    // Legacy chooser path — the merged builder always starts at /basics now.
-    // Kept as a redirect so any user mid-flow with this URL bookmarked or
-    // saved as their server-side onboardingStep lands in the right place.
-    element: <Navigate to="/onboarding/cv/basics" replace />,
+    // Legacy chooser path — the merged builder always starts at the builder now.
+    element: <Navigate to="/onboarding/cv/builder" replace />,
   },
   {
+    // Legacy: paste-JD path replaced by the conversational builder.
     path: '/onboarding/cv/jd',
-    element: (
-      <OnboardingGate>
-        <CvBuilderJdPage />
-      </OnboardingGate>
-    ),
+    element: <Navigate to="/onboarding/cv/builder" replace />,
   },
   {
+    // Legacy: questionnaire path replaced by the conversational builder.
     path: '/onboarding/cv/basics',
-    element: (
-      <OnboardingGate>
-        <CvBuilderQuestionnairePage />
-      </OnboardingGate>
-    ),
+    element: <Navigate to="/onboarding/cv/builder" replace />,
   },
   {
-    // Legacy path (pre-merge) — some users may have it open on a stale tab.
     path: '/onboarding/cv/builder',
-    element: <Navigate to="/onboarding/cv/basics" replace />,
+    element: (
+      <OnboardingGate>
+        <CvBuilderPage />
+      </OnboardingGate>
+    ),
   },
   {
     path: '/onboarding/cv/edit',

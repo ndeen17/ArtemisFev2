@@ -27,10 +27,11 @@ const STEP_ORDER: Record<OnboardingStep, number> = {
 };
 
 function stepForPath(pathname: string): OnboardingStep | null {
-  // Multiple steps can share the same URL (e.g. `/onboarding/cv/basics` is
-  // shared by `cv_builder_questionnaire` and the legacy `no_cv`). Pick the
-  // canonical (current) step where there's overlap so STEP_ORDER comparisons
-  // line up with the user's actual progress on the server.
+  // Multiple steps can share the same URL — the unified CV builder URL
+  // (`/onboarding/cv/builder`) is the canonical destination for all the
+  // CV-builder-flavour steps. Pick the canonical (current) step where
+  // there's overlap so STEP_ORDER comparisons line up with the user's
+  // actual progress on the server.
   const PREFER: OnboardingStep[] = [
     'role',
     'goal',
