@@ -26,6 +26,7 @@ export function SplitPaneShell({
   right,
   rightTitle,
   rightSubtitle,
+  onPreview,
 }: {
   open: boolean;
   onClose: () => void;
@@ -33,6 +34,9 @@ export function SplitPaneShell({
   right: React.ReactNode;
   rightTitle: string;
   rightSubtitle?: string;
+  /** Optional Preview action surfaced in the header next to Close. Hosts wire
+   *  this to a navigate() so the action is impossible to miss. */
+  onPreview?: () => void;
 }) {
   const dirty = useBuilderDirty((s) => s.dirty);
 
@@ -86,13 +90,16 @@ export function SplitPaneShell({
   }, [open]);
 
   return (
-    <>
-      {/* When the builder is closed, only the page content renders inline.
-          When it's open the page content steps aside entirely \u2014 the builder
-          takes the full content width at every breakpoint so the editor isn't
-          cramped into a 1.4fr column. The host page also collapses the
-          sidebar (see AppShell) so the user gets the full viewport. */}
-      {open ? null : <div className="min-w-0">{left}</div>}
+    <div
+      className={cn(
+        'grid gap-6 grid-cols-1',
+        // On xl+ keep the left column (action plan, etc.) visible alongside
+        // the builder so the user can keep scanning their plan while editing.
+        // The builder gets the larger 1.4fr share but never the full breadth.
+        open ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]' : '',
+      )}
+    >
+      <div className="min-w-0">{left}</div>
       {open ? (
         <aside
           className={cn(
@@ -128,16 +135,32 @@ export function SplitPaneShell({
                   <p className="mt-0.5 truncate text-[12px] text-gray-500">{rightSubtitle}</p>
                 ) : null}
               </div>
-              <Button variant="ghost" onClick={guardedClose} aria-label="Close builder">
-                Close
-              </Button>
+              <div className="flex items-center gap-2 shrink-0">
+                {onPreview ? (
+                  <Button
+                    variant="outline"
+                    onClick={onPreview}
+                    aria-label="Preview CV"
+                    title="See the printable version of your CV"
+                  >
+                    Preview
+                  </Button>
+                ) : null}
+                <Button variant="ghost" onClick={guardedClose} aria-label="Close builder">
+                  Close
+                </Button>
+              </div>
             </header>
-            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 xl:overflow-visible">
+            {/* Below xl this scroller carries the sheet content. On xl+ we
+                rely on the page's own scroll so the editor flows to its full
+                vertical length next to the action plan, never capped at the
+                viewport height. */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 xl:flex-none xl:overflow-visible">
               {right}
             </div>
           </div>
         </aside>
       ) : null}
-    </>
+    </div>
   );
 }

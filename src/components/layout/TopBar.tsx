@@ -1,4 +1,3 @@
-import { useAuthStore } from '@/store/authStore';
 import { MenuIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/cn';
 
@@ -15,8 +14,6 @@ interface TopBarProps {
 }
 
 export function TopBar({ title, subtitle, onOpenSidebar, alwaysShowMenu = false }: TopBarProps) {
-  const user = useAuthStore((s) => s.user);
-
   return (
     <header className="sticky top-0 z-20 bg-[#fafafa]/95 backdrop-blur border-b border-gray-100">
       <div className="flex items-center justify-between gap-4 h-16 px-4 sm:px-6 lg:px-10">
@@ -53,11 +50,9 @@ export function TopBar({ title, subtitle, onOpenSidebar, alwaysShowMenu = false 
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Sign out lives in Settings → Profile (Account section) — having two
-              entry points was noisy and a fat-finger risk on mobile. */}
-          <span className="text-[13px] text-gray-500 hidden sm:inline truncate max-w-[180px]">
-            {user?.email}
-          </span>
+          {/* The user email used to live here, but Sign out (and the email)
+              now live in Settings → Profile. Two entry points was noisy and a
+              fat-finger risk on mobile, and the email itself was clutter. */}
         </div>
       </div>
     </header>

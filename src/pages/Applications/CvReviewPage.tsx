@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { SplitPaneShell } from '@/components/layout/SplitPaneShell';
 import { BuilderPanel } from '@/components/cv/BuilderPanel';
@@ -42,6 +42,8 @@ export default function CvReviewPage() {
   const [refineOpen, setRefineOpen] = useState(false);
   const reparsedRef = useRef(false);
   const builder = useBuilderUrlState();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Auto-reparse on first open if the targeted CV has no structured payload
   // (legacy targets created before structured was persisted, or AI returned
@@ -111,6 +113,12 @@ export default function CvReviewPage() {
         rightSubtitle={
           app ? `${app.jobTitle} · ${app.company}` : undefined
         }
+        onPreview={() => {
+          const back = `${location.pathname}${location.search}`;
+          navigate(
+            `/applications/${id}/cv-review/preview?back=${encodeURIComponent(back)}`,
+          );
+        }}
         right={
           <BuilderPanel
             mode="targeted"

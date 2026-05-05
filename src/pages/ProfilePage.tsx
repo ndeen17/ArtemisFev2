@@ -1,4 +1,4 @@
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { SplitPaneShell } from '@/components/layout/SplitPaneShell';
 import { ProfileOverviewCard } from '@/components/profile/ProfileOverviewCard';
@@ -29,6 +29,8 @@ export default function ProfilePage() {
   const overview = useProfileOverview();
   const plan = useActionPlan();
   const builder = useBuilderUrlState();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   if (overview.data?.firstReveal) {
     return <Navigate to="/profile/score-reveal" replace />;
@@ -116,6 +118,10 @@ export default function ProfilePage() {
         onClose={builder.close}
         rightTitle="Edit your CV"
         rightSubtitle="Changes save to your canonical CV."
+        onPreview={() => {
+          const back = `${location.pathname}${location.search}`;
+          navigate(`/profile/cv/preview?back=${encodeURIComponent(back)}`);
+        }}
         left={left}
         right={
           <BuilderPanel
