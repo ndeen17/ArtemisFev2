@@ -147,7 +147,7 @@ export default function CvEditPage() {
     }
   }
 
-  if (cvQuery.isLoading || draft === null) {
+  if (cvQuery.isLoading || (draft === null && !!cvQuery.data)) {
     return (
       <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
         <div className="flex items-center gap-2 text-gray-500">
@@ -156,6 +156,44 @@ export default function CvEditPage() {
       </OnboardingLayout>
     );
   }
+
+  // Async generation kicked off by /cv/from-{questionnaire,jd} runs in the
+  // background to dodge the rewrite-proxy timeout. Show a clear "drafting"
+  // state until cvGenerationStatus flips back to 'idle' or 'failed'.
+  if (!cvQuery.data && isGenerating) {
+    return (
+      <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
+        <StepHeader
+          eyebrow="Your CV draft"
+          title="Drafting your CV…"
+          subtitle="This usually takes 20–40 seconds. You can leave this page open — we'll bring you straight to the editor when it's ready."
+        />
+        <div className="flex items-center gap-2 text-gray-600 text-[14px]">
+          <SpinnerIcon className="animate-spin w-4 h-4" />
+          Working on it…
+        </div>
+      </OnboardingLayout>
+    );
+  }
+
+  if (!cvQuery.data && generationFailed) {
+    return (
+      <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
+        <StepHeader
+          eyebrow="Your CV draft"
+          title="We couldn't finish drafting your CV."
+          subtitle="The AI couldn't complete the draft this time. Head back and try again — your answers are still saved."
+        />
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13.5px] text-rose-900 leading-relaxed">
+          {genError ?? 'Something went wrong while generating your CV. Please try again.'}
+        </div>
+        <div>
+          <Button onClick={() => navigate('/onboarding/cv')}>Go back and try again</Button>
+        </div>
+      </OnboardingLayout>
+    );
+  }
+
   if (!cvQuery.data) {
     return (
       <OnboardingLayout step={3} backTo="/onboarding/cv" wide>
@@ -165,6 +203,10 @@ export default function CvEditPage() {
       </OnboardingLayout>
     );
   }
+
+  // The "loading draft" branch above guards `draft === null && cvQuery.data`,
+  // so by this point both are populated. Narrow for TS.
+  if (draft === null) return null;
 
   return (
     <OnboardingLayout step={3} backTo="/onboarding/cv" wide>

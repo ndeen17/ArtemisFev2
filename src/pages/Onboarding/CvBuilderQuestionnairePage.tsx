@@ -46,6 +46,30 @@ export default function CvBuilderQuestionnairePage() {
   const expArray = useFieldArray({ control: form.control, name: 'experience' });
   const eduArray = useFieldArray({ control: form.control, name: 'education' });
   const skills = form.watch('skills');
+  const summary = form.watch('summary') ?? '';
+  const headline = form.watch('headline') ?? '';
+  const watchedExperience = form.watch('experience');
+
+  /**
+   * Soft signal-counter — informational only, never blocks the submit.
+   *
+   * The AI prompts cope reasonably with sparse input but the resulting CV
+   * reads thin. If the user's giving us almost nothing to go on, surface a
+   * gentle nudge so they fill in the obvious gaps before we burn an AI
+   * call. Threshold is deliberately forgiving: a couple of meaningful
+   * fields are enough to avoid the warning.
+   */
+  const filledRoles = (watchedExperience ?? []).filter(
+    (e) => e.title?.trim() && e.company?.trim(),
+  ).length;
+  const summaryChars = summary.trim().length;
+  const headlineChars = headline.trim().length;
+  const signalScore =
+    (summaryChars >= 80 ? 2 : summaryChars >= 30 ? 1 : 0) +
+    (headlineChars >= 10 ? 1 : 0) +
+    (filledRoles >= 2 ? 2 : filledRoles >= 1 ? 1 : 0) +
+    (skills.length >= 5 ? 2 : skills.length >= 2 ? 1 : 0);
+  const lowSignal = signalScore < 3;
 
   function addSkill() {
     const v = skillsInput.trim();
@@ -280,6 +304,14 @@ export default function CvBuilderQuestionnairePage() {
         </section>
 
         {topError ? <div className="text-[13px] text-red-600">{topError}</div> : null}
+
+        {lowSignal ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13.5px] text-amber-900 leading-relaxed">
+            <span className="font-semibold">We can still build something, but it'll be light.</span>{' '}
+            A short summary, a headline and a couple of skills give the AI a lot more to work with.
+            You can continue anyway and refine in the editor.
+          </div>
+        ) : null}
 
         <div className="flex justify-end pt-2">
           <Button type="submit" disabled={patch.isPending}>
