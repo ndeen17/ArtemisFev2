@@ -7,19 +7,30 @@ import {
 } from '@artemis/shared';
 import { Button } from '@/components/ui/Button';
 import { useEndInterview, useOpenInterview, useVoiceQuota } from '@/hooks/useInterviews';
+import {
+  REALTIME_VOICE_OPTIONS,
+  REALTIME_VAD_OPTIONS,
+  RealtimeVoiceLabels,
+  RealtimeVadLabels,
+  readVoiceSettings,
+  writeVoiceSettings,
+  type RealtimeVoice,
+  type RealtimeVadSensitivity,
+} from '@/features/interviews/voiceSettings';
 
 interface InterviewBriefCardProps {
   interview: InterviewSession;
 }
 
 /**
- * Phase 8B/8D — Brief screen. Shown when status='briefed' and transcript is empty.
+ * Phase 8B/8D/8G — Brief screen. Shown when status='briefed' and transcript is empty.
  *
  * Text mode: "Start" calls /open which generates the opening interviewer turn
  * and flips status to 'live'.
- * Voice mode: "Start" optimistically flips the local query cache to 'live' so
- * the detail page swaps to <InterviewVoiceChat>. The WebSocket gateway will
- * then transition the server-side status itself when the connection opens.
+ * Voice mode: user picks Norah's voice + VAD sensitivity, then "Start"
+ * optimistically flips the local query cache to 'live'. The voice chat
+ * component reads back the saved settings from sessionStorage and mints the
+ * actual realtime session via `POST /interviews/:id/realtime/session`.
  */
 export function InterviewBriefCard({ interview }: InterviewBriefCardProps) {
   const open = useOpenInterview(interview.id);
@@ -28,6 +39,9 @@ export function InterviewBriefCard({ interview }: InterviewBriefCardProps) {
   const isVoice = interview.mode === 'voice';
   const voiceQuota = useVoiceQuota();
   const [error, setError] = useState<string | null>(null);
+  const initial = readVoiceSettings(interview.id);
+  const [voice, setVoice] = useState<RealtimeVoice>(initial.voice);
+  const [vad, setVad] = useState<RealtimeVadSensitivity>(initial.vad);
 
   const brief = interview.brief;
   if (!brief) return null;
@@ -35,6 +49,7 @@ export function InterviewBriefCard({ interview }: InterviewBriefCardProps) {
   async function handleStart() {
     setError(null);
     if (isVoice) {
+      writeVoiceSettings(interview.id, { voice, vad });
       qc.setQueryData(['interview', interview.id], {
         ...interview,
         status: 'live' as const,
@@ -104,15 +119,71 @@ export function InterviewBriefCard({ interview }: InterviewBriefCardProps) {
         </ul>
       </section>
 
+      {isVoice && (
+        <section className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8">
+          <h3 className="text-[14px] font-semibold text-[#111827]">Voice settings</h3>
+          <p className="mt-1 text-[12px] text-gray-500">
+            Pick how Norah sounds and how quickly she responds.
+          </p>
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="text-[12px] font-semibold text-gray-700 mb-2">Voice</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {REALTIME_VOICE_OPTIONS.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setVoice(v)}
+                    className={[
+                      'rounded-2xl border px-3 py-2 text-left text-[12px] transition',
+                      voice === v
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300',
+                    ].join(' ')}
+                  >
+                    <span className="block font-semibold capitalize">{v}</span>
+                    <span className="block text-[11px] text-gray-500">
+                      {RealtimeVoiceLabels[v].replace(/^[a-z]+\s*—\s*/i, '')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold text-gray-700 mb-2">Response sensitivity</p>
+              <div className="flex flex-wrap gap-2">
+                {REALTIME_VAD_OPTIONS.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setVad(v)}
+                    className={[
+                      'rounded-full px-3 py-1.5 text-[12px] border transition',
+                      vad === v
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300',
+                    ].join(' ')}
+                    title={RealtimeVadLabels[v]}
+                  >
+                    {v === 'low' ? 'Patient' : v === 'high' ? 'Snappy' : 'Balanced'}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-gray-500">{RealtimeVadLabels[vad]}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {error && <p className="text-[13px] text-rose-600">{error}</p>}
 
       {isVoice && (
         <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-[12px] text-gray-700">
           {remainingMin == null
-            ? 'Voice mode: realtime spoken interview. We&apos;ll ask for microphone access when you start.'
+            ? 'Voice mode: realtime spoken interview. We\u2019ll ask for microphone access when you start.'
             : voiceBlocked
-              ? 'You have used today\u2019s 60 minutes of voice practice. Try again tomorrow or switch to text mode.'
-              : `Voice mode · ${remainingMin} min left today (60 min/day cap).`}
+              ? 'You have used today\u2019s voice practice minutes. Try again tomorrow or switch to text mode.'
+              : `Voice mode · ${remainingMin} min left today.`}
         </div>
       )}
 
@@ -131,3 +202,4 @@ export function InterviewBriefCard({ interview }: InterviewBriefCardProps) {
     </div>
   );
 }
+

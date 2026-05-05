@@ -4,6 +4,9 @@ import type {
   InterviewSession,
   InterviewSessionSummary,
   PostTurnInput,
+  RealtimeSessionRequest,
+  RealtimeSessionResponse,
+  RealtimeTranscriptBatch,
 } from '@artemis/shared';
 import { apiClient } from '@/lib/apiClient';
 
@@ -45,6 +48,25 @@ export const interviewApi = {
     const res = await apiClient.get<{ quota: VoiceQuota }>('/interviews/voice-quota');
     return res.data.quota;
   },
+  /** Phase 8G — mint an OpenAI ephemeral key for direct browser↔OpenAI WebRTC. */
+  async realtimeSession(
+    id: string,
+    input: RealtimeSessionRequest = {},
+  ): Promise<RealtimeSessionResponse> {
+    const res = await apiClient.post<RealtimeSessionResponse>(
+      `/interviews/${id}/realtime/session`,
+      input,
+    );
+    return res.data;
+  },
+  /** Phase 8G — batched persist of finalised transcript turns from WebRTC. */
+  async realtimeTranscript(id: string, input: RealtimeTranscriptBatch): Promise<InterviewSession> {
+    const res = await apiClient.post<{ interview: InterviewSession }>(
+      `/interviews/${id}/realtime/transcript`,
+      input,
+    );
+    return res.data.interview;
+  },
 };
 
 export interface VoiceQuota {
@@ -53,3 +75,4 @@ export interface VoiceQuota {
   usedSec: number;
   remainingSec: number;
 }
+
