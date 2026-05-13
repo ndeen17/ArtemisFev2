@@ -40,6 +40,33 @@ function syncAuthStep(qc: ReturnType<typeof useQueryClient>, state: OnboardingSt
   qc.setQueryData(KEY, state);
 }
 
+/**
+ * Optimistically advance the auth store's onboardingStep without waiting for a
+ * server roundtrip. Used right after a CV mutation succeeds: the BE has already
+ * advanced the step, so we want the FE gate to reflect that immediately even if
+ * the subsequent state refetch races with a cold-start auth refresh.
+ */
+function nudgeAuthStep(step: OnboardingState['onboardingStep']) {
+  const auth = useAuthStore.getState();
+  if (auth.user && auth.user.onboardingStep !== step) {
+    auth.setUser({ ...auth.user, onboardingStep: step });
+  }
+}
+
+/** Best-effort fetch of onboarding state with a small retry to absorb cold-start auth races. */
+async function refetchOnboardingState(
+  qc: ReturnType<typeof useQueryClient>,
+): Promise<OnboardingState | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
+    } catch {
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 600));
+    }
+  }
+  return null;
+}
+
 export function usePatchOnboarding() {
   const qc = useQueryClient();
   const hydrate = useOnboardingStore((s) => s.hydrate);
@@ -79,11 +106,13 @@ export function useUploadCv() {
       void qc.invalidateQueries({ queryKey: ['analysis', 'latest'] });
       void qc.invalidateQueries({ queryKey: ['profile', 'overview'] });
       void qc.invalidateQueries({ queryKey: ['dashboard'] });
-      // The backend advances onboardingStep to 'linkedin' on upload. Refetch
-      // onboarding state and mirror it into the auth store so the route gate
-      // doesn't bounce the user back to /onboarding/cv.
-      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
-      syncAuthStep(qc, state);
+      // The backend advances onboardingStep to 'linkedin' on upload. Mirror that
+      // optimistically into the auth store so the route gate doesn't bounce the
+      // user back to /onboarding/cv even if the subsequent refetch races with a
+      // cold-start auth refresh.
+      nudgeAuthStep('linkedin');
+      const state = await refetchOnboardingState(qc);
+      if (state) syncAuthStep(qc, state);
     },
   });
 }
@@ -94,8 +123,9 @@ export function useGenerateCvFromJd() {
     mutationFn: cvApi.fromJd,
     async onSuccess() {
       void qc.invalidateQueries({ queryKey: CV_KEY });
-      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
-      syncAuthStep(qc, state);
+      nudgeAuthStep('linkedin');
+      const state = await refetchOnboardingState(qc);
+      if (state) syncAuthStep(qc, state);
     },
   });
 }
@@ -106,8 +136,9 @@ export function useGenerateCvFromQuestionnaire() {
     mutationFn: cvApi.fromQuestionnaire,
     async onSuccess() {
       void qc.invalidateQueries({ queryKey: CV_KEY });
-      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
-      syncAuthStep(qc, state);
+      nudgeAuthStep('linkedin');
+      const state = await refetchOnboardingState(qc);
+      if (state) syncAuthStep(qc, state);
     },
   });
 }

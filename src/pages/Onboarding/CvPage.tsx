@@ -66,6 +66,20 @@ export default function CvPage() {
     }
   }
 
+  async function handleContinue() {
+    setError(null);
+    try {
+      // Idempotent PATCH guarantees the BE + auth store have onboardingStep='linkedin'
+      // before navigating, so OnboardingGate can't boomerang the user back here
+      // when the auth store is stale (returning users, or the post-upload refetch
+      // lost a cold-start race).
+      await patch.mutateAsync({ onboardingStep: 'linkedin' });
+      navigate('/onboarding/linkedin');
+    } catch (err) {
+      setError(extractApiError(err).message);
+    }
+  }
+
   async function dontHaveOne() {
     setError(null);
     try {
@@ -117,8 +131,8 @@ export default function CvPage() {
               Cancel replace
             </Button>
           ) : (
-            <Button onClick={() => navigate('/onboarding/linkedin')} size="sm">
-              Continue
+            <Button onClick={handleContinue} size="sm" disabled={patch.isPending}>
+              {patch.isPending ? 'Saving…' : 'Continue'}
             </Button>
           )
         ) : (
