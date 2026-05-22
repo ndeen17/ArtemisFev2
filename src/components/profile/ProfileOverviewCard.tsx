@@ -29,7 +29,7 @@ export function ProfileOverviewCard({ overview, isLoading }: Props) {
     return (
       <Card>
         <div className="flex items-center gap-2 text-[14px] text-gray-500">
-          <SpinnerIcon className="animate-spin" /> Loading profile…
+          <SpinnerIcon className="animate-spin" /> Loading resume…
         </div>
       </Card>
     );
@@ -42,7 +42,7 @@ export function ProfileOverviewCard({ overview, isLoading }: Props) {
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
-            Profile readiness
+            Resume readiness
           </div>
           <h2 className="mt-1 text-[24px] sm:text-[28px] font-extrabold tracking-tight text-[#111827] leading-[1.15]">
             {overview.readinessScore !== null ? `${overview.readinessScore}/100` : 'No score yet'}

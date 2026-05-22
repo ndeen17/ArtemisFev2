@@ -23,7 +23,7 @@ const items: NavItem[] = [
   // The route stays /dashboard so deep links / bookmarks keep working — only
   // the visible label changes to "Home" per the product copy update.
   { to: '/dashboard', label: 'Home', icon: HomeIcon },
-  { to: '/profile', label: 'Profile', icon: UserIcon },
+  { to: '/profile', label: 'Resume', icon: UserIcon },
   { to: '/applications', label: 'Applications', icon: BriefcaseIcon },
   { to: '/interviews', label: 'Interviews', icon: MicIcon },
   { to: '/settings/profile', label: 'Settings', icon: SettingsIcon },
@@ -114,7 +114,7 @@ export function Sidebar({ open, onClose, collapsed = false }: SidebarProps) {
             Build status
           </p>
           <p className="text-[12px] text-gray-500 leading-snug">
-            Profile, applications, and text-mode mock interviews are live. Voice mode ships next.
+            Resume, applications, and text-mode mock interviews are live. Voice mode ships next.
           </p>
         </div>
       </aside>

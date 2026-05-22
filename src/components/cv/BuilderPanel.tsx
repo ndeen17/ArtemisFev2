@@ -161,7 +161,7 @@ function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProp
   if (!cvQuery.data) {
     return (
       <p className="text-[14px] text-gray-600">
-        You don&apos;t have a CV yet. Upload one from your profile to start editing.
+        You don&apos;t have a CV yet. Upload one from your resume to start editing.
       </p>
     );
   }

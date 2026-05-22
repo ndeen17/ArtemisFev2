@@ -112,7 +112,7 @@ export default function ProfilePage() {
   );
 
   return (
-    <AppShell title="Profile" subtitle="Your CV, your scores, and what to do next">
+    <AppShell title="Resume" subtitle="Your CV, your scores, and what to do next">
       <SplitPaneShell
         open={builder.state.isOpen}
         onClose={builder.close}
@@ -234,7 +234,7 @@ function CompactReadinessChip({
     <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
       <div className="min-w-0">
         <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-green">
-          Profile readiness
+          Resume readiness
         </div>
         <div className="mt-0.5 flex items-baseline gap-2">
           <span className="text-[22px] font-extrabold tabular-nums text-[#111827]">

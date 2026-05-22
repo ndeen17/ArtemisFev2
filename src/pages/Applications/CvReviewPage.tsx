@@ -150,7 +150,7 @@ export default function CvReviewPage() {
 
       {target.isError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-[13px] text-rose-700">
-          Could not generate. Make sure you have a CV uploaded on the Profile page, then try again.
+          Could not generate. Make sure you have a CV uploaded on the Resume page, then try again.
         </div>
       )}
 

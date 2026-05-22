@@ -52,7 +52,7 @@ export default function DashboardPage() {
     toast.push({
       tone: 'info',
       title: 'Your CV is still a starter draft',
-      description: 'Polish it whenever you’re ready from Profile → Edit CV.',
+      description: 'Polish it whenever you’re ready from Resume → Edit CV.',
       durationMs: 8000,
     });
   }, [toast]);
@@ -139,7 +139,7 @@ export default function DashboardPage() {
             to="/profile"
             className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 px-5 py-2.5 text-[14px] font-semibold text-[#111827] hover:bg-gray-50"
           >
-            Open profile
+            Open resume
           </Link>
         </div>
       </div>
@@ -204,7 +204,7 @@ function CvSummaryCard({
           to="/profile"
           className="inline-flex items-center gap-1 rounded-full bg-[#fafafa] border border-gray-100 px-4 py-2 text-[13px] font-semibold text-[#111827] hover:bg-gray-100"
         >
-          Open profile
+          Open resume
         </Link>
       </div>
     </section>

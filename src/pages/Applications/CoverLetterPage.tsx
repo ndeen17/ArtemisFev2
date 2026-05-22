@@ -28,7 +28,7 @@ export default function CoverLetterPage() {
 
       {(draft.isError || edit.isError) && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-[13px] text-rose-700">
-          Something went wrong. Make sure you have a CV uploaded on the Profile page, then try
+          Something went wrong. Make sure you have a CV uploaded on the Resume page, then try
           again.
         </div>
       )}

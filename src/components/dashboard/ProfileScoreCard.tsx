@@ -20,7 +20,7 @@ const bandCopy = (score: number | null) => {
   if (score === null) {
     return {
       label: 'No score yet',
-      line: 'Add a CV from your profile to get your readiness score.',
+      line: 'Add a CV from your resume to get your readiness score.',
       ring: 'stroke-gray-300',
     };
   }
@@ -34,7 +34,7 @@ const bandCopy = (score: number | null) => {
   if (score >= 65) {
     return {
       label: 'Ready to apply',
-      line: 'Solid profile. Tighten the highest-severity gap to push higher.',
+      line: 'Solid resume. Tighten the highest-severity gap to push higher.',
       ring: 'stroke-emerald-400',
     };
   }
@@ -47,7 +47,7 @@ const bandCopy = (score: number | null) => {
   }
   return {
     label: 'Just getting started',
-    line: 'Polish your CV from your profile to unlock your full picture.',
+    line: 'Polish your CV from your resume to unlock your full picture.',
     ring: 'stroke-rose-400',
   };
 };
@@ -111,7 +111,7 @@ export function ProfileScoreCard({ overview, isLoading }: Props) {
 
         <div className="min-w-0">
           <div className="text-[12px] font-semibold uppercase tracking-[0.14em] text-brand-green">
-            Profile readiness
+            Resume readiness
           </div>
           <h2 className="mt-1 text-[22px] sm:text-[24px] font-extrabold tracking-tight text-[#111827] leading-[1.15]">
             {copy.label}

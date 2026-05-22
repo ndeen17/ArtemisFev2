@@ -53,7 +53,7 @@ function ProfilePreview() {
             to="/profile"
             className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#15803d] hover:underline"
           >
-            <ArrowLeftIcon className="w-4 h-4" /> Back to profile
+            <ArrowLeftIcon className="w-4 h-4" /> Back to resume
           </Link>
         </div>
       </AppShell>
