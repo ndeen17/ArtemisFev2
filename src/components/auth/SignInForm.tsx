@@ -56,7 +56,7 @@ export function SignInForm() {
     setTopError(null);
     try {
       const idToken = await getGoogleIdToken();
-      const data = await google.mutateAsync({ idToken });
+      const data = await google.mutateAsync({ idToken, intent: 'signin' });
       navigate(
         data.user.onboardingComplete
           ? '/dashboard'

@@ -61,7 +61,7 @@ export function SignUpForm() {
     setTopError(null);
     try {
       const idToken = await getGoogleIdToken();
-      const data = await google.mutateAsync({ idToken });
+      const data = await google.mutateAsync({ idToken, intent: 'signup' });
       const dest = data.user.onboardingComplete
         ? '/dashboard'
         : (stepToPath[data.user.onboardingStep] ?? '/onboarding/role');

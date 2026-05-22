@@ -23,6 +23,9 @@ export type SignInInput = z.infer<typeof SignInSchema>;
 
 export const GoogleAuthSchema = z.object({
   idToken: z.string().min(1, 'idToken required'),
+  /** Whether this Google auth call is a fresh sign-up or a sign-in for an existing account.
+   *  Sign-in MUST NOT create a new account if one doesn't exist. */
+  intent: z.enum(['signin', 'signup']),
 });
 export type GoogleAuthInput = z.infer<typeof GoogleAuthSchema>;
 
