@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { MailIcon, CheckIcon, SpinnerIcon } from '@/components/ui/icons';
 import { useResendVerification } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
+import { stepToPath } from '@/store/onboardingStore';
 
 interface VerifyEmailNoticeProps {
   email?: string;
@@ -16,8 +18,19 @@ interface VerifyEmailNoticeProps {
 export function VerifyEmailNotice({ email, verified }: VerifyEmailNoticeProps) {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const resend = useResendVerification();
+  const user = useAuthStore((s) => s.user);
 
   if (verified) {
+    // Send the user to wherever they should be: dashboard if onboarding is
+    // complete, otherwise their canonical next onboarding step. Falls back
+    // to /onboarding/role for users who aren't signed in (defensive — they
+    // shouldn't reach this card without an auth session, but a fresh tab
+    // hitting a verification link could).
+    const continueHref = user
+      ? user.onboardingComplete
+        ? '/dashboard'
+        : (stepToPath[user.onboardingStep] ?? '/onboarding/role')
+      : '/onboarding/role';
     return (
       <div className="text-center">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#dcfce7]">
@@ -29,7 +42,7 @@ export function VerifyEmailNotice({ email, verified }: VerifyEmailNoticeProps) {
         <p className="text-[15px] text-gray-600 mb-6">
           You&apos;re all set. Continue setting up your account.
         </p>
-        <Button variant="primary" size="lg" href="/onboarding/role" className="w-full">
+        <Button variant="primary" size="lg" href={continueHref} className="w-full">
           Continue
         </Button>
       </div>

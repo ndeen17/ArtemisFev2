@@ -34,9 +34,15 @@ export function SignUpForm() {
     setTopError(null);
     try {
       const data = await signUp.mutateAsync(values);
-      const dest = data.user.onboardingComplete
-        ? '/dashboard'
-        : (stepToPath[data.user.onboardingStep] ?? '/onboarding/role');
+      // Password signups land on /verify-email until they click the link.
+      // Google users (and any pre-verified accounts) skip straight ahead.
+      const needsVerification =
+        data.user.authProvider === 'password' && !data.user.emailVerified;
+      const dest = needsVerification
+        ? `/verify-email?email=${encodeURIComponent(data.user.email)}`
+        : data.user.onboardingComplete
+          ? '/dashboard'
+          : (stepToPath[data.user.onboardingStep] ?? '/onboarding/role');
       navigate(dest, { replace: true });
     } catch (err) {
       const apiErr = extractApiError(err);

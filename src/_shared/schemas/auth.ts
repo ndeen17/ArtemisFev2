@@ -32,6 +32,9 @@ export const AuthUserSchema = z.object({
   email: z.string().email(),
   displayName: z.string().nullable(),
   emailVerified: z.boolean(),
+  /** How this account authenticates. Drives the FE email-verification gate:
+   *  Google accounts are trusted as verified via Google's email_verified claim. */
+  authProvider: z.enum(['password', 'google']),
   onboardingComplete: z.boolean(),
   onboardingStep: OnboardingStepSchema,
 });

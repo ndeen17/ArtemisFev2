@@ -4,6 +4,8 @@ import { AuthLayout } from '@/components/layout/AuthLayout';
 import { VerifyEmailNotice } from '@/components/auth/VerifyEmailNotice';
 import { SpinnerIcon } from '@/components/ui/icons';
 import { useVerifyEmail } from '@/hooks/useAuth';
+import { authApi } from '@/features/auth/api';
+import { useAuthStore } from '@/store/authStore';
 
 /**
  * /verify-email
@@ -14,7 +16,11 @@ import { useVerifyEmail } from '@/hooks/useAuth';
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const token = params.get('token');
-  const emailParam = params.get('email') ?? undefined;
+  const storedUser = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  // Prefer the explicit ?email= query (set on post-signup redirect), then
+  // fall back to whatever the auth store knows about the current user.
+  const emailParam = params.get('email') ?? storedUser?.email ?? undefined;
   const verify = useVerifyEmail();
   const [status, setStatus] = useState<'idle' | 'verifying' | 'verified' | 'error'>(
     token ? 'verifying' : 'idle',
@@ -25,7 +31,19 @@ export default function VerifyEmailPage() {
     let cancelled = false;
     verify
       .mutateAsync({ token })
-      .then(() => !cancelled && setStatus('verified'))
+      .then(async () => {
+        if (cancelled) return;
+        // Refresh the auth store so `emailVerified` flips to true and the
+        // route gates release. Swallow failures — the user can re-auth if
+        // /auth/me fails for some reason (cold-start race etc.).
+        try {
+          const me = await authApi.me();
+          if (!cancelled) setUser(me.user);
+        } catch {
+          /* ignore — gate will re-check on next navigation */
+        }
+        if (!cancelled) setStatus('verified');
+      })
       .catch(() => !cancelled && setStatus('error'));
     return () => {
       cancelled = true;

@@ -80,6 +80,21 @@ apiClient.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
     const original = error.config as RetriableConfig | undefined;
+    // 403 EMAIL_NOT_VERIFIED — the BE is telling us the signed-in user
+    // hasn't verified their email. Redirect to the verify-email page so the
+    // user can resend / complete verification. We don't return Promise.reject
+    // unconditionally because some callers (e.g. mutations) might surface a
+    // confusing error toast; the navigation will unmount them shortly anyway.
+    if (error.response?.status === 403) {
+      const body = error.response.data as { error?: string } | undefined;
+      if (
+        body?.error === 'EMAIL_NOT_VERIFIED' &&
+        typeof window !== 'undefined' &&
+        window.location.pathname !== '/verify-email'
+      ) {
+        window.location.assign('/verify-email');
+      }
+    }
     if (!original || error.response?.status !== 401 || original._retry) {
       return Promise.reject(error);
     }

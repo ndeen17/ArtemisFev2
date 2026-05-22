@@ -34,10 +34,14 @@ export function SignInForm() {
     setTopError(null);
     try {
       const data = await signIn.mutateAsync(values);
+      const needsVerification =
+        data.user.authProvider === 'password' && !data.user.emailVerified;
       navigate(
-        data.user.onboardingComplete
-          ? '/dashboard'
-          : (stepToPath[data.user.onboardingStep] ?? '/onboarding/role'),
+        needsVerification
+          ? `/verify-email?email=${encodeURIComponent(data.user.email)}`
+          : data.user.onboardingComplete
+            ? '/dashboard'
+            : (stepToPath[data.user.onboardingStep] ?? '/onboarding/role'),
         { replace: true },
       );
     } catch (err) {

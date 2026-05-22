@@ -57,6 +57,11 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   if (!isAuthenticated || !user) {
     return <Navigate to="/signin" replace state={{ from: location }} />;
   }
+  // Email/password users can't enter the onboarding wizard until they've
+  // verified their email. Google users bypass (Google asserts verification).
+  if (user.authProvider === 'password' && !user.emailVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
   if (user.onboardingComplete) {
     return <Navigate to="/dashboard" replace />;
   }

@@ -23,6 +23,14 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/signin" replace state={{ from: location }} />;
   }
 
+  // Email/password users must verify their email before accessing any
+  // protected route. Google users bypass this — Google's email_verified
+  // claim is the canonical signal and we trust it. The /verify-email page
+  // itself is public, so users sent there can resend and complete verification.
+  if (user.authProvider === 'password' && !user.emailVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
   const isCompletionScreen = location.pathname === '/onboarding/complete';
   if (!user.onboardingComplete && !isCompletionScreen) {
     // Normalise legacy `no_cv` step to the merged builder's basics page.
