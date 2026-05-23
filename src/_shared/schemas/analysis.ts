@@ -22,16 +22,31 @@ export const AnalysisStrengthSchema = z.object({
 });
 export type AnalysisStrength = z.infer<typeof AnalysisStrengthSchema>;
 
+/**
+ * Optional reference fields the LLM populates when a finding is item-specific.
+ * Validated server-side against the user's structured CV; hallucinated/stale refs
+ * are dropped (set to null) before persistence. All four fields are nullable so
+ * CV-wide findings and legacy analysis documents validate as-is.
+ */
+const RefFields = {
+  expId: z.string().max(80).nullable().default(null),
+  educationId: z.string().max(80).nullable().default(null),
+  bulletIndex: z.number().int().min(0).max(50).nullable().default(null),
+  quotedBullet: z.string().min(1).max(500).nullable().default(null),
+} as const;
+
 export const AnalysisGapSchema = z.object({
   title: z.string().min(1).max(120),
   detail: z.string().min(1).max(400),
   severity: AnalysisSeveritySchema,
+  ...RefFields,
 });
 export type AnalysisGap = z.infer<typeof AnalysisGapSchema>;
 
 export const AnalysisSuggestionSchema = z.object({
   title: z.string().min(1).max(120),
   detail: z.string().min(1).max(400),
+  ...RefFields,
 });
 export type AnalysisSuggestion = z.infer<typeof AnalysisSuggestionSchema>;
 

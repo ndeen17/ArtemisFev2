@@ -206,6 +206,7 @@ function Row({
                     section: item.section,
                     focus: item.id,
                     itemId: item.itemId ?? undefined,
+                    bulletIndex: item.bulletIndex ?? null,
                     coach: true,
                   })
                 }

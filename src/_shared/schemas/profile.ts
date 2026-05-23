@@ -70,6 +70,10 @@ export const ActionPlanItemSchema = z.object({
    *  refers to. When present the "Fix in builder" deep link can scroll to & highlight that
    *  specific card. Null when the finding isn't tied to a single item (e.g. summary, skills). */
   itemId: z.string().max(80).nullable().default(null),
+  /** Optional 0-based bullet index inside the referenced experience role. Only meaningful
+   *  when `section === 'experience'` and `itemId` is set. Drives bullet-level scroll/focus
+   *  in the builder. */
+  bulletIndex: z.number().int().min(0).max(50).nullable().default(null),
 });
 export type ActionPlanItem = z.infer<typeof ActionPlanItemSchema>;
 

@@ -523,16 +523,6 @@ function ExperienceForm({
         <RewriteDrawer
           target={{ cvId, expId: rewriteFor.expId, bulletIdx: rewriteFor.bulletIdx }}
           initialOriginal={rewriteFor.current}
-          onApplied={(text) => {
-            // Sync local draft so a subsequent Save doesn't clobber the applied text.
-            const nextExperience = value.experience.map((e) => {
-              if (e.id !== rewriteFor.expId) return e;
-              const ach = e.achievements.slice();
-              ach[rewriteFor.bulletIdx] = text;
-              return { ...e, achievements: ach };
-            });
-            onChange({ ...value, experience: nextExperience });
-          }}
           onClose={() => setRewriteFor(null)}
         />
       ) : null}

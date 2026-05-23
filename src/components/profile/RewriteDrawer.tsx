@@ -1,38 +1,27 @@
 import { useState } from 'react';
 import type { BulletPath } from '@artemis/shared';
-import { Button } from '@/components/ui/Button';
-import { CopyIcon, SparklesIcon, SpinnerIcon, CheckIcon } from '@/components/ui/icons';
-import {
-  useRewriteTargetedBullet,
-  useApplyBullet,
-} from '@/hooks/useOnboarding';
+import { CopyIcon, SpinnerIcon, CheckIcon } from '@/components/ui/icons';
+import { useRewriteTargetedBullet } from '@/hooks/useOnboarding';
 
 /**
  * Drawer-style targeted rewrite: opens with a known {cvId, expId, bulletIdx},
  * fetches main + 2 alternatives from POST /cv/.../rewrite, and lets the user
- * Apply any of them. Apply persists via POST /cv/.../apply (which goes through
- * cv.service.updateStructured → analysis re-queue → rubric re-score).
- *
- * `onApplied(text)` lets a parent (e.g. CvEditor) sync its local draft so the
- * just-applied text isn't wiped by a subsequent save.
+ * copy any version. Editing the CV happens in the builder — there is no
+ * "Apply to CV" CTA here on purpose.
  */
 export function RewriteDrawer({
   target,
   initialOriginal,
-  onApplied,
   onClose,
 }: {
   target: BulletPath;
   initialOriginal?: string;
-  onApplied?: (text: string) => void;
   onClose: () => void;
 }) {
   const rewrite = useRewriteTargetedBullet();
-  const apply = useApplyBullet();
   const [original, setOriginal] = useState<string>(initialOriginal ?? '');
   const [main, setMain] = useState<string | null>(null);
   const [alts, setAlts] = useState<string[]>([]);
-  const [appliedText, setAppliedText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [autoStarted, setAutoStarted] = useState(false);
 
@@ -51,22 +40,6 @@ export function RewriteDrawer({
     });
   }
 
-  function handleApply(text: string) {
-    setError(null);
-    apply.mutate(
-      { target, text },
-      {
-        onSuccess() {
-          setAppliedText(text);
-          onApplied?.(text);
-        },
-        onError() {
-          setError('Could not save the rewrite. Try again.');
-        },
-      },
-    );
-  }
-
   return (
     <div role="dialog" aria-label="Rewrite bullet" className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
@@ -80,7 +53,7 @@ export function RewriteDrawer({
               Sharper, action-led, quantified
             </h2>
             <p className="mt-1 text-[12.5px] text-gray-500">
-              Apply lands directly in your CV and re-runs analysis automatically.
+              Copy a version you like, then paste it into your CV in the builder.
             </p>
           </div>
           <button
@@ -113,26 +86,6 @@ export function RewriteDrawer({
                   {main}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleApply(main)}
-                    disabled={apply.isPending}
-                  >
-                    {appliedText === main ? (
-                      <span className="inline-flex items-center gap-2">
-                        <CheckIcon className="w-4 h-4" /> Applied
-                      </span>
-                    ) : apply.isPending ? (
-                      <span className="inline-flex items-center gap-2">
-                        <SpinnerIcon className="animate-spin w-4 h-4" /> Saving…
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-2">
-                        <SparklesIcon className="w-4 h-4" /> Apply to my CV
-                      </span>
-                    )}
-                  </Button>
                   <CopyButton text={main} />
                 </div>
               </>
@@ -153,14 +106,6 @@ export function RewriteDrawer({
                       {alt}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleApply(alt)}
-                        disabled={apply.isPending}
-                        className="text-[12px] font-semibold text-[#15803d] hover:underline disabled:opacity-50"
-                      >
-                        {appliedText === alt ? 'Applied ✓' : 'Apply this version'}
-                      </button>
                       <CopyButton text={alt} />
                     </div>
                   </div>
@@ -173,17 +118,13 @@ export function RewriteDrawer({
         </div>
 
         <footer className="border-t border-gray-100 px-5 py-3 flex justify-between items-center text-[12px] text-gray-500">
-          <span>
-            {appliedText
-              ? 'Applied — re-analysis is running in the background.'
-              : 'Pick a version, then Apply.'}
-          </span>
+          <span>Copy a version, then paste into the builder.</span>
           <button
             type="button"
             onClick={onClose}
             className="font-semibold text-gray-700 hover:text-gray-900"
           >
-            {appliedText ? 'Done' : 'Cancel'}
+            Close
           </button>
         </footer>
       </div>
