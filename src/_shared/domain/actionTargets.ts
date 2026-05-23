@@ -35,6 +35,34 @@ export function targetSectionForAction(input: {
 }
 
 /**
+ * Returns true when an action plan item is purely about CV structure,
+ * formatting, layout, length, font, spacing, section ordering, or visual
+ * design. The builder already enforces a clean, ATS-safe structure, so these
+ * findings are filtered out of the action plan before the user sees them.
+ *
+ * Conservative on purpose: content findings that merely mention "bullet" or
+ * "section" in a substantive way (e.g. "add quantified bullets") are NOT
+ * matched here — only items whose primary subject is formatting/structure.
+ */
+const FORMATTING_PATTERNS: ReadonlyArray<RegExp> = [
+  /\b(formatting|layout|font|typeface|spacing|margins?|columns?|alignment|whitespace|white\s+space|readability|aesthetic|visual\s+design|template)\b/i,
+  /\b(one[\s-]page|two[\s-]page|page\s+length|cv\s+length|resume\s+length|too\s+long|too\s+short|trim\s+(?:the\s+)?(?:cv|resume))\b/i,
+  /\b(section\s+(?:order|heading|header|title)|reorder\s+sections?|organi[sz]e\s+sections?|structure\s+of\s+(?:your|the)\s+(?:cv|resume|document))\b/i,
+  /\bATS[\s-]?(?:friendly\s+)?(?:format|layout|template|structure|parsing)\b/i,
+  /\bconsistent\s+(?:formatting|format|style|styling|font|punctuation|capitali[sz]ation|tense|date\s+format)\b/i,
+  /\b(punctuation|capitali[sz]ation)\s+(?:consistency|consistent|errors?|issues?)\b/i,
+  /\bbullet\s+(?:style|formatting|format|alignment|symbol)\b/i,
+];
+
+export function isStructureOrFormattingAction(input: {
+  title: string;
+  detail: string;
+}): boolean {
+  const haystack = `${input.title}\n${input.detail}`;
+  return FORMATTING_PATTERNS.some((p) => p.test(haystack));
+}
+
+/**
  * If the action's detail contains a clearly-quoted bullet (double quotes,
  * smart quotes, or backticks), return its trimmed text. Used by FE to wire
  * a "Rewrite this bullet" CTA that opens the rewrite drawer pre-targeted.
