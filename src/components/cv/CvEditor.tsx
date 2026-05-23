@@ -55,6 +55,10 @@ export interface CvEditorProps {
    *  deep-link flow so "Fix in builder" lands on the exact role/qualification
    *  the finding refers to instead of just the section panel. */
   focusItemId?: string | null;
+  /** Optional 0-based bullet index inside the targeted Experience role.
+   *  Only meaningful when `focusItemId` resolves to an experience row.
+   *  Drives bullet-textarea-level scroll + focus + ring-flash. */
+  focusBulletIndex?: number | null;
   /** When provided, renders a per-section "Save section" button. Parents wire
    *  this to a partial patch so users get explicit confirmation that the
    *  current section persisted, without having to commit the whole CV. */
@@ -73,6 +77,7 @@ export function CvEditor({
   initialSection,
   seedCoachMessage,
   focusItemId,
+  focusBulletIndex,
   onSaveSection,
   onPreview,
 }: CvEditorProps) {
@@ -231,7 +236,7 @@ export function CvEditor({
               {active === 'header' ? <HeaderForm value={value} onChange={onChange} /> : null}
               {active === 'summary' ? <SummaryForm value={value} onChange={onChange} /> : null}
               {active === 'experience' ? (
-                <ExperienceForm value={value} onChange={onChange} cvId={cvId} focusItemId={focusItemId} />
+                <ExperienceForm value={value} onChange={onChange} cvId={cvId} focusItemId={focusItemId} focusBulletIndex={focusBulletIndex} />
               ) : null}
               {active === 'education' ? (
                 <EducationForm value={value} onChange={onChange} focusItemId={focusItemId} />
@@ -429,6 +434,7 @@ function ExperienceForm({
   onChange,
   cvId,
   focusItemId,
+  focusBulletIndex,
 }: CvEditorProps) {
   const setItem = (idx: number, patch: Partial<StructuredCvExperience>) => {
     const next = value.experience.map((e, i) => (i === idx ? { ...e, ...patch } : e));
@@ -507,6 +513,7 @@ function ExperienceForm({
           <ExperienceCard
             exp={exp}
             canRewrite={Boolean(cvId)}
+            focusBulletIndex={focusItemId === exp.id ? focusBulletIndex ?? null : null}
             onChange={(patch) => setItem(idx, patch)}
             onRemove={() => removeItem(idx)}
             onRewriteBullet={(bulletIdx, current) =>
@@ -533,16 +540,40 @@ function ExperienceForm({
 function ExperienceCard({
   exp,
   canRewrite,
+  focusBulletIndex,
   onChange,
   onRemove,
   onRewriteBullet,
 }: {
   exp: StructuredCvExperience;
   canRewrite: boolean;
+  focusBulletIndex: number | null;
   onChange: (patch: Partial<StructuredCvExperience>) => void;
   onRemove: () => void;
   onRewriteBullet: (bulletIdx: number, current: string) => void;
 }) {
+  // Bullet-level deep-link: when this card is the focused role AND
+  // focusBulletIndex points at a real bullet, scroll its textarea into view,
+  // focus it, and ring-flash for 2.2s so the user lands on the exact line.
+  const bulletRefs = useRef<Map<number, HTMLTextAreaElement | null>>(new Map());
+  const [flashBulletIdx, setFlashBulletIdx] = useState<number | null>(null);
+  useEffect(() => {
+    if (focusBulletIndex === null || focusBulletIndex === undefined) return;
+    if (typeof window === 'undefined') return;
+    if (focusBulletIndex < 0 || focusBulletIndex >= exp.achievements.length) return;
+    const raf = window.requestAnimationFrame(() => {
+      const el = bulletRefs.current.get(focusBulletIndex);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+      setFlashBulletIdx(focusBulletIndex);
+    });
+    const handle = window.setTimeout(() => setFlashBulletIdx(null), 2200);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(handle);
+    };
+  }, [focusBulletIndex, exp.achievements.length]);
   return (
     <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -586,6 +617,9 @@ function ExperienceCard({
           {exp.achievements.map((a, i) => (
             <div key={i} className="flex gap-2">
               <textarea
+                ref={(el) => {
+                  bulletRefs.current.set(i, el);
+                }}
                 rows={2}
                 value={a}
                 onChange={(e) => {
@@ -594,7 +628,10 @@ function ExperienceCard({
                   onChange({ achievements: next });
                 }}
                 placeholder="Increased monthly sales 10% by upselling and cross-selling…"
-                className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-[13px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent"
+                className={cn(
+                  'w-full rounded-2xl border border-gray-200 bg-white p-3 text-[13px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-shadow duration-700',
+                  flashBulletIdx === i ? 'ring-2 ring-brand-green ring-offset-2 ring-offset-white' : '',
+                )}
               />
               <div className="flex flex-col items-stretch gap-1">
                 {canRewrite && a.trim().length >= 8 ? (

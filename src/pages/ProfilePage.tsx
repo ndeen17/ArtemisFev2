@@ -129,6 +129,7 @@ export default function ProfilePage() {
             section={builder.state.section}
             focus={builder.state.focus}
             itemId={builder.state.itemId}
+            bulletIndex={builder.state.bulletIndex}
             coachOpen={builder.state.coachOpen}
             onSaved={builder.close}
           />
