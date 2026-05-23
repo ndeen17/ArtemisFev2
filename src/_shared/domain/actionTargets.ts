@@ -50,3 +50,127 @@ export function extractQuotedBullet(detail: string): string | null {
   }
   return null;
 }
+
+/**
+ * Minimal structural shape of a CV needed by `matchActionToCvItem`. Lets this
+ * module stay zero-dependency (no schema imports) so the BE and FE copies are
+ * byte-identical.
+ */
+export interface ActionTargetCvShape {
+  experience: ReadonlyArray<{
+    id: string;
+    title?: string;
+    company?: string;
+    startDate?: string;
+    endDate?: string;
+    achievements?: ReadonlyArray<string>;
+  }>;
+  education: ReadonlyArray<{
+    id: string;
+    school?: string;
+    qualification?: string;
+    startDate?: string;
+    endDate?: string;
+  }>;
+}
+
+const NORM_WS = /\s+/g;
+function norm(s: string | undefined | null): string {
+  return (s ?? '').toLowerCase().replace(NORM_WS, ' ').trim();
+}
+/** Words we never use as a match signal because they'd produce false positives. */
+const STOPWORDS = new Set([
+  'inc', 'ltd', 'llc', 'co', 'corp', 'company', 'group', 'the', 'and', 'of',
+  'university', 'college', 'school', 'institute',
+]);
+function isMeaningful(token: string): boolean {
+  return token.length >= 3 && !STOPWORDS.has(token);
+}
+
+/**
+ * Heuristically match an action-plan item to a specific Experience or Education
+ * entry in the user's structured CV. Returns the matched item id, or null when
+ * the action either targets a non-item section (summary/skills/header) or no
+ * confident match exists. "Confident" means a unique highest-scoring item with
+ * score >= 1 — ties resolve to null so we never guess.
+ *
+ * Pure & deterministic; safe to run on BE (when building the action plan) and
+ * FE (for backfilling legacy items missing `itemId`).
+ */
+export function matchActionToCvItem(input: {
+  title: string;
+  detail: string;
+  quotedBullet?: string | null;
+  section: EditorSection;
+  cv: ActionTargetCvShape | null | undefined;
+}): string | null {
+  if (!input.cv) return null;
+  if (input.section !== 'experience' && input.section !== 'education') return null;
+
+  const haystack = norm(`${input.title}\n${input.detail}`);
+  const quoted = norm(input.quotedBullet ?? extractQuotedBullet(input.detail) ?? '');
+
+  if (input.section === 'experience') {
+    const scores = input.cv.experience.map((item) => {
+      let score = 0;
+      const company = norm(item.company);
+      const title = norm(item.title);
+      if (company && isMeaningful(company) && haystack.includes(company)) score += 3;
+      if (title && isMeaningful(title) && haystack.includes(title)) score += 2;
+      // Date co-occurrence is a weak signal on its own — only contributes when
+      // we already have a name/title hit, to avoid 2023 == 2023 false positives.
+      const start = norm(item.startDate);
+      const end = norm(item.endDate);
+      if (score > 0) {
+        if (start && start.length >= 4 && haystack.includes(start)) score += 1;
+        if (end && end.length >= 4 && haystack.includes(end)) score += 1;
+      }
+      // Quoted-bullet substring inside one of this item's achievements is a
+      // strong signal on its own.
+      if (quoted && item.achievements) {
+        for (const a of item.achievements) {
+          const na = norm(a);
+          if (na && (na.includes(quoted) || quoted.includes(na))) {
+            score += 4;
+            break;
+          }
+        }
+      }
+      return { id: item.id, score };
+    });
+    return pickUniqueWinner(scores);
+  }
+
+  // education
+  const scores = input.cv.education.map((item) => {
+    let score = 0;
+    const school = norm(item.school);
+    const qual = norm(item.qualification);
+    if (school && isMeaningful(school) && haystack.includes(school)) score += 3;
+    if (qual && isMeaningful(qual) && haystack.includes(qual)) score += 2;
+    if (score > 0) {
+      const start = norm(item.startDate);
+      const end = norm(item.endDate);
+      if (start && start.length >= 4 && haystack.includes(start)) score += 1;
+      if (end && end.length >= 4 && haystack.includes(end)) score += 1;
+    }
+    return { id: item.id, score };
+  });
+  return pickUniqueWinner(scores);
+}
+
+function pickUniqueWinner(scores: ReadonlyArray<{ id: string; score: number }>): string | null {
+  let best: { id: string; score: number } | null = null;
+  let tie = false;
+  for (const s of scores) {
+    if (s.score <= 0) continue;
+    if (!best || s.score > best.score) {
+      best = s;
+      tie = false;
+    } else if (s.score === best.score) {
+      tie = true;
+    }
+  }
+  if (!best || tie) return null;
+  return best.id;
+}

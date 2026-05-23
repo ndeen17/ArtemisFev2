@@ -205,6 +205,7 @@ function Row({
                   onOpenBuilder({
                     section: item.section,
                     focus: item.id,
+                    itemId: item.itemId ?? undefined,
                     coach: true,
                   })
                 }

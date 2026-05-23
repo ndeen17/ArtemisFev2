@@ -40,6 +40,9 @@ export interface BuilderPanelProps {
   section?: BuilderSection | null;
   /** Action-plan item id; resolves to its section + coach seed. Profile mode only. */
   focus?: string | null;
+  /** Specific Experience/Education item id (e.g. `exp-xxx` / `edu-xxx`) to
+   *  scroll to & flash inside the section. Profile mode only. */
+  itemId?: string | null;
   /** When true, opens the AI coach drawer prefilled with the focus seed. */
   coachOpen?: boolean;
   /** Called after a successful save. Hosts use this to optionally close. */
@@ -51,7 +54,7 @@ export function BuilderPanel(props: BuilderPanelProps) {
   return <TargetedBuilder {...props} />;
 }
 
-function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProps) {
+function ProfileBuilder({ section, focus, itemId, coachOpen, onSaved }: BuilderPanelProps) {
   const cvQuery = useMyCv();
   const patch = usePatchCv();
   const reparse = useReparseCv();
@@ -187,6 +190,7 @@ function ProfileBuilder({ section, focus, coachOpen, onSaved }: BuilderPanelProp
         cvId={cvQuery.data.id}
         initialSection={initialSection}
         seedCoachMessage={seedCoachMessage}
+        focusItemId={itemId ?? focusedAction?.itemId ?? null}
         onSaveSection={async (_section, next) => {
           await patch.mutateAsync({ cvId: cvQuery.data!.id, structured: next });
         }}

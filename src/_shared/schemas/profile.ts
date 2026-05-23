@@ -66,6 +66,10 @@ export const ActionPlanItemSchema = z.object({
   section: z.enum(['header', 'summary', 'experience', 'education', 'skills']).default('experience'),
   /** Optional bullet text quoted in the action — when present, FE can deep-link a targeted rewrite. */
   quotedBullet: z.string().max(500).nullable().default(null),
+  /** Optional CV item id (StructuredCvExperience.id or StructuredCvEducation.id) the action
+   *  refers to. When present the "Fix in builder" deep link can scroll to & highlight that
+   *  specific card. Null when the finding isn't tied to a single item (e.g. summary, skills). */
+  itemId: z.string().max(80).nullable().default(null),
 });
 export type ActionPlanItem = z.infer<typeof ActionPlanItemSchema>;
 

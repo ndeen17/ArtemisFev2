@@ -50,6 +50,11 @@ export interface CvEditorProps {
   /** When set, opens the AI coach drawer on mount with this seed message
    *  prefilled. Used by the action plan deep-link flow. */
   seedCoachMessage?: string;
+  /** Optional CV item id (StructuredCvExperience.id or StructuredCvEducation.id)
+   *  to scroll to and flash inside the active section. Used by the action plan
+   *  deep-link flow so "Fix in builder" lands on the exact role/qualification
+   *  the finding refers to instead of just the section panel. */
+  focusItemId?: string | null;
   /** When provided, renders a per-section "Save section" button. Parents wire
    *  this to a partial patch so users get explicit confirmation that the
    *  current section persisted, without having to commit the whole CV. */
@@ -67,6 +72,7 @@ export function CvEditor({
   cvId,
   initialSection,
   seedCoachMessage,
+  focusItemId,
   onSaveSection,
   onPreview,
 }: CvEditorProps) {
@@ -225,10 +231,10 @@ export function CvEditor({
               {active === 'header' ? <HeaderForm value={value} onChange={onChange} /> : null}
               {active === 'summary' ? <SummaryForm value={value} onChange={onChange} /> : null}
               {active === 'experience' ? (
-                <ExperienceForm value={value} onChange={onChange} cvId={cvId} />
+                <ExperienceForm value={value} onChange={onChange} cvId={cvId} focusItemId={focusItemId} />
               ) : null}
               {active === 'education' ? (
-                <EducationForm value={value} onChange={onChange} />
+                <EducationForm value={value} onChange={onChange} focusItemId={focusItemId} />
               ) : null}
               {active === 'skills' ? <SkillsForm value={value} onChange={onChange} /> : null}
             </div>
@@ -422,6 +428,7 @@ function ExperienceForm({
   value,
   onChange,
   cvId,
+  focusItemId,
 }: CvEditorProps) {
   const setItem = (idx: number, patch: Partial<StructuredCvExperience>) => {
     const next = value.experience.map((e, i) => (i === idx ? { ...e, ...patch } : e));
@@ -455,22 +462,58 @@ function ExperienceForm({
     current: string;
   } | null>(null);
 
+  // Item-level deep-link: when ?itemId=<exp-xxx> is in the URL we register a
+  // ref per card and, after first paint, scroll & flash the matching card so
+  // "Fix in builder" lands the user on the exact role the finding refers to.
+  const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const [flashItemId, setFlashItemId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusItemId) return;
+    if (typeof window === 'undefined') return;
+    // Defer to next frame so the card has actually mounted (especially when
+    // the user just switched into the Experience tab from another section).
+    const raf = window.requestAnimationFrame(() => {
+      const el = cardRefs.current.get(focusItemId);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setFlashItemId(focusItemId);
+    });
+    const handle = window.setTimeout(() => setFlashItemId(null), 2200);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(handle);
+    };
+  }, [focusItemId, value.experience.length]);
+
   return (
     <div className="space-y-4">
       {value.experience.length === 0 ? (
         <p className="text-[13px] text-gray-500">No roles yet. Add your first below.</p>
       ) : null}
       {value.experience.map((exp, idx) => (
-        <ExperienceCard
+        <div
           key={exp.id}
-          exp={exp}
-          canRewrite={Boolean(cvId)}
-          onChange={(patch) => setItem(idx, patch)}
-          onRemove={() => removeItem(idx)}
-          onRewriteBullet={(bulletIdx, current) =>
-            setRewriteFor({ expId: exp.id, bulletIdx, current })
-          }
-        />
+          ref={(el) => {
+            cardRefs.current.set(exp.id, el);
+          }}
+          data-item-id={exp.id}
+          className={cn(
+            'rounded-2xl transition-all duration-700',
+            flashItemId === exp.id
+              ? 'ring-2 ring-brand-green ring-offset-2 ring-offset-white'
+              : '',
+          )}
+        >
+          <ExperienceCard
+            exp={exp}
+            canRewrite={Boolean(cvId)}
+            onChange={(patch) => setItem(idx, patch)}
+            onRemove={() => removeItem(idx)}
+            onRewriteBullet={(bulletIdx, current) =>
+              setRewriteFor({ expId: exp.id, bulletIdx, current })
+            }
+          />
+        </div>
       ))}
       <Button variant="ghost" type="button" onClick={addItem}>
         + Add role
@@ -611,7 +654,7 @@ function ExperienceCard({
   );
 }
 
-function EducationForm({ value, onChange }: CvEditorProps) {
+function EducationForm({ value, onChange, focusItemId }: CvEditorProps) {
   const setItem = (idx: number, patch: Partial<StructuredCvEducation>) => {
     const next = value.education.map((e, i) => (i === idx ? { ...e, ...patch } : e));
     onChange({ ...value, education: next });
@@ -634,6 +677,25 @@ function EducationForm({ value, onChange }: CvEditorProps) {
   const removeItem = (idx: number) =>
     onChange({ ...value, education: value.education.filter((_, i) => i !== idx) });
 
+  // See ExperienceForm for the deep-link / scroll-and-flash pattern.
+  const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const [flashItemId, setFlashItemId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusItemId) return;
+    if (typeof window === 'undefined') return;
+    const raf = window.requestAnimationFrame(() => {
+      const el = cardRefs.current.get(focusItemId);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setFlashItemId(focusItemId);
+    });
+    const handle = window.setTimeout(() => setFlashItemId(null), 2200);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(handle);
+    };
+  }, [focusItemId, value.education.length]);
+
   return (
     <div className="space-y-4">
       {value.education.length === 0 ? (
@@ -643,7 +705,19 @@ function EducationForm({ value, onChange }: CvEditorProps) {
         </div>
       ) : null}
       {value.education.map((ed, idx) => (
-        <div key={ed.id} className="rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3">
+        <div
+          key={ed.id}
+          ref={(el) => {
+            cardRefs.current.set(ed.id, el);
+          }}
+          data-item-id={ed.id}
+          className={cn(
+            'rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3 transition-all duration-700',
+            flashItemId === ed.id
+              ? 'ring-2 ring-brand-green ring-offset-2 ring-offset-white border-brand-green/40'
+              : '',
+          )}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="School">
               <Input value={ed.school} onChange={(e) => setItem(idx, { school: e.target.value })} />
