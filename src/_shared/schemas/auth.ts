@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EmailSchema } from './common.js';
+import { AllowedEmailSchema, EmailSchema } from './common.js';
 import { OnboardingStepSchema } from './onboarding.js';
 
 /** Password policy: 8+ chars, at least one letter and one number. */
@@ -10,7 +10,7 @@ export const PasswordSchema = z
   .regex(/\d/, 'Password must contain a number');
 
 export const SignUpSchema = z.object({
-  email: EmailSchema,
+  email: AllowedEmailSchema,
   password: PasswordSchema,
 });
 export type SignUpInput = z.infer<typeof SignUpSchema>;
