@@ -78,11 +78,17 @@ export const ALLOWED_EMAIL_DOMAINS: ReadonlySet<string> = new Set([
 /** Email schema used for NEW sign-ups: must be a valid email AND from an allowlisted provider. */
 export const AllowedEmailSchema = EmailSchema.refine(
   (value) => {
-    const domain = value.split('@')[1];
-    return !!domain && ALLOWED_EMAIL_DOMAINS.has(domain);
+    const [local, domain] = value.split('@');
+    if (!domain || !ALLOWED_EMAIL_DOMAINS.has(domain)) return false;
+    // Block `+` aliases on signup: one Gmail/etc. inbox can produce unlimited
+    // `+suffix` variants that all deliver to the same place, which is a cheap
+    // way to register many accounts from a single mailbox. Real users almost
+    // never use a `+` alias for an account they intend to log into long-term.
+    if (local.includes('+')) return false;
+    return true;
   },
   {
     message:
-      'Please sign up with a common email provider (Gmail, Yahoo, Outlook, iCloud, etc.).',
+      'Please sign up with a common email provider (Gmail, Yahoo, Outlook, iCloud, etc.) and no "+" alias.',
   },
 );
