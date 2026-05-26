@@ -3,3 +3,11 @@ dist
 .vite
 .DS_Store
 *.log
+
+# Tests (kept local — not committed)
+src/test/
+tests/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
