@@ -207,7 +207,6 @@ function Row({
                     focus: item.id,
                     itemId: item.itemId ?? undefined,
                     bulletIndex: item.bulletIndex ?? null,
-                    coach: true,
                   })
                 }
                 className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline"
