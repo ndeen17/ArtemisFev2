@@ -139,6 +139,8 @@ export function RubricBreakdown({
                           onClick={() =>
                             onOpenBuilder({
                               section: item.section as BuilderSection,
+                              itemId: item.itemId ?? undefined,
+                              bulletIndex: item.bulletIndex ?? undefined,
                             })
                           }
                           className="text-[12px] font-semibold text-[#15803d] hover:underline whitespace-nowrap"

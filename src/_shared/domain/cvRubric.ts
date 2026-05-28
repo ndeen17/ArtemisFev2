@@ -16,69 +16,13 @@ import type {
   AnalysisSuggestion,
 } from '../schemas/analysis.js';
 import type { RubricItem } from '../schemas/profile.js';
+import { bulletVerbStrength } from './cvFeatures/gradedActionVerbBank.js';
 
-const STRONG_VERBS = new Set(
-  [
-    'led',
-    'built',
-    'shipped',
-    'designed',
-    'launched',
-    'reduced',
-    'increased',
-    'migrated',
-    'architected',
-    'scaled',
-    'mentored',
-    'owned',
-    'drove',
-    'delivered',
-    'automated',
-    'negotiated',
-    'implemented',
-    'optimised',
-    'optimized',
-    'created',
-    'developed',
-    'managed',
-    'engineered',
-    'spearheaded',
-    'pioneered',
-    'transformed',
-    'improved',
-    'streamlined',
-    'rebuilt',
-    'introduced',
-    'rolled out',
-    'launched',
-    'grew',
-    'cut',
-    'saved',
-    'won',
-    'closed',
-    'shipped',
-    'oversaw',
-    'directed',
-    'coordinated',
-    'orchestrated',
-    'modernised',
-    'modernized',
-    'simplified',
-    'authored',
-    'researched',
-    'analysed',
-    'analyzed',
-    'forecasted',
-    'negotiated',
-    'recruited',
-    'trained',
-    'coached',
-    'taught',
-    'presented',
-    'facilitated',
-    'led',
-  ].map((s) => s.toLowerCase()),
-);
+// Phase 1a: the flat `STRONG_VERBS` allow-list previously embedded here has
+// moved to `cvFeatures/gradedActionVerbBank.ts` as `STRONG_VERBS_LEGACY`
+// (kept for regression tests) plus the new graded tiers (TIER_1/2/3). Item
+// #6 below now reads `bulletVerbStrength(b) >= 2`, which is a strict
+// superset of the old boolean test — no score regression.
 
 const QUANTIFIER_RE = /\d|%|\$|£|€/;
 
@@ -163,6 +107,11 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     const exp = structured?.experience ?? [];
     const goodEntries = exp.filter((e) => e.achievements.filter((a) => a.trim().length > 0).length >= 3);
     const ach = pct(goodEntries.length, 2);
+    // Point at the first role that doesn't yet have 3+ non-empty bullets — that's
+    // the one the user needs to flesh out to lift this score.
+    const firstShallow = exp.find(
+      (e) => e.achievements.filter((a) => a.trim().length > 0).length < 3,
+    );
     items.push({
       id: 'experience_depth',
       label: 'Two roles with ≥3 achievements each',
@@ -170,6 +119,8 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
       achieved: round1(10 * ach),
       hint: 'Lead each role with 3+ achievement bullets.',
       section: 'experience',
+      itemId: ach < 1 ? firstShallow?.id ?? null : null,
+      bulletIndex: null,
     });
   }
 
@@ -182,6 +133,12 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     const ratio = pct(quantified, Math.max(bullets.length, 1));
     // full credit at >= 60%
     const achieved = round1(10 * Math.min(1, ratio / 0.6));
+    // Point at the first un-quantified bullet across all roles so the builder
+    // can land the cursor directly on a line missing a number.
+    const firstWeak = findFirstBulletWhere(
+      structured?.experience,
+      (b) => !QUANTIFIER_RE.test(b),
+    );
     items.push({
       id: 'quantified_bullets',
       label: 'Bullets quantify impact',
@@ -189,6 +146,8 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
       achieved: bullets.length === 0 ? 0 : achieved,
       hint: 'Add a number, percentage, or currency to each achievement.',
       section: 'experience',
+      itemId: achieved < 10 ? firstWeak?.itemId ?? null : null,
+      bulletIndex: achieved < 10 ? firstWeak?.bulletIndex ?? null : null,
     });
   }
 
@@ -197,13 +156,15 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     const bullets = (structured?.experience ?? []).flatMap((e) =>
       e.achievements.filter((a) => a.trim().length > 0),
     );
-    const strong = bullets.filter((b) => {
-      const first = b.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g, '') ?? '';
-      return STRONG_VERBS.has(first);
-    }).length;
+    const strong = bullets.filter((b) => bulletVerbStrength(b) >= 2).length;
     const ratio = pct(strong, Math.max(bullets.length, 1));
     // full credit at >= 70%
     const achieved = round1(5 * Math.min(1, ratio / 0.7));
+    // Point at the first bullet whose opener falls short of strong-verb tier 2.
+    const firstWeakVerb = findFirstBulletWhere(
+      structured?.experience,
+      (b) => bulletVerbStrength(b) < 2,
+    );
     items.push({
       id: 'strong_action_verbs',
       label: 'Bullets start with strong verbs',
@@ -211,6 +172,8 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
       achieved: bullets.length === 0 ? 0 : achieved,
       hint: 'Open each bullet with Led / Built / Shipped / Reduced / Increased…',
       section: 'experience',
+      itemId: achieved < 5 ? firstWeakVerb?.itemId ?? null : null,
+      bulletIndex: achieved < 5 ? firstWeakVerb?.bulletIndex ?? null : null,
     });
   }
 
@@ -340,6 +303,8 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
         achieved: 0,
         hint: 'Add start/end dates for each role using a consistent format (e.g. MM/YYYY).',
         section: 'experience',
+        itemId: exp[0]?.id ?? null,
+        bulletIndex: null,
       });
     } else {
       const formats = new Set(tokens.map(classifyDateFormat));
@@ -348,6 +313,21 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
       const ratio = pct(dominant, tokens.length);
       // Full credit at one consistent format. Partial as it fragments.
       const achieved = formats.size <= 1 ? 5 : round1(5 * Math.max(0.4, ratio));
+      // Identify the first role whose dates don't fit the dominant format so
+      // the builder can land on the offending entry.
+      const dominantFmt = dominantFormatKey(tokens);
+      const firstOffender = formats.size > 1
+        ? exp.find((e) => {
+            const s = e.startDate.trim();
+            const en = e.endDate.trim();
+            const sf = s ? classifyDateFormat(s) : 'unknown';
+            const ef = en ? classifyDateFormat(en) : 'unknown';
+            return (
+              (sf !== 'unknown' && sf !== 'present' && sf !== dominantFmt) ||
+              (ef !== 'unknown' && ef !== 'present' && ef !== dominantFmt)
+            );
+          })
+        : undefined;
       items.push({
         id: 'ats_date_consistency',
         label: 'Dates use a consistent format',
@@ -358,6 +338,8 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
             ? 'Date formatting is consistent across roles.'
             : 'Use one date format across every role (e.g. all MM/YYYY, or all "Jan 2020").',
         section: 'experience',
+        itemId: firstOffender?.id ?? null,
+        bulletIndex: null,
       });
     }
   }
@@ -387,6 +369,34 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
     let achieved = 5;
     if (offenders.length === 1) achieved = 3;
     else if (offenders.length >= 2) achieved = round1(Math.max(0, 5 - offenders.length * 1.5));
+    // Point at the first repeat — the role and the second occurrence of the
+    // offending verb, so the builder lands on a bullet the user can rewrite.
+    let pinItemId: string | null = null;
+    let pinBulletIndex: number | null = null;
+    if (offenders.length > 0) {
+      const first = offenders[0];
+      const role = exp[first.roleIndex];
+      if (role) {
+        pinItemId = role.id;
+        // Find the second occurrence of the repeated verb — first occurrence
+        // is canonical, the duplicates are the ones worth rewriting.
+        let seen = 0;
+        for (let i = 0; i < role.achievements.length; i++) {
+          const opener = role.achievements[i]
+            .trim()
+            .split(/\s+/)[0]
+            ?.toLowerCase()
+            .replace(/[^a-z]/g, '');
+          if (opener === first.verb) {
+            seen += 1;
+            if (seen === 2) {
+              pinBulletIndex = i;
+              break;
+            }
+          }
+        }
+      }
+    }
     items.push({
       id: 'verb_repetition',
       label: 'No verb repeats more than twice in a role',
@@ -399,6 +409,8 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
               .map((o) => `"${o.verb}" ×${o.count} in ${o.roleLabel}`)
               .join('; ')}. Mix in fresh verbs from the same category.`,
       section: 'experience',
+      itemId: pinItemId,
+      bulletIndex: pinBulletIndex,
     });
   }
 
@@ -507,6 +519,45 @@ function countDominantFormat(tokens: string[]): number {
   let max = 0;
   for (const k of Object.keys(counts)) max = Math.max(max, counts[k]);
   return max;
+}
+
+/** Return the most-common concrete date format across the tokens, or null when
+ *  none can be classified. Used to identify which roles deviate. */
+function dominantFormatKey(tokens: string[]): DateFormat | null {
+  const counts: Record<string, number> = {};
+  for (const t of tokens) {
+    const f = classifyDateFormat(t);
+    if (f === 'unknown' || f === 'present') continue;
+    counts[f] = (counts[f] ?? 0) + 1;
+  }
+  let best: DateFormat | null = null;
+  let bestCount = 0;
+  for (const k of Object.keys(counts)) {
+    if (counts[k] > bestCount) {
+      best = k as DateFormat;
+      bestCount = counts[k];
+    }
+  }
+  return best;
+}
+
+/** Walk the experience array in order and return the first bullet (with its
+ *  containing role id) that matches the predicate. Skips empty/whitespace-only
+ *  bullets. Returns null when nothing matches. Used by rubric items that want
+ *  to deep-link to the exact offending bullet. */
+function findFirstBulletWhere(
+  experience: ReadonlyArray<{ id: string; achievements: string[] }> | undefined,
+  predicate: (bullet: string) => boolean,
+): { itemId: string; bulletIndex: number } | null {
+  if (!experience?.length) return null;
+  for (const role of experience) {
+    for (let i = 0; i < role.achievements.length; i++) {
+      const a = role.achievements[i];
+      if (!a || !a.trim()) continue;
+      if (predicate(a)) return { itemId: role.id, bulletIndex: i };
+    }
+  }
+  return null;
 }
 
 /**

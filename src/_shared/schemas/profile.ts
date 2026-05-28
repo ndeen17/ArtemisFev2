@@ -24,6 +24,14 @@ export const RubricItemSchema = z.object({
   hint: z.string().min(1).max(240),
   /** Editor section the user should jump to to fix this item. */
   section: z.enum(['header', 'summary', 'experience', 'education', 'skills']).nullable(),
+  /** When the failing check can be traced to one specific Experience/Education entry,
+   *  the id of that entry. Lets the builder scroll/flash the exact card. Null/absent when
+   *  the check is section-wide (e.g. "Add at least 8 skills"). */
+  itemId: z.string().nullish(),
+  /** When the failing check can be traced to one specific bullet within `itemId`'s
+   *  achievements array, its 0-based index. Lets the builder scroll/focus/flash the
+   *  exact textarea. Null/absent when the check is item-wide. */
+  bulletIndex: z.number().int().min(0).nullish(),
 });
 export type RubricItem = z.infer<typeof RubricItemSchema>;
 
