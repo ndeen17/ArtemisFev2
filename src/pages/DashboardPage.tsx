@@ -6,11 +6,10 @@ import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
 import { useProfileOverview } from '@/hooks/useProfile';
 import { useInterview, useInterviews } from '@/hooks/useInterviews';
-import { ProfileScoreCard } from '@/components/dashboard/ProfileScoreCard';
+import { ResumeReadinessCard } from '@/components/dashboard/ResumeReadinessCard';
 import { SetupProgressCard } from '@/components/dashboard/SetupProgressCard';
 import { AnalysingResumeCard } from '@/components/dashboard/AnalysingResumeCard';
 import { ActionList, type WeakInterviewSummary } from '@/components/dashboard/ActionList';
-import { NoGoalPrompt } from '@/components/dashboard/NoGoalPrompt';
 import { useAuthStore } from '@/store/authStore';
 import { useGoalCopy } from '@/hooks/useGoal';
 import { ArrowRightIcon } from '@/components/ui/icons';
@@ -23,9 +22,17 @@ const INTERVIEW_WEAK_THRESHOLD = 70;
  * come from real persisted data — readiness is derived locally via
  * shared/domain/readiness from onboarding state + CV summary + latest analysis.
  *
- * Phase 6: hero copy, primary CTA, and ActionList ordering all flow from the user's
- * goal via `useGoalCopy()`. When no goal is set we surface a NoGoalPrompt and fall
- * back to neutral copy.
+ * UX rules (post-redesign):
+ *  - One hero, one primary CTA. The CTA is goal-driven (`useGoalCopy()`); when
+ *    no goal is set, it routes to `/settings/goal` automatically, so we don't
+ *    need a separate `NoGoalPrompt` card competing for the same intent.
+ *  - One readiness signal. `ResumeReadinessCard` mirrors the Profile hero
+ *    number (no ring, no per-component breakdown) — deep view lives at
+ *    `/profile`.
+ *  - Setup progress disappears at 100%. Action list always leads remaining
+ *    work; setup is the support card below it.
+ *  - No `CvSummaryCard` — metadata-for-metadata's-sake; the resume page
+ *    owns CV details.
  */
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -34,7 +41,7 @@ export default function DashboardPage() {
   const analysis = useLatestAnalysis();
   const overview = useProfileOverview();
   const interviews = useInterviews();
-  const { goal, copy, hasGoal } = useGoalCopy();
+  const { goal, copy } = useGoalCopy();
   const toast = useToast();
 
   // One-shot nudge for users who skipped the in-onboarding CV editor. The
@@ -111,52 +118,49 @@ export default function DashboardPage() {
 
   return (
     <AppShell title="Home" subtitle={copy.dashboardSubtitle}>
+      {/* Hero — leads the page. Bigger greeting (`text-[40px]+`) so it
+          outweighs the readiness card below, restoring hierarchy after the
+          Profile hero bump. Single primary CTA from goal copy. */}
       <div>
         <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
           {copy.dashboardEyebrow}
         </div>
-        <h1 className="mt-1 text-[32px] font-extrabold tracking-tight text-[#111827] leading-[1.1]">
+        <h1 className="mt-1 text-[40px] sm:text-[44px] font-extrabold tracking-tight text-ink leading-[1.05]">
           Hi, {firstName}.
         </h1>
-        {/* Surface the user's career choice right under the greeting so the
-            home page reflects who they're optimising for at a glance. */}
+        {/* Role pill — fastest read of "who are you optimising for?" */}
         {roleLabel(onboarding.data?.role) ? (
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-[12px] font-semibold text-[#111827]">
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-[12px] font-semibold text-ink">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-green" aria-hidden="true" />
             {roleLabel(onboarding.data?.role)}
           </div>
         ) : null}
-        <p className="mt-2 text-[15px] text-gray-600 max-w-xl">{copy.dashboardSubtitle}</p>
-        <div className="mt-5 flex flex-wrap gap-3">
+        <p className="mt-3 text-[15px] text-ink-muted max-w-xl">{copy.dashboardSubtitle}</p>
+        <div className="mt-5">
           <Link
             to={copy.primaryCtaTo}
-            className="inline-flex items-center gap-1 rounded-full bg-brand-green text-white px-5 py-2.5 text-[14px] font-semibold hover:bg-[#15803d]"
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand-green text-white px-5 py-2.5 text-[14px] font-semibold hover:bg-brand-greenInk transition-colors"
             data-goal={goal ?? 'none'}
           >
-            {copy.primaryCtaLabel} <ArrowRightIcon />
-          </Link>
-          <Link
-            to="/profile"
-            className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 px-5 py-2.5 text-[14px] font-semibold text-[#111827] hover:bg-gray-50"
-          >
-            Open resume
+            {copy.primaryCtaLabel} <ArrowRightIcon className="w-4 h-4" />
           </Link>
         </div>
       </div>
 
-      {!hasGoal ? <NoGoalPrompt /> : null}
-
+      {/* Readiness signal — analysing OR score OR empty. One card, three states.
+          NEVER stacked with another progress visual. */}
       {isAnalysing ? (
         <AnalysingResumeCard />
       ) : (
-        <ProfileScoreCard overview={overview.data} isLoading={overview.isLoading} />
+        <ResumeReadinessCard
+          overview={overview.data}
+          isLoading={overview.isLoading}
+          hasCv={!!cv.data}
+        />
       )}
 
-      {/* Old "Readiness" ring is now framed as the setup checklist it always
-          really tracked. Distinct from the Profile readiness score above so
-          the two numbers no longer compete for the same mental slot. */}
-      <SetupProgressCard snapshot={snapshot} />
-
+      {/* Action list — the workhorse. Sits above setup progress because
+          "what to do next" is more important than "finish onboarding". */}
       <ActionList
         readiness={snapshot}
         analysis={analysis.data ?? null}
@@ -165,48 +169,9 @@ export default function DashboardPage() {
         weakInterview={weakInterview}
       />
 
-      <CvSummaryCard loading={cv.isLoading} cv={cv.data ?? null} />
+      {/* Setup progress — hidden at 100%, shows only remaining factors.
+          Demoted below ActionList so it doesn't compete for top-of-page. */}
+      <SetupProgressCard snapshot={snapshot} />
     </AppShell>
-  );
-}
-
-function CvSummaryCard({
-  loading,
-  cv,
-}: {
-  loading: boolean;
-  cv: { filename: string | null; charCount: number; source: string; createdAt: string } | null;
-}) {
-  return (
-    <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-[12px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-            Your CV
-          </div>
-          <h2 className="text-[18px] font-semibold text-[#111827] mt-1">
-            {cv?.filename ?? (cv ? 'Generated CV' : 'No CV on file yet')}
-          </h2>
-          {loading ? (
-            <p className="mt-2 text-[14px] text-gray-500">Loading…</p>
-          ) : cv ? (
-            <p className="mt-2 text-[13px] text-gray-500">
-              {cv.charCount.toLocaleString()} characters · source: {cv.source} · saved{' '}
-              {new Date(cv.createdAt).toLocaleString()}
-            </p>
-          ) : (
-            <p className="mt-2 text-[14px] text-gray-500">
-              Add a CV to unlock the full readiness picture.
-            </p>
-          )}
-        </div>
-        <Link
-          to="/profile"
-          className="inline-flex items-center gap-1 rounded-full bg-[#fafafa] border border-gray-100 px-4 py-2 text-[13px] font-semibold text-[#111827] hover:bg-gray-100"
-        >
-          Open resume
-        </Link>
-      </div>
-    </section>
   );
 }
