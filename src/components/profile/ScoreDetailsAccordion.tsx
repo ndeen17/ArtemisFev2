@@ -16,6 +16,9 @@ import {
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
 import { useOnboardingState } from '@/hooks/useOnboarding';
 import type { OpenBuilderOptions } from '@/hooks/useBuilderUrlState';
+import { ThumbsFeedback } from '@/components/feedback/ThumbsFeedback';
+import { findingIdFromTitle } from '@/components/feedback/findingId';
+import type { FindingFeedbackSurface } from '@artemis/shared';
 
 /**
  * Score details accordion — the single home for everything that explains the
@@ -204,7 +207,11 @@ export function ScoreDetailsAccordion({
               />
             ) : null}
             {tab === 'insights' ? (
-              <InsightsTab loading={analysis.isLoading} result={result} />
+              <InsightsTab
+                loading={analysis.isLoading}
+                result={result}
+                analysisId={analysis.data?.id ?? null}
+              />
             ) : null}
             {tab === 'bullets' ? (
               <BulletsTab loading={analysis.isLoading} result={result} />
@@ -264,9 +271,11 @@ function ATSTab({
 function InsightsTab({
   loading,
   result,
+  analysisId,
 }: {
   loading: boolean;
   result: AnalysisResult | null;
+  analysisId: string | null;
 }) {
   if (loading) return <LoadingNote />;
   if (!result) return <EmptyAnalysis />;
@@ -283,6 +292,7 @@ function InsightsTab({
             detail={s.detail}
             accent="bg-brand-greenSoft text-brand-greenInk"
             icon={<CheckIcon className="text-brand-greenInk" />}
+            footer={renderFeedback(analysisId, 'analysis_strength', s.title)}
           />
         ))}
       />
@@ -297,6 +307,7 @@ function InsightsTab({
             detail={g.detail}
             accent="bg-amber-100 text-amber-600"
             icon={<AlertTriangleIcon className="text-amber-600" />}
+            footer={renderFeedback(analysisId, 'analysis_gap', g.title)}
           />
         ))}
       />
@@ -313,12 +324,28 @@ function InsightsTab({
                 detail={s.detail}
                 accent="bg-brand-greenSoft text-brand-greenInk"
                 icon={<LightbulbIcon className="text-brand-greenInk" />}
+                footer={renderFeedback(analysisId, 'analysis_suggestion', s.title)}
               />
             ))}
           />
         </div>
       ) : null}
     </div>
+  );
+}
+
+function renderFeedback(
+  analysisId: string | null,
+  surface: FindingFeedbackSurface,
+  title: string,
+): React.ReactNode {
+  if (!analysisId) return null;
+  return (
+    <ThumbsFeedback
+      surface={surface}
+      surfaceId={analysisId}
+      findingId={findingIdFromTitle(title)}
+    />
   );
 }
 
@@ -410,11 +437,13 @@ function ListRow({
   detail,
   accent,
   icon,
+  footer,
 }: {
   title: string;
   detail: string;
   accent: string;
   icon: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   return (
     <li className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-[#fafafa] px-4 py-3">
@@ -423,9 +452,10 @@ function ListRow({
       >
         {icon}
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="text-[14px] font-semibold text-[#111827]">{title}</div>
         <div className="text-[13px] text-gray-600 mt-0.5">{detail}</div>
+        {footer ? <div className="mt-1.5">{footer}</div> : null}
       </div>
     </li>
   );

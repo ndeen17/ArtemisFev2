@@ -125,7 +125,7 @@ export default function DashboardPage() {
         <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
           {copy.dashboardEyebrow}
         </div>
-        <h1 className="mt-1 text-[40px] sm:text-[44px] font-extrabold tracking-tight text-ink leading-[1.05]">
+        <h1 className="mt-1 text-[32px] font-extrabold tracking-tight text-ink leading-[1.1]">
           Hi, {firstName}.
         </h1>
         {/* Role pill — fastest read of "who are you optimising for?" */}

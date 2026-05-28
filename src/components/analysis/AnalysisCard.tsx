@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/icons';
 import { Button } from '@/components/ui/Button';
 import { useRefreshAnalysis } from '@/hooks/useAnalysis';
+import { ThumbsFeedback } from '@/components/feedback/ThumbsFeedback';
+import { findingIdFromTitle } from '@/components/feedback/findingId';
 
 const severityStyles: Record<AnalysisSeverity, { dot: string; label: string }> = {
   low: { dot: 'bg-emerald-400', label: 'Low' },
@@ -149,7 +151,19 @@ export function AnalysisCard({ analysis, isLoading, hasCv }: Props) {
           title="Strengths"
           icon={<SparklesIcon className="text-brand-green" />}
           items={r.strengths.map((s, i) => (
-            <Item key={i} title={s.title} detail={s.detail} accent="bg-[#dcfce7] text-[#15803d]">
+            <Item
+              key={i}
+              title={s.title}
+              detail={s.detail}
+              accent="bg-[#dcfce7] text-[#15803d]"
+              footer={
+                <ThumbsFeedback
+                  surface="analysis_strength"
+                  surfaceId={analysis.id}
+                  findingId={findingIdFromTitle(s.title)}
+                />
+              }
+            >
               <CheckIcon className="text-[#15803d]" />
             </Item>
           ))}
@@ -158,7 +172,7 @@ export function AnalysisCard({ analysis, isLoading, hasCv }: Props) {
           title="Gaps"
           icon={<AlertTriangleIcon className="text-amber-500" />}
           items={r.gaps.map((g, i) => (
-            <GapItem key={i} gap={g} />
+            <GapItem key={i} gap={g} analysisId={analysis.id} />
           ))}
         />
       </div>
@@ -167,7 +181,19 @@ export function AnalysisCard({ analysis, isLoading, hasCv }: Props) {
         title="Suggestions"
         icon={<LightbulbIcon className="text-brand-green" />}
         items={r.suggestions.map((s, i) => (
-          <Item key={i} title={s.title} detail={s.detail} accent="bg-[#dcfce7] text-[#15803d]">
+          <Item
+            key={i}
+            title={s.title}
+            detail={s.detail}
+            accent="bg-[#dcfce7] text-[#15803d]"
+            footer={
+              <ThumbsFeedback
+                surface="analysis_suggestion"
+                surfaceId={analysis.id}
+                findingId={findingIdFromTitle(s.title)}
+              />
+            }
+          >
             <LightbulbIcon className="text-[#15803d]" />
           </Item>
         ))}
@@ -256,11 +282,13 @@ function Item({
   detail,
   accent,
   children,
+  footer,
 }: {
   title: string;
   detail: string;
   accent: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   return (
     <li className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-[#fafafa] px-4 py-3">
@@ -269,15 +297,16 @@ function Item({
       >
         {children}
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="text-[14px] font-semibold text-[#111827]">{title}</div>
         <div className="text-[13px] text-gray-600 mt-0.5">{detail}</div>
+        {footer ? <div className="mt-1.5">{footer}</div> : null}
       </div>
     </li>
   );
 }
 
-function GapItem({ gap }: { gap: AnalysisGap }) {
+function GapItem({ gap, analysisId }: { gap: AnalysisGap; analysisId: string }) {
   const sev = severityStyles[gap.severity];
   return (
     <li className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-[#fafafa] px-4 py-3">
@@ -292,6 +321,12 @@ function GapItem({ gap }: { gap: AnalysisGap }) {
           </span>
         </div>
         <div className="text-[13px] text-gray-600 mt-0.5">{gap.detail}</div>
+        <ThumbsFeedback
+          className="mt-1.5"
+          surface="analysis_gap"
+          surfaceId={analysisId}
+          findingId={findingIdFromTitle(gap.title)}
+        />
       </div>
     </li>
   );
