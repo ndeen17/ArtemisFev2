@@ -29,8 +29,8 @@ import { useBuilderDirty } from '@/store/builderDirtyStore';
  *
  * Lifts hydration / auto-reparse / save logic that previously lived on
  * `Profile/CvEditPage` and `Applications/TargetedCvEditPage`. The host page
- * controls visibility via `SplitPaneShell` and passes `focus` + `coachOpen`
- * through the URL.
+ * controls visibility via `SplitPaneShell` and passes `focus` / `itemId` /
+ * `bulletIndex` through the URL.
  */
 export interface BuilderPanelProps {
   mode: 'profile' | 'targeted';
@@ -38,7 +38,7 @@ export interface BuilderPanelProps {
   applicationId?: string;
   /** Optional initial section. Wins over `focus` if both are present. */
   section?: BuilderSection | null;
-  /** Action-plan item id; resolves to its section + coach seed. Profile mode only. */
+  /** Action-plan item id; resolves to its section. Profile mode only. */
   focus?: string | null;
   /** Specific Experience/Education item id (e.g. `exp-xxx` / `edu-xxx`) to
    *  scroll to & flash inside the section. Profile mode only. */
@@ -46,8 +46,6 @@ export interface BuilderPanelProps {
   /** Optional 0-based bullet index inside the targeted Experience role. Drives
    *  bullet-textarea-level scroll + focus + ring-flash. Profile mode only. */
   bulletIndex?: number | null;
-  /** When true, opens the AI coach drawer prefilled with the focus seed. */
-  coachOpen?: boolean;
   /** Called after a successful save. Hosts use this to optionally close. */
   onSaved?: () => void;
 }
@@ -57,7 +55,7 @@ export function BuilderPanel(props: BuilderPanelProps) {
   return <TargetedBuilder {...props} />;
 }
 
-function ProfileBuilder({ section, focus, itemId, bulletIndex, coachOpen, onSaved }: BuilderPanelProps) {
+function ProfileBuilder({ section, focus, itemId, bulletIndex, onSaved }: BuilderPanelProps) {
   const cvQuery = useMyCv();
   const patch = usePatchCv();
   const reparse = useReparseCv();
@@ -142,10 +140,6 @@ function ProfileBuilder({ section, focus, itemId, bulletIndex, coachOpen, onSave
     | BuilderSection
     | undefined;
 
-  const seedCoachMessage = coachOpen && focusedAction
-    ? `Help me address this from my action plan: "${focusedAction.title}". Detail: ${focusedAction.detail}`
-    : undefined;
-
   async function save() {
     setError(null);
     if (!cvQuery.data || !draft) return;
@@ -192,7 +186,6 @@ function ProfileBuilder({ section, focus, itemId, bulletIndex, coachOpen, onSave
         onChange={setDraft}
         cvId={cvQuery.data.id}
         initialSection={initialSection}
-        seedCoachMessage={seedCoachMessage}
         focusItemId={itemId ?? focusedAction?.itemId ?? null}
         focusBulletIndex={bulletIndex ?? focusedAction?.bulletIndex ?? null}
         onSaveSection={async (_section, next) => {

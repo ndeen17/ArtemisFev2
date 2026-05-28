@@ -74,7 +74,7 @@ export const GOAL_COPY: Record<Goal, GoalCopy> = {
     dashboardEyebrow: 'Growth mode',
     dashboardSubtitle: 'Sharpen the skills that move you up. Start with the highest-impact gap.',
     primaryCtaLabel: 'Open my action plan',
-    primaryCtaTo: '/profile/action-plan',
+    primaryCtaTo: '/profile#actions',
     tone: 'growth',
     actionPriority: {
       'fix-gap': 0,
@@ -92,7 +92,7 @@ export const GOAL_COPY: Record<Goal, GoalCopy> = {
     dashboardSubtitle:
       'Take it at your own pace. Start with a quick analysis, see where you stand.',
     primaryCtaLabel: 'See my CV analysis',
-    primaryCtaTo: '/profile/cv',
+    primaryCtaTo: '/profile?tab=insights#details',
     tone: 'calm',
     actionPriority: {
       'add-cv': 0,

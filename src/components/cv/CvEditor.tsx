@@ -47,9 +47,6 @@ export interface CvEditorProps {
   /** Optional initial section to focus on mount. Used by ?focus=<actionId> to
    *  jump the user straight to the relevant tab from the action plan. */
   initialSection?: Section;
-  /** When set, opens the AI coach drawer on mount with this seed message
-   *  prefilled. Used by the action plan deep-link flow. */
-  seedCoachMessage?: string;
   /** Optional CV item id (StructuredCvExperience.id or StructuredCvEducation.id)
    *  to scroll to and flash inside the active section. Used by the action plan
    *  deep-link flow so "Fix in builder" lands on the exact role/qualification
@@ -75,14 +72,13 @@ export function CvEditor({
   onChange,
   cvId,
   initialSection,
-  seedCoachMessage,
   focusItemId,
   focusBulletIndex,
   onSaveSection,
   onPreview,
 }: CvEditorProps) {
   const [active, setActive] = useState<Section>(initialSection ?? 'header');
-  const [coachOpen, setCoachOpen] = useState<boolean>(Boolean(seedCoachMessage));
+  const [coachOpen, setCoachOpen] = useState<boolean>(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [savingSection, setSavingSection] = useState<Section | null>(null);
   const [savedSection, setSavedSection] = useState<Section | null>(null);
@@ -326,7 +322,6 @@ export function CvEditor({
           cv={value}
           section={activeMeta.coachSection}
           onClose={() => setCoachOpen(false)}
-          seedMessage={seedCoachMessage}
         />
       ) : null}
     </div>

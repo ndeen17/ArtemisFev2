@@ -7,11 +7,20 @@ import type {
 } from '@artemis/shared';
 import type { OpenBuilderOptions } from '@/hooks/useBuilderUrlState';
 import { findBulletInStructured } from '@artemis/shared';
-import { CheckIcon, AlertTriangleIcon, LightbulbIcon, SpinnerIcon } from '@/components/ui/icons';
+import {
+  CheckIcon,
+  AlertTriangleIcon,
+  LightbulbIcon,
+  SpinnerIcon,
+  ChevronDownIcon,
+} from '@/components/ui/icons';
 import { useToggleAction } from '@/hooks/useProfile';
 import { useMyCv } from '@/hooks/useOnboarding';
 import { RewriteDrawer } from './RewriteDrawer';
 import { FixButton } from './FixButton';
+
+/** Number of high-priority actions shown above the fold; the rest expand on demand. */
+const DEFAULT_VISIBLE = 3;
 
 /**
  * PRF-06 — Unified action plan. Renders gaps (severity-sorted) then suggestions,
@@ -42,6 +51,7 @@ export function ActionPlan({
     target: BulletPath;
     original: string;
   } | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   if (isLoading || !plan) {
     return (
@@ -58,17 +68,24 @@ export function ActionPlan({
       <Card>
         <Header completed={0} total={0} />
         <p className="mt-3 text-[14px] text-gray-500">
-          No actions yet — your action plan appears once your CV analysis finishes.
+          Nothing to fix right now — your top things to fix appear here once Artemis
+          finishes analysing your CV.
         </p>
       </Card>
     );
   }
 
+  // Show the top N actions by default (already sorted server-side by severity
+  // then suggestions). The rest are hidden behind a "Show all" toggle so the
+  // section reads as a tight to-do list, not a wall of work.
+  const remaining = Math.max(0, plan.items.length - DEFAULT_VISIBLE);
+  const visibleItems = showAll ? plan.items : plan.items.slice(0, DEFAULT_VISIBLE);
+
   return (
     <Card>
       <Header completed={plan.completedCount} total={plan.totalCount} />
       <div className="mt-6 space-y-3">
-        {plan.items.map((item) => (
+        {visibleItems.map((item) => (
           <Row
             key={item.id}
             item={item}
@@ -80,6 +97,19 @@ export function ActionPlan({
           />
         ))}
       </div>
+      {remaining > 0 ? (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#15803d] hover:underline"
+          aria-expanded={showAll}
+        >
+          {showAll ? 'Show fewer' : `Show all ${plan.items.length} actions`}
+          <ChevronDownIcon
+            className={`w-4 h-4 transition-transform ${showAll ? 'rotate-180' : ''}`}
+          />
+        </button>
+      ) : null}
       {rewriteTarget ? (
         <RewriteDrawer
           target={rewriteTarget.target}
@@ -93,25 +123,34 @@ export function ActionPlan({
 
 function Header({ completed, total }: { completed: number; total: number }) {
   const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const subtitle =
+    total === 0
+      ? 'Nothing to fix yet'
+      : completed === total
+        ? 'Everything done — nice work'
+        : `Work through these to lift your score · ${completed}/${total} done`;
   return (
-    <div className="flex items-end justify-between gap-4 flex-wrap">
+    <div id="actions" className="flex items-end justify-between gap-4 flex-wrap">
       <div>
         <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
-          Action plan
+          Your next moves
         </div>
         <h2 className="mt-1 text-[20px] font-semibold text-[#111827]">
-          {completed} of {total} done
+          Top things to fix
         </h2>
+        <p className="mt-1 text-[13px] text-gray-500">{subtitle}</p>
       </div>
-      <div className="w-40">
-        <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-          <div
-            className="h-full bg-brand-green transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
+      {total > 0 ? (
+        <div className="w-40">
+          <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+            <div
+              className="h-full bg-brand-green transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="mt-1 text-right text-[11px] text-gray-500">{pct}%</div>
         </div>
-        <div className="mt-1 text-right text-[11px] text-gray-500">{pct}%</div>
-      </div>
+      ) : null}
     </div>
   );
 }

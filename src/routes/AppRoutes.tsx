@@ -77,11 +77,9 @@ const LinkedInPage = lazyWithRetry(() => import('@/pages/Onboarding/LinkedInPage
 const CompletePage = lazyWithRetry(() => import('@/pages/Onboarding/CompletePage'));
 const DashboardPage = lazyWithRetry(() => import('@/pages/DashboardPage'));
 const ProfilePage = lazyWithRetry(() => import('@/pages/ProfilePage'));
-const CvAnalysisPage = lazyWithRetry(() => import('@/pages/Profile/CvAnalysisPage'));
 const CvRewriterPage = lazyWithRetry(() => import('@/pages/Profile/CvRewriterPage'));
 const LinkedInAnalysisPage = lazyWithRetry(() => import('@/pages/Profile/LinkedInAnalysisPage'));
 const ScoreRevealPage = lazyWithRetry(() => import('@/pages/Profile/ScoreRevealPage'));
-const ActionPlanPage = lazyWithRetry(() => import('@/pages/Profile/ActionPlanPage'));
 const ApplicationsPage = lazyWithRetry(() => import('@/pages/ApplicationsPage'));
 const NewApplicationPage = lazyWithRetry(() => import('@/pages/Applications/NewApplicationPage'));
 const ApplicationDetailPage = lazyWithRetry(
@@ -207,12 +205,11 @@ const router = createBrowserRouter([
     ),
   },
   {
+    // Legacy route — the CV analysis surface has been folded into the
+    // "Score details" accordion on /profile. Keep this redirect so external
+    // bookmarks and goal CTAs continue to land on the right content.
     path: '/profile/cv',
-    element: (
-      <ProtectedRoute>
-        <CvAnalysisPage />
-      </ProtectedRoute>
-    ),
+    element: <Navigate to="/profile?tab=insights#details" replace />,
   },
   {
     path: '/profile/cv/rewrite',
@@ -255,12 +252,11 @@ const router = createBrowserRouter([
     ),
   },
   {
+    // Legacy route — the standalone action plan was merged into the main
+    // profile page so users see the score, the to-do list, and the details
+    // in a single scroll. Redirect to the actions anchor on /profile.
     path: '/profile/action-plan',
-    element: (
-      <ProtectedRoute>
-        <ActionPlanPage />
-      </ProtectedRoute>
-    ),
+    element: <Navigate to="/profile#actions" replace />,
   },
   {
     path: '/applications',

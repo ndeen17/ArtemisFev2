@@ -10,7 +10,6 @@ import { useSearchParams } from 'react-router-dom';
  *   &focus=<actionId>     — action plan item being addressed; resolved to its section
  *   &itemId=<cvItemId>    — specific Experience/Education item id to scroll to & flash inside the section
  *   &bulletIdx=<n>        — 0-based bullet index inside the targeted Experience role; scrolls + focuses the bullet textarea
- *   &coach=1              — open the AI coach drawer on mount, prefilled with the action seed
  *
  * Old hash anchors (#summary etc) are not honoured — replace with `section=` for clarity
  * and back/forward parity.
@@ -28,7 +27,6 @@ export interface BuilderState {
   focus: string | null;
   itemId: string | null;
   bulletIndex: number | null;
-  coachOpen: boolean;
 }
 
 export interface OpenBuilderOptions {
@@ -36,7 +34,6 @@ export interface OpenBuilderOptions {
   focus?: string;
   itemId?: string;
   bulletIndex?: number | null;
-  coach?: boolean;
 }
 
 const VALID_SECTIONS: ReadonlySet<string> = new Set([
@@ -62,7 +59,6 @@ export function useBuilderUrlState() {
       focus: params.get('focus'),
       itemId: params.get('itemId'),
       bulletIndex,
-      coachOpen: params.get('coach') === '1',
     };
   }, [params]);
 
@@ -83,8 +79,6 @@ export function useBuilderUrlState() {
           } else {
             next.delete('bulletIdx');
           }
-          if (opts.coach) next.set('coach', '1');
-          else next.delete('coach');
           return next;
         },
         { replace: false },
@@ -102,7 +96,6 @@ export function useBuilderUrlState() {
         next.delete('focus');
         next.delete('itemId');
         next.delete('bulletIdx');
-        next.delete('coach');
         return next;
       },
       { replace: false },

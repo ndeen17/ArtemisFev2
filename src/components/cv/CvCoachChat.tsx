@@ -12,9 +12,6 @@ export interface CvCoachChatProps {
   cv: StructuredCv;
   section: CvCoachSection;
   onClose: () => void;
-  /** Optional initial user message — auto-fired on mount. Used by the editor to
-   *  open the coach pre-loaded with context for an action-plan item. */
-  seedMessage?: string;
 }
 
 /**
@@ -22,7 +19,7 @@ export interface CvCoachChatProps {
  * and is sent on every request alongside the current CV draft so the model has
  * fresh context. Closing the panel discards the conversation.
  */
-export function CvCoachChat({ cv, section, onClose, seedMessage }: CvCoachChatProps) {
+export function CvCoachChat({ cv, section, onClose }: CvCoachChatProps) {
   const coach = useCvCoach();
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState<Msg[]>(() => [
@@ -33,36 +30,10 @@ export function CvCoachChat({ cv, section, onClose, seedMessage }: CvCoachChatPr
     },
   ]);
   const scroller = useRef<HTMLDivElement | null>(null);
-  const seededRef = useRef(false);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });
   }, [messages, coach.isPending]);
-
-  // Auto-fire the seed message exactly once when the component mounts with one.
-  useEffect(() => {
-    const seed = seedMessage?.trim();
-    if (!seed || seededRef.current) return;
-    seededRef.current = true;
-    const next: Msg[] = [
-      ...messages,
-      { role: 'user' as const, content: seed },
-    ];
-    setMessages(next);
-    coach
-      .mutateAsync({ cv, section, history: messages, message: seed })
-      .then((reply) => setMessages([...next, { role: 'assistant', content: reply }]))
-      .catch(() =>
-        setMessages([
-          ...next,
-          {
-            role: 'assistant',
-            content: "Sorry — I couldn't reach the coach just now. Try again in a moment.",
-          },
-        ]),
-      );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function send() {
     const text = draft.trim();

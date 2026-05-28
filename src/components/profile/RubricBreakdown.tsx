@@ -10,17 +10,23 @@ import type {
  * Phase C UI — shows the deterministic rubric the user can drive to 100.
  * Each item displays achieved/weight points and, when fixable in the editor,
  * a "Fix in builder" deep link to the matching section.
+ *
+ * Pass `chromeless` when embedding inside another card (e.g. the Score details
+ * accordion) so the outer rounded-card wrapper is skipped and the content
+ * blends with its container.
  */
 export function RubricBreakdown({
   items,
   rubricScore,
   llmScore,
   onOpenBuilder,
+  chromeless = false,
 }: {
   items: RubricItem[];
   rubricScore: number | null;
   llmScore: number | null;
   onOpenBuilder: (opts: OpenBuilderOptions) => void;
+  chromeless?: boolean;
 }) {
   if (!items.length) {
     return null;
@@ -34,28 +40,40 @@ export function RubricBreakdown({
       : atsScore >= 60
       ? { label: 'Needs work', tone: 'bg-amber-50 text-amber-700 ring-amber-200' }
       : { label: 'At risk', tone: 'bg-rose-50 text-rose-700 ring-rose-200' };
+
+  const Wrapper = chromeless ? PassthroughWrapper : CardWrapper;
+
   return (
-    <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
+    <Wrapper>
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
-            Score breakdown
-          </div>
-          <h2 className="mt-1 text-[20px] font-semibold text-[#111827]">
-            How your score is calculated
+          {chromeless ? null : (
+            <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
+              Score breakdown
+            </div>
+          )}
+          <h2
+            className={
+              chromeless
+                ? 'text-[16px] font-semibold text-[#111827]'
+                : 'mt-1 text-[20px] font-semibold text-[#111827]'
+            }
+          >
+            {chromeless ? 'ATS checklist' : 'How your score is calculated'}
           </h2>
           <p className="mt-1 text-[13px] text-gray-500 max-w-xl">
-            Your displayed score is the average of a deterministic rubric and the AI&apos;s
-            holistic grade. Tick every item below and write a strong CV to reach 100.
+            {chromeless
+              ? 'Mechanical checks an applicant tracking system runs on your CV. Tick each to lift the ATS portion of your score.'
+              : "Your displayed score is the average of a deterministic rubric and the AI's holistic grade. Tick every item below and write a strong CV to reach 100."}
           </p>
         </div>
         <div className="text-right">
-          {rubricScore !== null ? (
+          {!chromeless && rubricScore !== null ? (
             <div className="text-[12px] text-gray-500">
               Rubric <span className="font-semibold text-[#111827]">{rubricScore}</span>/100
             </div>
           ) : null}
-          {llmScore !== null ? (
+          {!chromeless && llmScore !== null ? (
             <div className="text-[12px] text-gray-500">
               AI grade <span className="font-semibold text-[#111827]">{llmScore}</span>/100
             </div>
@@ -134,8 +152,20 @@ export function RubricBreakdown({
           );
         })}
       </ul>
+    </Wrapper>
+  );
+}
+
+function CardWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
+      {children}
     </section>
   );
+}
+
+function PassthroughWrapper({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>;
 }
 
 function round1(n: number): number {
