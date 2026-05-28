@@ -1,6 +1,7 @@
 import type { RubricItem } from '@artemis/shared';
 import { atsSubScore } from '@artemis/shared';
 import { CheckIcon } from '@/components/ui/icons';
+import { scoreBandClasses } from '@/lib/scoreBand';
 import type {
   BuilderSection,
   OpenBuilderOptions,
@@ -95,6 +96,7 @@ export function RubricBreakdown({
         {items.map((item) => {
           const pct = item.weight === 0 ? 0 : (item.achieved / item.weight) * 100;
           const fullCredit = item.achieved >= item.weight - 0.05;
+          const band = scoreBandClasses(pct);
           return (
             <li
               key={item.id}
@@ -124,7 +126,7 @@ export function RubricBreakdown({
                   </div>
                   <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
                     <div
-                      className="h-full bg-brand-green transition-all"
+                      className={`h-full transition-all ${band.fill}`}
                       style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
                     />
                   </div>

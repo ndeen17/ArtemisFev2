@@ -55,8 +55,8 @@ export function CheckIcon(props: SVGProps<SVGSVGElement>) {
       width="20"
       height="20"
       fill="none"
-      stroke="#22c55e"
-      strokeWidth="3"
+      stroke="currentColor"
+      strokeWidth="2.4"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -133,7 +133,7 @@ export function ArrowLeftIcon(props: SVGProps<SVGSVGElement>) {
       height="18"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -152,7 +152,7 @@ export function ArrowRightIcon(props: SVGProps<SVGSVGElement>) {
       height="18"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -171,13 +171,53 @@ export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
       height="18"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
       {...props}
     >
       <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+export function TrendUpIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M3 17l6-6 4 4 8-8" />
+      <path d="M14 7h7v7" />
+    </svg>
+  );
+}
+
+export function TrendDownIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M3 7l6 6 4-4 8 8" />
+      <path d="M14 17h7v-7" />
     </svg>
   );
 }
@@ -202,7 +242,7 @@ export function PlusIcon(props: SVGProps<SVGSVGElement>) {
       height="18"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

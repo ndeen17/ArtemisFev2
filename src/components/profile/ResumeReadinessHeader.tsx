@@ -6,8 +6,11 @@ import {
   SpinnerIcon,
   ChevronDownIcon,
   ArrowRightIcon,
+  TrendUpIcon,
+  TrendDownIcon,
 } from '@/components/ui/icons';
 import { useRefreshAnalysis } from '@/hooks/useAnalysis';
+import { scoreBandClasses } from '@/lib/scoreBand';
 
 /**
  * Resume page header — replaces the legacy ProfileOverviewCard.
@@ -81,10 +84,10 @@ export function ResumeReadinessHeader({
             Resume readiness
           </div>
           <div className="mt-1 flex items-baseline gap-3 flex-wrap">
-            <span className="text-[40px] sm:text-[44px] font-extrabold tracking-tight text-[#111827] leading-none tabular-nums">
+            <span className="text-[56px] sm:text-[64px] font-extrabold tracking-tight text-ink leading-none tabular-nums">
               {overview.readinessScore !== null ? overview.readinessScore : '—'}
             </span>
-            <span className="text-[18px] font-semibold text-gray-400">/ 100</span>
+            <span className="text-[20px] font-semibold text-gray-400">/ 100</span>
             <DeltaChip delta={overview.weeklyDelta} />
             <StatusChip status={overview.analysisStatus} hasCv={hasCv} />
           </div>
@@ -120,7 +123,7 @@ export function ResumeReadinessHeader({
           <button
             type="button"
             onClick={() => setExplainerOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#15803d] hover:underline"
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand-greenInk hover:underline"
             aria-expanded={explainerOpen}
           >
             What goes into this score?
@@ -148,7 +151,7 @@ export function ResumeReadinessHeader({
                 only chasing keywords.{' '}
                 <a
                   href={`#${detailsAnchor}`}
-                  className="font-semibold text-[#15803d] hover:underline inline-flex items-center gap-0.5"
+                  className="font-semibold text-brand-greenInk hover:underline inline-flex items-center gap-0.5"
                 >
                   See full breakdown <ArrowRightIcon className="w-3.5 h-3.5" />
                 </a>
@@ -171,19 +174,20 @@ function ScoreComponent({
   explainer: string;
 }) {
   const pct = score ?? 0;
+  const band = scoreBandClasses(score);
   return (
-    <div className="rounded-2xl border border-gray-100 bg-[#fafafa] p-4">
+    <div className="rounded-2xl border border-gray-100 bg-surface-muted p-4">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-gray-500">
           {label}
         </span>
-        <span className="text-[14px] font-bold tabular-nums text-[#111827]">
+        <span className="text-[14px] font-bold tabular-nums text-ink">
           {score !== null ? `${score}/100` : '—'}
         </span>
       </div>
       <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
         <div
-          className="h-full bg-brand-green transition-all"
+          className={`h-full transition-all ${band.fill}`}
           style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
         />
       </div>
@@ -198,11 +202,18 @@ function DeltaChip({ delta }: { delta: number | null }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-        positive ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-rose-50 text-rose-600'
+        positive
+          ? 'bg-brand-greenSoft text-brand-greenInk'
+          : 'bg-rose-50 text-rose-600'
       }`}
       title="Change since your last analysis"
     >
-      {positive ? '▲' : '▼'} {positive ? '+' : ''}
+      {positive ? (
+        <TrendUpIcon className="w-3 h-3" />
+      ) : (
+        <TrendDownIcon className="w-3 h-3" />
+      )}
+      {positive ? '+' : ''}
       {delta}
     </span>
   );
@@ -241,7 +252,7 @@ function StatusChip({
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
+    <section className="rounded-3xl border border-gray-100 bg-white shadow-card p-6 sm:p-8">
       {children}
     </section>
   );

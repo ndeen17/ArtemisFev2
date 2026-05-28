@@ -160,9 +160,9 @@ export function ActionList(props: Props) {
   const items = sortByGoalPriority(derived, props.goal ?? null);
   if (items.length === 0) {
     return (
-      <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
-        <h2 className="text-[18px] font-semibold text-[#111827]">You&apos;re all caught up</h2>
-        <p className="mt-2 text-[14px] text-gray-600">
+      <section className="rounded-3xl border border-gray-100 bg-white shadow-card p-6 sm:p-8">
+        <h2 className="text-[18px] font-semibold text-ink">You&apos;re all caught up</h2>
+        <p className="mt-2 text-[14px] text-ink-muted">
           We&apos;ll surface new actions as your profile, applications, and interviews come online.
         </p>
       </section>
@@ -170,13 +170,13 @@ export function ActionList(props: Props) {
   }
 
   return (
-    <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
+    <section className="rounded-3xl border border-gray-100 bg-white shadow-card p-6 sm:p-8">
       <div className="flex items-end justify-between gap-4 mb-5">
         <div>
           <div className="text-[12px] font-semibold uppercase tracking-[0.14em] text-brand-green">
             Next steps
           </div>
-          <h2 className="text-[20px] font-extrabold tracking-tight text-[#111827] leading-[1.15] mt-1">
+          <h2 className="text-[20px] font-extrabold tracking-tight text-ink leading-[1.15] mt-1">
             What to do next
           </h2>
         </div>
@@ -190,31 +190,36 @@ export function ActionList(props: Props) {
             <li key={item.id}>
               <Link
                 to={item.to}
+                aria-label={`${item.title} — ${item.cta}`}
                 className={
-                  'flex items-center gap-4 rounded-2xl border px-4 py-4 transition-colors ' +
+                  'group flex items-center gap-4 rounded-2xl border px-4 py-4 transition-colors ' +
                   (isPrimary
-                    ? 'border-[#dcfce7] bg-[#f0fdf4] hover:bg-[#dcfce7]'
-                    : 'border-gray-100 bg-[#fafafa] hover:bg-gray-50')
+                    ? 'border-brand-greenSoft bg-brand-greenWash hover:bg-brand-greenSoft'
+                    : 'border-gray-100 bg-surface-muted hover:bg-gray-50')
                 }
               >
                 <span
                   className={
                     'flex-shrink-0 inline-flex items-center justify-center rounded-full w-10 h-10 ' +
-                    (isPrimary ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-gray-100 text-gray-600')
+                    (isPrimary
+                      ? 'bg-brand-greenSoft text-brand-greenInk'
+                      : 'bg-gray-100 text-gray-600')
                   }
                 >
                   <Icon />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold text-[#111827] truncate">
+                  <div className="text-[14px] font-semibold text-ink truncate">
                     {item.title}
                   </div>
-                  <div className="text-[13px] text-gray-600 mt-0.5 line-clamp-2">{item.detail}</div>
+                  <div className="text-[13px] text-ink-muted mt-0.5 line-clamp-2">{item.detail}</div>
                 </div>
-                <span className="flex-shrink-0 inline-flex items-center gap-1 text-[13px] font-semibold text-[#111827]">
-                  {item.cta}
-                  <ArrowRightIcon className="w-4 h-4" />
-                </span>
+                {/* Chevron only — the per-row "Open resume / Continue" text was
+                    redundant when 4 of 5 rows said the same thing. The row
+                    itself is the click target. */}
+                <ArrowRightIcon
+                  className="flex-shrink-0 w-4 h-4 text-ink-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
+                />
               </Link>
             </li>
           );

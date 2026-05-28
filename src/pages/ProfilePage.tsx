@@ -74,14 +74,13 @@ export default function ProfilePage() {
         onOpenBuilder={builder.open}
       />
 
-      {overview.data?.rubricBreakdown && overview.data.rubricBreakdown.length > 0 ? (
-        <ScoreDetailsAccordion
-          rubricItems={overview.data.rubricBreakdown}
-          rubricScore={overview.data.rubricScore ?? null}
-          llmScore={overview.data.llmScore ?? null}
-          onOpenBuilder={builder.open}
-        />
-      ) : null}
+      <ScoreDetailsAccordion
+        rubricItems={overview.data?.rubricBreakdown ?? []}
+        rubricScore={overview.data?.rubricScore ?? null}
+        llmScore={overview.data?.llmScore ?? null}
+        analysisStatus={overview.data?.analysisStatus ?? 'none'}
+        onOpenBuilder={builder.open}
+      />
 
       <LinkedInComingSoonNote />
     </div>

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import type {
   ActionPlan as ActionPlanData,
   ActionPlanItem,
@@ -31,8 +32,8 @@ const DEFAULT_VISIBLE = 3;
  */
 const SEVERITY_DOT: Record<'high' | 'medium' | 'low', string> = {
   high: 'bg-rose-500',
-  medium: 'bg-amber-400',
-  low: 'bg-emerald-400',
+  medium: 'bg-amber-500',
+  low: 'bg-emerald-500',
 };
 
 export function ActionPlan({
@@ -52,6 +53,15 @@ export function ActionPlan({
     original: string;
   } | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const location = useLocation();
+
+  // Scroll into view when the user lands on `/profile#actions` (e.g. from the
+  // legacy `/profile/action-plan` redirect or dashboard goal CTA).
+  useEffect(() => {
+    if (location.hash !== '#actions') return;
+    const el = document.getElementById('actions');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location.hash]);
 
   if (isLoading || !plan) {
     return (

@@ -138,8 +138,32 @@ export const TranscriptTurnSchema = z.object({
   at: z.string(),
   /** Voice mode only — duration of the captured audio for this turn. */
   audioMs: z.number().int().nonnegative().optional(),
+  /**
+   * Phase D — which bank question this turn was answering (null on legacy
+   * free-form LLM turns). Used by Phase E rubric-grounded scoring.
+   */
+  questionId: z.string().nullable().optional(),
+  questionVersion: z.number().int().positive().nullable().optional(),
 });
 export type TranscriptTurn = z.infer<typeof TranscriptTurnSchema>;
+
+// ---------- Phase D — hybrid interviewer state ----------
+
+export const CurrentQuestionSchema = z.object({
+  id: z.string(),
+  version: z.number().int().positive(),
+  signals: z.array(z.string()),
+  /** Candidate turns spent on this question so far. */
+  turnsAsked: z.number().int().nonnegative(),
+  askedAt: z.string(),
+});
+export type CurrentQuestion = z.infer<typeof CurrentQuestionSchema>;
+
+export const UsedQuestionSchema = CurrentQuestionSchema.extend({
+  advancedAt: z.string(),
+  advancedReason: z.enum(['llm_advance', 'turn_cap', 'session_end']),
+});
+export type UsedQuestion = z.infer<typeof UsedQuestionSchema>;
 
 // ---------- Scoring + debrief ----------
 
@@ -179,6 +203,10 @@ export const InterviewSessionSchema = z.object({
   applicationId: z.string().nullable(),
   brief: InterviewBriefSchema.nullable(),
   transcript: z.array(TranscriptTurnSchema),
+  /** Phase D — bank question the candidate is currently answering, if any. */
+  currentQuestion: CurrentQuestionSchema.nullable(),
+  /** Phase D — history of bank questions the candidate has already answered in this session. */
+  usedQuestions: z.array(UsedQuestionSchema),
   debrief: InterviewDebriefSchema.nullable(),
   endedReason: InterviewEndReasonSchema.nullable(),
   costCents: z.number().int().nonnegative(),

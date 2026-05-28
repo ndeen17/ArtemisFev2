@@ -5,6 +5,7 @@ import type { ProfileOverview } from '@artemis/shared';
 import { Button } from '@/components/ui/Button';
 import { SparklesIcon } from '@/components/ui/icons';
 import { useMarkScoreRevealSeen } from '@/hooks/useProfile';
+import { scoreBandClasses } from '@/lib/scoreBand';
 
 /**
  * PRF-05 — One-time animated score reveal. Triggers when ProfileOverview reports
@@ -90,10 +91,40 @@ export function ScoreReveal({ overview }: Props) {
       >
         {tagline}
       </motion.p>
+
+      {overview.rubricScore !== null || overview.llmScore !== null ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.6, duration: 0.5 }}
+          className="mt-8 mx-auto max-w-xl"
+        >
+          <div className="text-[11px] font-semibold tracking-[0.14em] uppercase text-gray-500">
+            How we got there
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+            <RevealComponent
+              label="ATS checklist"
+              score={overview.rubricScore}
+              explainer="Mechanical checks an applicant tracking system runs on your CV."
+            />
+            <RevealComponent
+              label="AI grade"
+              score={overview.llmScore}
+              explainer="How a recruiter-trained AI rates your writing and impact."
+            />
+          </div>
+          <p className="mt-3 text-[12px] text-gray-500">
+            Your score is the average of the two — so you can&apos;t game it by
+            only chasing keywords.
+          </p>
+        </motion.div>
+      ) : null}
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.7, duration: 0.4 }}
+        transition={{ delay: 1.9, duration: 0.4 }}
         className="mt-8 flex items-center justify-center"
       >
         <Button variant="primary" size="md" onClick={onContinue}>
@@ -103,6 +134,38 @@ export function ScoreReveal({ overview }: Props) {
           </span>
         </Button>
       </motion.div>
+    </div>
+  );
+}
+
+function RevealComponent({
+  label,
+  score,
+  explainer,
+}: {
+  label: string;
+  score: number | null;
+  explainer: string;
+}) {
+  const pct = score ?? 0;
+  const band = scoreBandClasses(score);
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-surface-muted p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+          {label}
+        </span>
+        <span className="text-[14px] font-bold tabular-nums text-ink">
+          {score !== null ? `${score}/100` : '—'}
+        </span>
+      </div>
+      <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+        <div
+          className={`h-full transition-all duration-700 ${band.fill}`}
+          style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+        />
+      </div>
+      <p className="mt-2 text-[12px] text-gray-500 leading-snug">{explainer}</p>
     </div>
   );
 }

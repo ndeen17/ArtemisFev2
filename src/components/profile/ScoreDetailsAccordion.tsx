@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { RubricItem, AnalysisResult } from '@artemis/shared';
+import type { RubricItem, AnalysisResult, ProfileOverview } from '@artemis/shared';
 import { roleLabel } from '@artemis/shared';
 import { RubricBreakdown } from './RubricBreakdown';
 import { BulletFeedbackList } from './BulletFeedback';
@@ -46,6 +46,7 @@ interface Props {
   rubricItems: RubricItem[];
   rubricScore: number | null;
   llmScore: number | null;
+  analysisStatus: ProfileOverview['analysisStatus'];
   onOpenBuilder: (opts: OpenBuilderOptions) => void;
 }
 
@@ -53,6 +54,7 @@ export function ScoreDetailsAccordion({
   rubricItems,
   rubricScore,
   llmScore,
+  analysisStatus,
   onOpenBuilder,
 }: Props) {
   const location = useLocation();
@@ -77,9 +79,71 @@ export function ScoreDetailsAccordion({
     if (t) setTab(t);
   }, [hash, location.search]);
 
-  const hasAnything =
-    rubricItems.length > 0 || result !== null;
-  if (!hasAnything) return null;
+  // react-router-dom v6 doesn't auto-scroll to hash; bring this section into
+  // view when the user lands here via `/profile#details` (e.g. from the legacy
+  // `/profile/cv` redirect or the "See full breakdown" link in the header).
+  useEffect(() => {
+    if (hash !== 'details') return;
+    const el = document.getElementById('details');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [hash]);
+
+  const hasAnything = rubricItems.length > 0 || result !== null;
+  const analysing =
+    analysisStatus === 'queued' || analysisStatus === 'running';
+
+  // Hide entirely only when there's nothing to show *and* nothing in flight
+  // (e.g. brand-new user without a CV). Otherwise we always render the section
+  // so the page layout stays stable as analysis state transitions.
+  if (!hasAnything && !analysing && analysisStatus !== 'failed') {
+    return null;
+  }
+
+  // Skeleton state — mid-analysis with no rubric yet. Keeps the section
+  // present so users don't see the page jump when results land.
+  if (!hasAnything && analysing) {
+    return (
+      <section
+        id="details"
+        className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8"
+      >
+        <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
+          Why this score
+        </div>
+        <h2 className="mt-1 text-[20px] font-semibold text-[#111827]">Score details</h2>
+        <div className="mt-4 flex items-center gap-2 text-[14px] text-gray-500">
+          <SpinnerIcon className="animate-spin" /> Analysing your CV — the breakdown
+          appears here in 10–30 seconds.
+        </div>
+        <div className="mt-5 space-y-2">
+          <div className="h-3 w-3/4 rounded bg-gray-100 animate-pulse" />
+          <div className="h-3 w-1/2 rounded bg-gray-100 animate-pulse" />
+          <div className="h-3 w-2/3 rounded bg-gray-100 animate-pulse" />
+        </div>
+      </section>
+    );
+  }
+
+  // Failed state — keep the section so users have a place to retry from. The
+  // Re-analyse action lives in the header so we just message the failure.
+  if (!hasAnything && analysisStatus === 'failed') {
+    return (
+      <section
+        id="details"
+        className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8"
+      >
+        <div className="text-[12px] font-semibold tracking-[0.14em] uppercase text-brand-green">
+          Why this score
+        </div>
+        <h2 className="mt-1 text-[20px] font-semibold text-[#111827]">Score details</h2>
+        <p className="mt-3 text-[14px] text-gray-500">
+          The last analysis didn&apos;t complete. Use{' '}
+          <span className="font-semibold text-[#111827]">Re-analyse</span> above to
+          try again.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -121,8 +185,8 @@ export function ScoreDetailsAccordion({
                 onClick={() => setTab(t)}
                 className={`px-3 py-2 text-[13px] font-semibold rounded-t-lg border-b-2 -mb-px transition-colors ${
                   tab === t
-                    ? 'border-brand-green text-[#15803d]'
-                    : 'border-transparent text-gray-500 hover:text-[#111827]'
+                    ? 'border-brand-greenInk text-brand-greenInk'
+                    : 'border-transparent text-gray-500 hover:text-ink'
                 }`}
               >
                 {TAB_LABELS[t]}
@@ -210,15 +274,15 @@ function InsightsTab({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <ListBlock
         title="Strengths"
-        icon={<SparklesIcon className="text-[#15803d]" />}
+        icon={<SparklesIcon className="text-brand-greenInk" />}
         empty="No standout strengths yet — work through your action plan to build them."
         items={result.strengths.map((s, i) => (
           <ListRow
             key={i}
             title={s.title}
             detail={s.detail}
-            accent="bg-[#dcfce7] text-[#15803d]"
-            icon={<CheckIcon className="text-[#15803d]" />}
+            accent="bg-brand-greenSoft text-brand-greenInk"
+            icon={<CheckIcon className="text-brand-greenInk" />}
           />
         ))}
       />
@@ -240,15 +304,15 @@ function InsightsTab({
         <div className="lg:col-span-2">
           <ListBlock
             title="Suggestions"
-            icon={<LightbulbIcon className="text-[#15803d]" />}
+            icon={<LightbulbIcon className="text-brand-greenInk" />}
             empty=""
             items={result.suggestions.map((s, i) => (
               <ListRow
                 key={i}
                 title={s.title}
                 detail={s.detail}
-                accent="bg-[#dcfce7] text-[#15803d]"
-                icon={<LightbulbIcon className="text-[#15803d]" />}
+                accent="bg-brand-greenSoft text-brand-greenInk"
+                icon={<LightbulbIcon className="text-brand-greenInk" />}
               />
             ))}
           />
