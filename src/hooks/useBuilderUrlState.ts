@@ -11,6 +11,7 @@ import { useSearchParams } from 'react-router-dom';
  *   &itemId=<cvItemId>    — specific Experience/Education item id to scroll to & flash inside the section
  *   &bulletIdx=<n>        — 0-based bullet index inside the targeted Experience role; scrolls + focuses the bullet textarea
  *   &field=<name>         — named input inside a non-itemised section (e.g. header `fullName`/`email`/`headline`/`location`); scrolls + focuses the input
+ *   &why=<text>           — short reason/hint to surface as a dismissible banner above the editor (“Why am I here?”). URL-encoded, soft 240 char cap.
  *
  * Old hash anchors (#summary etc) are not honoured — replace with `section=` for clarity
  * and back/forward parity.
@@ -29,6 +30,7 @@ export interface BuilderState {
   itemId: string | null;
   bulletIndex: number | null;
   field: string | null;
+  why: string | null;
 }
 
 export interface OpenBuilderOptions {
@@ -37,6 +39,7 @@ export interface OpenBuilderOptions {
   itemId?: string;
   bulletIndex?: number | null;
   field?: string;
+  why?: string;
 }
 
 const VALID_SECTIONS: ReadonlySet<string> = new Set([
@@ -63,6 +66,7 @@ export function useBuilderUrlState() {
       itemId: params.get('itemId'),
       bulletIndex,
       field: params.get('field'),
+      why: params.get('why'),
     };
   }, [params]);
 
@@ -85,6 +89,8 @@ export function useBuilderUrlState() {
           }
           if (opts.field) next.set('field', opts.field);
           else next.delete('field');
+          if (opts.why) next.set('why', opts.why.slice(0, 240));
+          else next.delete('why');
           return next;
         },
         { replace: false },
@@ -103,6 +109,7 @@ export function useBuilderUrlState() {
         next.delete('itemId');
         next.delete('bulletIdx');
         next.delete('field');
+        next.delete('why');
         return next;
       },
       { replace: false },

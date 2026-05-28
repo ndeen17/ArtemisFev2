@@ -248,3 +248,80 @@ export function findBulletIndexInItem(
   }
   return containmentHit;
 }
+
+/**
+ * Cross-role version of `findBulletIndexInItem`. Scans every role's bullets
+ * looking for a UNIQUE match for the quoted text and returns both the role id
+ * and bullet index when exactly one role has exactly one match. Lets the
+ * action-plan resolver rescue findings where the LLM emitted a verbatim quote
+ * but forgot (or hallucinated) the expId — instead of dropping the precision,
+ * we backfill it from the text. Returns null on ambiguity / no match so we
+ * never guess.
+ */
+export function findBulletAcrossRoles(
+  cv: ActionTargetCvShape | null | undefined,
+  quotedBullet: string | null | undefined,
+): { itemId: string; bulletIndex: number } | null {
+  if (!cv || !quotedBullet) return null;
+  const target = norm(quotedBullet);
+  if (target.length < 8) return null;
+  let hit: { itemId: string; bulletIndex: number } | null = null;
+  for (const role of cv.experience) {
+    const idx = findBulletIndexInItem(role.achievements, quotedBullet);
+    if (idx === null) continue;
+    if (hit) return null; // matched in two roles — ambiguous
+    hit = { itemId: role.id, bulletIndex: idx };
+  }
+  return hit;
+}
+
+/**
+ * Detect "collection-level" language that violates the analysis prompt's
+ * SPECIFICITY CONTRACT — phrases like "some of your roles", "one of your
+ * experiences", "across your bullets". When an LLM-emitted gap or suggestion
+ * concerns Experience or Education but anchors to no specific id AND the text
+ * reads like a collection-level finding, we drop it entirely (rather than
+ * surface a vague CTA that lands the user on a section with nothing flashing).
+ *
+ * Pure regex — runs on both BE (when building the action plan) and FE (so a
+ * future client-side filter or test can apply the same rule).
+ */
+const VAGUE_COLLECTION_PATTERNS: ReadonlyArray<RegExp> = [
+  /\b(?:some|one|a\s+few|several|many|most|various|multiple|certain|a\s+couple)\s+of\s+(?:your|the)\s+(?:roles?|positions?|jobs?|experiences?|entries|bullets?|achievements?|points?|qualifications?)\b/i,
+  /\b(?:across|throughout|in|within)\s+(?:your|the)\s+(?:experience(?:\s+section)?|roles?|positions?|bullets?|achievements?|cv|resume)\b/i,
+  /\byour\s+(?:roles?|positions?|jobs?|experiences?|bullets?|achievements?|entries)\s+(?:in\s+general|generally|overall|tend\s+to|often|typically)\b/i,
+  /\b(?:each|every|all)\s+(?:of\s+your\s+)?(?:roles?|positions?|jobs?|experiences?|bullets?|achievements?)\b/i,
+  /\bmany\s+bullets?\b/i,
+];
+
+export function isVagueCollectionLanguage(text: string): boolean {
+  if (!text) return false;
+  return VAGUE_COLLECTION_PATTERNS.some((p) => p.test(text));
+}
+
+/**
+ * Returns true when the given text names at least one role (company OR title)
+ * or education entry (school OR qualification) from the user's CV. Used by the
+ * action-plan filter as the "earned exception": a finding may survive without
+ * a resolved id if it at least names a specific entity by hand — that means
+ * the LLM was being specific even if the id rescue failed, and the user can
+ * recognise where it points.
+ */
+export function mentionsSpecificEntity(
+  text: string,
+  cv: ActionTargetCvShape | null | undefined,
+): boolean {
+  if (!text || !cv) return false;
+  const hay = norm(text);
+  if (!hay) return false;
+  const tokens: string[] = [];
+  for (const e of cv.experience) {
+    if (e.company) tokens.push(norm(e.company));
+    if (e.title) tokens.push(norm(e.title));
+  }
+  for (const ed of cv.education) {
+    if (ed.school) tokens.push(norm(ed.school));
+    if (ed.qualification) tokens.push(norm(ed.qualification));
+  }
+  return tokens.some((t) => t && isMeaningful(t) && hay.includes(t));
+}

@@ -62,6 +62,11 @@ export interface CvEditorProps {
    *  ring-flash so rubric items like `header_complete` can land the user on
    *  the exact empty input. */
   focusField?: string | null;
+  /** Optional list of keyword tokens flagged as gaps by the latest analysis.
+   *  Rendered as one-click “+ Add” chips at the top of the Skills form so the
+   *  user can resolve `keyword_gaps_closed` debt without retyping. Already-
+   *  present keywords are filtered out client-side. */
+  missingKeywords?: string[];
   /** When provided, renders a per-section "Save section" button. Parents wire
    *  this to a partial patch so users get explicit confirmation that the
    *  current section persisted, without having to commit the whole CV. */
@@ -81,6 +86,7 @@ export function CvEditor({
   focusItemId,
   focusBulletIndex,
   focusField,
+  missingKeywords,
   onSaveSection,
   onPreview,
 }: CvEditorProps) {
@@ -242,9 +248,11 @@ export function CvEditor({
                 <ExperienceForm value={value} onChange={onChange} cvId={cvId} focusItemId={focusItemId} focusBulletIndex={focusBulletIndex} />
               ) : null}
               {active === 'education' ? (
-                <EducationForm value={value} onChange={onChange} focusItemId={focusItemId} />
+                <EducationForm value={value} onChange={onChange} focusItemId={focusItemId} focusField={focusField} />
               ) : null}
-              {active === 'skills' ? <SkillsForm value={value} onChange={onChange} /> : null}
+              {active === 'skills' ? (
+                <SkillsForm value={value} onChange={onChange} missingKeywords={missingKeywords} />
+              ) : null}
             </div>
             {onSaveSection ? (
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
@@ -755,7 +763,12 @@ function ExperienceCard({
   );
 }
 
-function EducationForm({ value, onChange, focusItemId }: CvEditorProps) {
+function EducationForm({
+  value,
+  onChange,
+  focusItemId,
+  focusField,
+}: CvEditorProps & { focusField?: string | null }) {
   const setItem = (idx: number, patch: Partial<StructuredCvEducation>) => {
     const next = value.education.map((e, i) => (i === idx ? { ...e, ...patch } : e));
     onChange({ ...value, education: next });
@@ -780,7 +793,13 @@ function EducationForm({ value, onChange, focusItemId }: CvEditorProps) {
 
   // See ExperienceForm for the deep-link / scroll-and-flash pattern.
   const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  // Per-card field refs: outer key = education item id, inner key = field name
+  // (school|qualification|startDate|endDate|detail). Lets us scroll + focus +
+  // flash the exact input inside the focused card when the rubric or an AI
+  // suggestion pins to a specific field.
+  const fieldRefs = useRef<Map<string, Map<string, HTMLInputElement | null>>>(new Map());
   const [flashItemId, setFlashItemId] = useState<string | null>(null);
+  const [flashFieldKey, setFlashFieldKey] = useState<string | null>(null); // "<itemId>:<field>"
   useEffect(() => {
     if (!focusItemId) return;
     if (typeof window === 'undefined') return;
@@ -789,13 +808,39 @@ function EducationForm({ value, onChange, focusItemId }: CvEditorProps) {
       if (!el) return;
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setFlashItemId(focusItemId);
+      // If a field was also specified, focus + flash that input on the same tick
+      // so the card highlight and the field highlight land together.
+      if (focusField) {
+        const inputEl = fieldRefs.current.get(focusItemId)?.get(focusField);
+        if (inputEl) {
+          inputEl.focus();
+          setFlashFieldKey(`${focusItemId}:${focusField}`);
+        }
+      }
     });
-    const handle = window.setTimeout(() => setFlashItemId(null), 2200);
+    const handle = window.setTimeout(() => {
+      setFlashItemId(null);
+      setFlashFieldKey(null);
+    }, 2200);
     return () => {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(handle);
     };
-  }, [focusItemId, value.education.length]);
+  }, [focusItemId, focusField, value.education.length]);
+
+  const registerFieldRef =
+    (itemId: string, field: string) => (el: HTMLInputElement | null) => {
+      let inner = fieldRefs.current.get(itemId);
+      if (!inner) {
+        inner = new Map();
+        fieldRefs.current.set(itemId, inner);
+      }
+      inner.set(field, el);
+    };
+  const ringFor = (itemId: string, field: string) =>
+    flashFieldKey === `${itemId}:${field}`
+      ? 'ring-2 ring-brand-green ring-offset-2 ring-offset-white'
+      : '';
 
   return (
     <div className="space-y-4">
@@ -821,33 +866,51 @@ function EducationForm({ value, onChange, focusItemId }: CvEditorProps) {
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="School">
-              <Input value={ed.school} onChange={(e) => setItem(idx, { school: e.target.value })} />
+              <Input
+                ref={registerFieldRef(ed.id, 'school')}
+                data-field="school"
+                value={ed.school}
+                onChange={(e) => setItem(idx, { school: e.target.value })}
+                className={ringFor(ed.id, 'school')}
+              />
             </Field>
             <Field label="Qualification">
               <Input
+                ref={registerFieldRef(ed.id, 'qualification')}
+                data-field="qualification"
                 value={ed.qualification}
                 onChange={(e) => setItem(idx, { qualification: e.target.value })}
+                className={ringFor(ed.id, 'qualification')}
               />
             </Field>
             <Field label="Start">
               <Input
+                ref={registerFieldRef(ed.id, 'startDate')}
+                data-field="startDate"
                 placeholder="YYYY"
                 value={ed.startDate}
                 onChange={(e) => setItem(idx, { startDate: e.target.value })}
+                className={ringFor(ed.id, 'startDate')}
               />
             </Field>
             <Field label="End">
               <Input
+                ref={registerFieldRef(ed.id, 'endDate')}
+                data-field="endDate"
                 placeholder="YYYY"
                 value={ed.endDate}
                 onChange={(e) => setItem(idx, { endDate: e.target.value })}
+                className={ringFor(ed.id, 'endDate')}
               />
             </Field>
             <Field label="Detail" className="sm:col-span-2">
               <Input
+                ref={registerFieldRef(ed.id, 'detail')}
+                data-field="detail"
                 placeholder="Honours, specialisation, GPA…"
                 value={ed.detail}
                 onChange={(e) => setItem(idx, { detail: e.target.value })}
+                className={ringFor(ed.id, 'detail')}
               />
             </Field>
           </div>
@@ -869,7 +932,11 @@ function EducationForm({ value, onChange, focusItemId }: CvEditorProps) {
   );
 }
 
-function SkillsForm({ value, onChange }: CvEditorProps) {
+function SkillsForm({
+  value,
+  onChange,
+  missingKeywords,
+}: CvEditorProps & { missingKeywords?: string[] }) {
   const [draft, setDraft] = useState('');
   const add = () => {
     const next = draft
@@ -881,8 +948,48 @@ function SkillsForm({ value, onChange }: CvEditorProps) {
     onChange({ ...value, skills: merged.slice(0, 40) });
     setDraft('');
   };
+  // Filter the analysis-flagged keyword gaps against the user's current skills
+  // (case-insensitive). What's left is the actionable list — one tap adds the
+  // skill, which deterministically lifts `keyword_gaps_closed` next score pass.
+  const haveSet = new Set(value.skills.map((s) => s.toLowerCase()));
+  const outstanding = (missingKeywords ?? []).filter((k) => !haveSet.has(k.toLowerCase()));
+  const addOne = (kw: string) => {
+    if (haveSet.has(kw.toLowerCase())) return;
+    const merged = Array.from(new Set([...value.skills, kw]));
+    onChange({ ...value, skills: merged.slice(0, 40) });
+  };
   return (
     <div className="space-y-3">
+      {outstanding.length > 0 ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-[12.5px] font-semibold text-amber-900">
+              Missing keywords from your latest analysis
+            </p>
+            <span className="text-[11px] font-medium text-amber-700/80">
+              {outstanding.length} to add
+            </span>
+          </div>
+          <p className="text-[12px] text-amber-800/90">
+            Tap to add. Each one closes a gap in <em>keyword_gaps_closed</em>.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {outstanding.map((kw) => (
+              <button
+                key={kw}
+                type="button"
+                onClick={() => addOne(kw)}
+                data-keyword={kw}
+                className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-[12px] font-medium text-amber-900 hover:bg-amber-100 hover:border-amber-400"
+                title={`Add "${kw}" to skills`}
+              >
+                <span aria-hidden="true">+</span>
+                {kw}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="flex gap-2">
         <Input
           value={draft}

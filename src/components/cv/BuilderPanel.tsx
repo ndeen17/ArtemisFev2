@@ -50,6 +50,15 @@ export interface BuilderPanelProps {
    *  `fullName`/`email`/`headline`/`location`). Drives input-level scroll +
    *  focus + ring-flash. Profile mode only. */
   field?: string | null;
+  /** Optional list of keyword gaps surfaced by the latest analysis. Rendered
+   *  as a one-click “+ Add” callout above the Skills form so users can
+   *  resolve `keyword_gaps_closed` rubric debt without retyping each token. */
+  missingKeywords?: string[];
+  /** Optional short reason text — the rubric `hint` or the AI suggestion
+   *  `detail` — that explains WHY this builder session was opened. Rendered
+   *  as a dismissible info banner above the editor so users always know what
+   *  the flashing element is asking them to do. */
+  why?: string | null;
   /** Called after a successful save. Hosts use this to optionally close. */
   onSaved?: () => void;
 }
@@ -59,7 +68,7 @@ export function BuilderPanel(props: BuilderPanelProps) {
   return <TargetedBuilder {...props} />;
 }
 
-function ProfileBuilder({ section, focus, itemId, bulletIndex, field, onSaved }: BuilderPanelProps) {
+function ProfileBuilder({ section, focus, itemId, bulletIndex, field, missingKeywords, why, onSaved }: BuilderPanelProps) {
   const cvQuery = useMyCv();
   const patch = usePatchCv();
   const reparse = useReparseCv();
@@ -155,6 +164,14 @@ function ProfileBuilder({ section, focus, itemId, bulletIndex, field, onSaved }:
     }
   }
 
+  // Local dismiss state for the "why am I here?" banner. Resets whenever the
+  // upstream `why` text changes so consecutive Fix-in-builder clicks each get
+  // their own banner without the user having to refresh.
+  const [whyDismissed, setWhyDismissed] = useState(false);
+  useEffect(() => {
+    setWhyDismissed(false);
+  }, [why]);
+
   if (cvQuery.isLoading || draft === null) {
     return (
       <div className="flex items-center gap-2 text-gray-500">
@@ -179,6 +196,26 @@ function ProfileBuilder({ section, focus, itemId, bulletIndex, field, onSaved }:
           The action you opened is no longer in your plan — opening the editor without focus.
         </div>
       ) : null}
+      {why && !whyDismissed ? (
+        <div
+          role="status"
+          className="flex items-start gap-2.5 rounded-2xl border border-brand-green/30 bg-brand-green/5 px-4 py-2.5 text-[12.5px] text-[#065f46]"
+        >
+          <SparklesIcon className="w-4 h-4 mt-0.5 shrink-0 text-[#15803d]" />
+          <p className="flex-1 leading-snug">
+            <span className="font-semibold">Why you’re here: </span>
+            {why}
+          </p>
+          <button
+            type="button"
+            onClick={() => setWhyDismissed(true)}
+            aria-label="Dismiss"
+            className="text-[#065f46]/60 hover:text-[#065f46] text-base leading-none"
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
       {isReparsing ? (
         <div className="inline-flex items-center gap-2 rounded-full bg-brand-green/10 px-3 py-1.5 text-[12.5px] font-semibold text-[#065f46]">
           <SpinnerIcon className="animate-spin w-4 h-4" />
@@ -193,6 +230,7 @@ function ProfileBuilder({ section, focus, itemId, bulletIndex, field, onSaved }:
         focusItemId={itemId ?? focusedAction?.itemId ?? null}
         focusBulletIndex={bulletIndex ?? focusedAction?.bulletIndex ?? null}
         focusField={field ?? null}
+        missingKeywords={missingKeywords}
         onSaveSection={async (_section, next) => {
           await patch.mutateAsync({ cvId: cvQuery.data!.id, structured: next });
         }}

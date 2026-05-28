@@ -191,6 +191,13 @@ function Row({
     return { cvId: cv.id, expId: found.expId, bulletIdx: found.bulletIdx };
   }, [cv, item.quotedBullet]);
 
+  // When an Experience/Education item slips through without a specific itemId
+  // (earned exception — it named the entity by hand) the CTA can only land
+  // the user on the section header, not a specific entry. Mute the affordance
+  // so they know to scan rather than expect a focused jump.
+  const isUnanchoredExpOrEdu =
+    (item.section === 'experience' || item.section === 'education') && !item.itemId;
+
   return (
     <div
       className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
@@ -256,9 +263,19 @@ function Row({
                     focus: item.id,
                     itemId: item.itemId ?? undefined,
                     bulletIndex: item.bulletIndex ?? null,
+                    why: item.detail,
                   })
                 }
-                className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline"
+                className={
+                  isUnanchoredExpOrEdu
+                    ? 'inline-flex items-center gap-1 text-[12.5px] font-semibold text-gray-500 hover:underline'
+                    : 'inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline'
+                }
+                title={
+                  isUnanchoredExpOrEdu
+                    ? 'Lands on the section header — no specific entry identified'
+                    : undefined
+                }
               >
                 {bulletTarget ? 'Open in builder' : 'Fix in builder'} →
               </button>

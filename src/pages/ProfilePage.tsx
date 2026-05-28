@@ -8,6 +8,7 @@ import { BuilderPanel } from '@/components/cv/BuilderPanel';
 import { useMyCv } from '@/hooks/useOnboarding';
 import { useProfileOverview, useActionPlan } from '@/hooks/useProfile';
 import { useBuilderUrlState } from '@/hooks/useBuilderUrlState';
+import { useLatestAnalysis } from '@/hooks/useAnalysis';
 import { LockIcon } from '@/components/ui/icons';
 
 /**
@@ -28,6 +29,7 @@ export default function ProfilePage() {
   const cv = useMyCv();
   const overview = useProfileOverview();
   const plan = useActionPlan();
+  const analysis = useLatestAnalysis();
   const builder = useBuilderUrlState();
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,6 +108,10 @@ export default function ProfilePage() {
             itemId={builder.state.itemId}
             bulletIndex={builder.state.bulletIndex}
             field={builder.state.field}
+            why={builder.state.why}
+            missingKeywords={
+              analysis.data?.status === 'done' ? analysis.data.result?.keywordGaps ?? [] : []
+            }
             onSaved={builder.close}
           />
         }
