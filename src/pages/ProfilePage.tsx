@@ -105,6 +105,7 @@ export default function ProfilePage() {
             focus={builder.state.focus}
             itemId={builder.state.itemId}
             bulletIndex={builder.state.bulletIndex}
+            field={builder.state.field}
             onSaved={builder.close}
           />
         }

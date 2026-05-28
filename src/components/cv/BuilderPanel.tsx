@@ -46,6 +46,10 @@ export interface BuilderPanelProps {
   /** Optional 0-based bullet index inside the targeted Experience role. Drives
    *  bullet-textarea-level scroll + focus + ring-flash. Profile mode only. */
   bulletIndex?: number | null;
+  /** Optional named-field hint for non-itemised sections (e.g. header
+   *  `fullName`/`email`/`headline`/`location`). Drives input-level scroll +
+   *  focus + ring-flash. Profile mode only. */
+  field?: string | null;
   /** Called after a successful save. Hosts use this to optionally close. */
   onSaved?: () => void;
 }
@@ -55,7 +59,7 @@ export function BuilderPanel(props: BuilderPanelProps) {
   return <TargetedBuilder {...props} />;
 }
 
-function ProfileBuilder({ section, focus, itemId, bulletIndex, onSaved }: BuilderPanelProps) {
+function ProfileBuilder({ section, focus, itemId, bulletIndex, field, onSaved }: BuilderPanelProps) {
   const cvQuery = useMyCv();
   const patch = usePatchCv();
   const reparse = useReparseCv();
@@ -188,6 +192,7 @@ function ProfileBuilder({ section, focus, itemId, bulletIndex, onSaved }: Builde
         initialSection={initialSection}
         focusItemId={itemId ?? focusedAction?.itemId ?? null}
         focusBulletIndex={bulletIndex ?? focusedAction?.bulletIndex ?? null}
+        focusField={field ?? null}
         onSaveSection={async (_section, next) => {
           await patch.mutateAsync({ cvId: cvQuery.data!.id, structured: next });
         }}

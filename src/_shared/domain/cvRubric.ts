@@ -62,9 +62,16 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
   // 1. header_complete (5)
   {
     const h = structured?.header;
-    const filled = [h?.fullName, h?.email, h?.headline, h?.location].filter(
-      (s) => s && s.trim().length,
-    ).length;
+    const checks: Array<{ key: 'fullName' | 'email' | 'headline' | 'location'; value: string | undefined }> = [
+      { key: 'fullName', value: h?.fullName },
+      { key: 'email', value: h?.email },
+      { key: 'headline', value: h?.headline },
+      { key: 'location', value: h?.location },
+    ];
+    const filled = checks.filter((c) => c.value && c.value.trim().length).length;
+    // Pin to the first empty field in display order so the builder can scroll
+    // straight to it. If everything's filled we leave field=null.
+    const firstMissing = checks.find((c) => !c.value || !c.value.trim().length);
     items.push({
       id: 'header_complete',
       label: 'Header is complete',
@@ -72,6 +79,9 @@ export function evaluateRubric(input: RubricInput): RubricEvaluation {
       achieved: round1(5 * pct(filled, 4)),
       hint: 'Add full name, email, headline and location.',
       section: 'header',
+      itemId: null,
+      bulletIndex: null,
+      field: firstMissing?.key ?? null,
     });
   }
 

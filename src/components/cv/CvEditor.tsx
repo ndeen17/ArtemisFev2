@@ -56,6 +56,12 @@ export interface CvEditorProps {
    *  Only meaningful when `focusItemId` resolves to an experience row.
    *  Drives bullet-textarea-level scroll + focus + ring-flash. */
   focusBulletIndex?: number | null;
+  /** Optional named-field hint for non-itemised sections. In the Header form
+   *  this is one of `'fullName' | 'email' | 'headline' | 'location' |
+   *  'phone' | 'linkedin' | 'website'`. Drives input-level scroll + focus +
+   *  ring-flash so rubric items like `header_complete` can land the user on
+   *  the exact empty input. */
+  focusField?: string | null;
   /** When provided, renders a per-section "Save section" button. Parents wire
    *  this to a partial patch so users get explicit confirmation that the
    *  current section persisted, without having to commit the whole CV. */
@@ -74,6 +80,7 @@ export function CvEditor({
   initialSection,
   focusItemId,
   focusBulletIndex,
+  focusField,
   onSaveSection,
   onPreview,
 }: CvEditorProps) {
@@ -229,7 +236,7 @@ export function CvEditor({
               </button>
             </div>
             <div className="mt-6">
-              {active === 'header' ? <HeaderForm value={value} onChange={onChange} /> : null}
+              {active === 'header' ? <HeaderForm value={value} onChange={onChange} focusField={focusField} /> : null}
               {active === 'summary' ? <SummaryForm value={value} onChange={onChange} /> : null}
               {active === 'experience' ? (
                 <ExperienceForm value={value} onChange={onChange} cvId={cvId} focusItemId={focusItemId} focusBulletIndex={focusBulletIndex} />
@@ -360,51 +367,121 @@ function sectionHint(s: Section): string {
 
 // ---------- Section forms ----------
 
-function HeaderForm({ value, onChange }: CvEditorProps) {
+function HeaderForm({
+  value,
+  onChange,
+  focusField,
+}: CvEditorProps & { focusField?: string | null }) {
   const set = <K extends keyof StructuredCv['header']>(k: K, v: StructuredCv['header'][K]) =>
     onChange({ ...value, header: { ...value.header, [k]: v } });
   const f = value.header;
+
+  // Field-level deep-link: when ?field=<name> is in the URL we register a ref
+  // per input and, after first paint, scroll & flash the matching field so
+  // "Fix in builder" lands the user on the exact empty input (e.g.
+  // header_complete rubric pinning to the first missing field).
+  const fieldRefs = useRef<Map<string, HTMLInputElement | null>>(new Map());
+  const [flashField, setFlashField] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusField) return;
+    const raf = window.requestAnimationFrame(() => {
+      const el = fieldRefs.current.get(focusField);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+      setFlashField(focusField);
+    });
+    const handle = window.setTimeout(() => setFlashField(null), 2200);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(handle);
+    };
+  }, [focusField]);
+
+  const ringFor = (key: string) =>
+    flashField === key ? 'ring-2 ring-brand-green ring-offset-2 ring-offset-white' : '';
+  const registerRef = (key: string) => (el: HTMLInputElement | null) => {
+    fieldRefs.current.set(key, el);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <Field label="Full name" required>
         <Input
+          ref={registerRef('fullName')}
+          id="header-field-fullName"
+          data-field="fullName"
           value={f.fullName}
           onChange={(e) => set('fullName', e.target.value)}
           aria-required="true"
+          className={ringFor('fullName')}
         />
       </Field>
       <Field label="Headline" optional>
         <Input
+          ref={registerRef('headline')}
+          id="header-field-headline"
+          data-field="headline"
           placeholder="Senior Frontend Engineer"
           value={f.headline}
           onChange={(e) => set('headline', e.target.value)}
+          className={ringFor('headline')}
         />
       </Field>
       <Field label="Email">
-        <Input type="email" value={f.email} onChange={(e) => set('email', e.target.value)} />
+        <Input
+          ref={registerRef('email')}
+          id="header-field-email"
+          data-field="email"
+          type="email"
+          value={f.email}
+          onChange={(e) => set('email', e.target.value)}
+          className={ringFor('email')}
+        />
       </Field>
       <Field label="Phone">
-        <Input value={f.phone} onChange={(e) => set('phone', e.target.value)} />
+        <Input
+          ref={registerRef('phone')}
+          id="header-field-phone"
+          data-field="phone"
+          value={f.phone}
+          onChange={(e) => set('phone', e.target.value)}
+          className={ringFor('phone')}
+        />
       </Field>
       <Field label="Location">
-        <CityAutocomplete
-          value={f.location}
-          onChange={(next) => set('location', next)}
-          placeholder="Start typing your city…"
-        />
+        <div
+          data-field="location"
+          id="header-field-location"
+          className={cn('rounded-2xl transition-shadow duration-700', ringFor('location'))}
+        >
+          <CityAutocomplete
+            value={f.location}
+            onChange={(next) => set('location', next)}
+            placeholder="Start typing your city…"
+          />
+        </div>
       </Field>
       <Field label="LinkedIn">
         <Input
+          ref={registerRef('linkedin')}
+          id="header-field-linkedin"
+          data-field="linkedin"
           placeholder="linkedin.com/in/your-handle"
           value={f.linkedin}
           onChange={(e) => set('linkedin', e.target.value)}
+          className={ringFor('linkedin')}
         />
       </Field>
       <Field label="Website" className="sm:col-span-2">
         <Input
+          ref={registerRef('website')}
+          id="header-field-website"
+          data-field="website"
           placeholder="your-portfolio.com"
           value={f.website}
           onChange={(e) => set('website', e.target.value)}
+          className={ringFor('website')}
         />
       </Field>
     </div>

@@ -32,6 +32,11 @@ export const RubricItemSchema = z.object({
    *  achievements array, its 0-based index. Lets the builder scroll/focus/flash the
    *  exact textarea. Null/absent when the check is item-wide. */
   bulletIndex: z.number().int().min(0).nullish(),
+  /** When the failing check traces to one specific Header field (or other named
+   *  input outside an itemised section), the field key. Lets the builder scroll/
+   *  focus/flash the exact input. Null/absent when the check is section-wide.
+   *  Examples for the header section: `'fullName' | 'email' | 'headline' | 'location'`. */
+  field: z.string().max(40).nullish(),
 });
 export type RubricItem = z.infer<typeof RubricItemSchema>;
 
