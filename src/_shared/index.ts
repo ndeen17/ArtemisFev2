@@ -22,6 +22,7 @@ export * from './schemas/realtime.js';
 export * from './schemas/findingFeedback.js';
 export * from './domain/readiness.js';
 export * from './domain/goalCopy.js';
+export * from './domain/careerLevel.js';
 export * from './domain/roleCopy.js';
 export * from './domain/actionTargets.js';
 export * from './domain/cvBullets.js';

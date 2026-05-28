@@ -11,6 +11,7 @@ interface Props {
 
 const TABS = [
   { to: '/settings/profile', label: 'Profile' },
+  { to: '/settings/career', label: 'Career' },
   { to: '/settings/goal', label: 'Goal' },
   { to: '/settings/resume', label: 'Resume' },
   { to: '/settings/privacy', label: 'Privacy' },

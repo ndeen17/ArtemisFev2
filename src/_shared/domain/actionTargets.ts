@@ -202,3 +202,49 @@ function pickUniqueWinner(scores: ReadonlyArray<{ id: string; score: number }>):
   if (!best || tie) return null;
   return best.id;
 }
+
+/**
+ * Find which achievement bullet inside an experience entry matches a quoted
+ * bullet string. Returns the 0-based index or null when there's no confident
+ * match. Used by the action-plan builder to backfill `bulletIndex` when the
+ * LLM gave us a `quotedBullet` but didn't anchor it to a numeric index, and
+ * by the FE for the same backfill on legacy actions.
+ *
+ * Matching strategy (most specific first):
+ *   1. Exact normalised equality.
+ *   2. Achievement contains the quoted text (LLM may have truncated).
+ *   3. Quoted text contains the achievement (LLM may have quoted a longer
+ *      composite — rare but happens with paraphrased bullets).
+ *
+ * Ties / multiple matches → null (we never guess). Empty quote → null.
+ */
+export function findBulletIndexInItem(
+  achievements: ReadonlyArray<string> | undefined,
+  quotedBullet: string | null | undefined,
+): number | null {
+  if (!quotedBullet || !achievements?.length) return null;
+  const target = norm(quotedBullet);
+  if (target.length < 8) return null; // too short to be discriminating
+
+  // 1. Exact equality wins outright.
+  let exact: number | null = null;
+  for (let i = 0; i < achievements.length; i++) {
+    if (norm(achievements[i]) === target) {
+      if (exact !== null) return null; // duplicate bullets — ambiguous
+      exact = i;
+    }
+  }
+  if (exact !== null) return exact;
+
+  // 2 / 3. Substring containment, either direction. Require a unique winner.
+  let containmentHit: number | null = null;
+  for (let i = 0; i < achievements.length; i++) {
+    const a = norm(achievements[i]);
+    if (!a) continue;
+    if (a.includes(target) || target.includes(a)) {
+      if (containmentHit !== null) return null; // ambiguous
+      containmentHit = i;
+    }
+  }
+  return containmentHit;
+}

@@ -610,8 +610,10 @@ function ExperienceCard({
       <Field label="Achievements">
         <div className="space-y-2">
           {exp.achievements.map((a, i) => (
-            <div key={i} className="flex gap-2">
+            <div key={i} className="flex gap-2" data-bullet-idx={i}>
               <textarea
+                id={`bullet-${exp.id}-${i}`}
+                data-bullet-idx={i}
                 ref={(el) => {
                   bulletRefs.current.set(i, el);
                 }}

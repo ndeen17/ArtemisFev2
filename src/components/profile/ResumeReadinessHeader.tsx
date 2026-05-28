@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { ProfileOverview } from '@artemis/shared';
 import { Button } from '@/components/ui/Button';
 import {
@@ -117,6 +118,10 @@ export function ResumeReadinessHeader({
         </div>
       </div>
 
+      {overview.levelResolution?.mismatch ? (
+        <LevelMismatchBanner resolution={overview.levelResolution} />
+      ) : null}
+
       {overview.analysisStatus === 'done' &&
       (overview.rubricScore !== null || overview.llmScore !== null) ? (
         <div className="mt-5 pt-5 border-t border-gray-100">
@@ -192,6 +197,35 @@ function ScoreComponent({
         />
       </div>
       <p className="mt-2 text-[12px] text-gray-500 leading-snug">{explainer}</p>
+    </div>
+  );
+}
+
+function LevelMismatchBanner({
+  resolution,
+}: {
+  resolution: NonNullable<ProfileOverview['levelResolution']>;
+}) {
+  return (
+    <div
+      role="status"
+      className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900"
+    >
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 shrink-0 rounded-full bg-amber-100 p-1.5 text-amber-700">
+          <SparklesIcon className="w-3.5 h-3.5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-amber-900">Calibrating to your CV</div>
+          <p className="mt-0.5 leading-snug text-amber-900/90">{resolution.explanation}</p>
+          <Link
+            to="/settings/career"
+            className="mt-1.5 inline-flex items-center gap-0.5 text-[12.5px] font-semibold text-amber-900 hover:underline"
+          >
+            Update your level <ArrowRightIcon className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

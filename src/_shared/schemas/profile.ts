@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CareerLevelResolutionSchema } from '../domain/careerLevel.js';
 
 /**
  * Phase 5 — Profile review API contracts.
@@ -47,6 +48,10 @@ export const ProfileOverviewSchema = z.object({
   rubricScore: z.number().int().min(0).max(100).nullable(),
   /** Raw LLM overallScore 0..100 — kept separate from cvScore so the UI can compare. */
   llmScore: z.number().int().min(0).max(100).nullable(),
+  /** Deterministic career-level resolution — folds the user's claimed level with
+   *  CV tenure + role title to pick a single level for grading, suggestions, and
+   *  interviews. Null until at least a claim or a CV is available. */
+  levelResolution: CareerLevelResolutionSchema.nullable().default(null),
 });
 export type ProfileOverview = z.infer<typeof ProfileOverviewSchema>;
 

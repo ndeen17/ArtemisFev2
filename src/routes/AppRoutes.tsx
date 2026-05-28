@@ -99,6 +99,7 @@ const InterviewsPage = lazyWithRetry(() => import('@/pages/InterviewsPage'));
 const NewInterviewPage = lazyWithRetry(() => import('@/pages/Interviews/NewInterviewPage'));
 const InterviewDetailPage = lazyWithRetry(() => import('@/pages/Interviews/InterviewDetailPage'));
 const SettingsGoalPage = lazyWithRetry(() => import('@/pages/Settings/SettingsGoalPage'));
+const SettingsCareerPage = lazyWithRetry(() => import('@/pages/Settings/SettingsCareerPage'));
 const SettingsProfilePage = lazyWithRetry(() => import('@/pages/Settings/SettingsProfilePage'));
 const SettingsResumePage = lazyWithRetry(() => import('@/pages/Settings/SettingsResumePage'));
 const SettingsPrivacyPage = lazyWithRetry(() => import('@/pages/Settings/SettingsPrivacyPage'));
@@ -364,6 +365,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SettingsGoalPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/settings/career',
+    element: (
+      <ProtectedRoute>
+        <SettingsCareerPage />
       </ProtectedRoute>
     ),
   },
