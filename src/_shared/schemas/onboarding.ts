@@ -38,9 +38,20 @@ export const OnboardingPatchSchema = z
     experienceLevel: ExperienceLevelSchema.optional(),
     goal: GoalSchema.optional(),
     onboardingStep: OnboardingStepSchema.optional(),
+    /** Phase 0 — data-usage consent opt-in. Setting `true` stamps
+     *  `dataUsageConsentedAt = now` and `dataUsageConsentVersion =
+     *  DATA_USAGE_CONSENT_VERSION`. Setting `false` clears both (revocation).
+     *  Server is the source of truth for timestamp + version; the client
+     *  only sends the boolean. */
+    dataUsageConsented: z.boolean().optional(),
   })
   .strict();
 export type OnboardingPatchInput = z.infer<typeof OnboardingPatchSchema>;
+
+/** Current data-usage consent text version. Bump when the wording of the
+ *  consent prompt materially changes — that invalidates prior consent for
+ *  any data-usage job that requires the new version. */
+export const DATA_USAGE_CONSENT_VERSION = 'v1-2026-05';
 
 /** Snapshot returned by GET /onboarding — drives the wizard's initial state. */
 export const OnboardingStateSchema = z.object({
@@ -58,5 +69,10 @@ export const OnboardingStateSchema = z.object({
    *  why it failed. */
   cvGenerationStatus: z.enum(['idle', 'running', 'failed']).default('idle'),
   cvGenerationError: z.string().nullable().default(null),
+  /** Phase 0 — null until the user opts in. ISO string timestamp on opt-in. */
+  dataUsageConsentedAt: z.string().nullable().default(null),
+  /** The consent-version that was current when the user opted in. Null
+   *  while `dataUsageConsentedAt` is null. */
+  dataUsageConsentVersion: z.string().nullable().default(null),
 });
 export type OnboardingState = z.infer<typeof OnboardingStateSchema>;

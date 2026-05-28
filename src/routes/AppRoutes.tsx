@@ -101,6 +101,7 @@ const InterviewDetailPage = lazyWithRetry(() => import('@/pages/Interviews/Inter
 const SettingsGoalPage = lazyWithRetry(() => import('@/pages/Settings/SettingsGoalPage'));
 const SettingsProfilePage = lazyWithRetry(() => import('@/pages/Settings/SettingsProfilePage'));
 const SettingsResumePage = lazyWithRetry(() => import('@/pages/Settings/SettingsResumePage'));
+const SettingsPrivacyPage = lazyWithRetry(() => import('@/pages/Settings/SettingsPrivacyPage'));
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -371,6 +372,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SettingsResumePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/settings/privacy',
+    element: (
+      <ProtectedRoute>
+        <SettingsPrivacyPage />
       </ProtectedRoute>
     ),
   },
