@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ExperienceLevel, Role } from '@artemis/shared';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
-import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { Button } from '@/components/ui/Button';
+import { Label } from '@/components/ui/Label';
 import { ArrowRightIcon, SpinnerIcon, CheckIcon } from '@/components/ui/icons';
 import { useOnboardingState, usePatchOnboarding } from '@/hooks/useOnboarding';
 import { useProfileOverview } from '@/hooks/useProfile';
@@ -19,7 +19,7 @@ const ROLES: { value: Role; title: string; description: string }[] = [
   {
     value: 'product_manager',
     title: 'Product Manager',
-    description: 'Product Owner, Delivery manager.',
+    description: 'Product Owner, Delivery manager',
   },
   { value: 'designer', title: 'Digital Designer', description: 'Product, UX, Brand, Motion' },
   {
@@ -36,6 +36,24 @@ const LEVELS: { value: ExperienceLevel; title: string; years: string }[] = [
   { value: 'senior', title: 'Senior', years: '6–9 years of work experience' },
   { value: 'lead', title: 'Staff / Lead', years: '10+ years of work experience' },
 ];
+
+const SELECT_CLASS =
+  'block w-full appearance-none rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 pr-10 text-[14px] text-[#111827] shadow-sm transition-colors focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/30 disabled:opacity-60';
+
+function ChevronAdornment() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M6 8l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 /**
  * Settings → Career. Lets the user change role + experience level after
@@ -121,48 +139,80 @@ export default function SettingsCareerPage() {
         </section>
       ) : null}
 
-      <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8 space-y-5">
+      <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8 space-y-6">
         <div>
-          <h2 className="text-[18px] font-bold text-[#111827]">Target role</h2>
+          <h2 className="text-[18px] font-bold text-[#111827]">Targeting</h2>
           <p className="mt-1 text-[13px] text-gray-500">
-            Pick the role family that matches what you&apos;re aiming for now.
+            Calibrates every suggestion, interview question, and gap. Change these
+            and re-analyse to see refreshed feedback.
           </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {ROLES.map((r) => (
-            <SelectableCard
-              key={r.value}
-              selected={role === r.value}
-              onSelect={() => {
-                setJustSaved(false);
-                setRole(r.value);
-              }}
-              title={r.title}
-              description={r.description}
-            />
-          ))}
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
-          <h2 className="text-[18px] font-bold text-[#111827]">Experience level</h2>
-          <p className="mt-1 text-[13px] text-gray-500">
-            The years bucket Artemis grades you against. Pick by your work history,
-            not your aspiration — we&apos;ll calibrate up as your CV grows.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {LEVELS.map((l) => (
-            <SelectableCard
-              key={l.value}
-              selected={level === l.value}
-              onSelect={() => {
-                setJustSaved(false);
-                setLevel(l.value);
-              }}
-              title={l.title}
-              description={l.years}
-            />
-          ))}
+        {/* Two-column form on desktop, stacked on mobile — the conventional
+            settings shape (label + control + helper) rather than the onboarding
+            tile picker. Native <select> keeps it accessible and familiar. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+          <div>
+            <Label htmlFor="settings-career-role">Target role</Label>
+            <div className="relative">
+              <select
+                id="settings-career-role"
+                className={SELECT_CLASS}
+                value={role ?? ''}
+                onChange={(e) => {
+                  setJustSaved(false);
+                  setRole(e.target.value as Role);
+                }}
+                disabled={patch.isPending}
+              >
+                <option value="" disabled>
+                  Select a role…
+                </option>
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronAdornment />
+            </div>
+            <p className="mt-1.5 text-[12.5px] text-gray-500">
+              {role
+                ? ROLES.find((r) => r.value === role)?.description
+                : 'Pick the role family you’re aiming for now.'}
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="settings-career-level">Experience level</Label>
+            <div className="relative">
+              <select
+                id="settings-career-level"
+                className={SELECT_CLASS}
+                value={level ?? ''}
+                onChange={(e) => {
+                  setJustSaved(false);
+                  setLevel(e.target.value as ExperienceLevel);
+                }}
+                disabled={patch.isPending}
+              >
+                <option value="" disabled>
+                  Select a level…
+                </option>
+                {LEVELS.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronAdornment />
+            </div>
+            <p className="mt-1.5 text-[12.5px] text-gray-500">
+              {level
+                ? LEVELS.find((l) => l.value === level)?.years
+                : 'Pick by your work history, not your aspiration — we’ll calibrate up as your CV grows.'}
+            </p>
+          </div>
         </div>
 
         {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
@@ -173,7 +223,7 @@ export default function SettingsCareerPage() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-4 pt-2">
+        <div className="flex items-center justify-between gap-4 pt-2 border-t border-gray-100">
           <Link
             to="/dashboard"
             className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#111827] hover:underline"
