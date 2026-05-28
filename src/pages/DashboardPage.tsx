@@ -147,6 +147,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Setup checklist — sits directly under the hero so new users see the
+          guided path FIRST, not as a footnote at the bottom of the page.
+          Renders only when there are remaining steps; returns null otherwise. */}
+      <SetupProgressCard snapshot={snapshot} />
+
       {/* Readiness signal — analysing OR score OR empty. One card, three states.
           NEVER stacked with another progress visual. */}
       {isAnalysing ? (
@@ -159,8 +164,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Action list — the workhorse. Sits above setup progress because
-          "what to do next" is more important than "finish onboarding". */}
+      {/* Action list — the workhorse: what to do next, ranked by goal. */}
       <ActionList
         readiness={snapshot}
         analysis={analysis.data ?? null}
@@ -168,10 +172,6 @@ export default function DashboardPage() {
         goal={goal}
         weakInterview={weakInterview}
       />
-
-      {/* Setup progress — hidden at 100%, shows only remaining factors.
-          Demoted below ActionList so it doesn't compete for top-of-page. */}
-      <SetupProgressCard snapshot={snapshot} />
     </AppShell>
   );
 }

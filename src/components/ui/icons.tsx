@@ -581,3 +581,45 @@ export function TargetIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function ThumbsUpIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M7 22V11" />
+      <path d="M5 11h2v11H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z" />
+      <path d="M7 11l4-8a2.5 2.5 0 0 1 4.5 2L14 9h5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7" />
+    </svg>
+  );
+}
+
+export function ThumbsDownIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M17 2v11" />
+      <path d="M19 13h-2V2h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2z" />
+      <path d="M17 13l-4 8a2.5 2.5 0 0 1-4.5-2L10 15H5a2 2 0 0 1-2-2.3l1.2-7A2 2 0 0 1 6.2 4H17" />
+    </svg>
+  );
+}

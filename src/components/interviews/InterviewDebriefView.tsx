@@ -4,6 +4,7 @@ import {
   type InterviewSession,
 } from '@artemis/shared';
 import { Button } from '@/components/ui/Button';
+import { ThumbsFeedback } from '@/components/feedback/ThumbsFeedback';
 
 interface InterviewDebriefViewProps {
   interview: InterviewSession;
@@ -52,6 +53,12 @@ export function InterviewDebriefView({ interview }: InterviewDebriefViewProps) {
                 />
               </div>
               <p className="mt-1.5 text-[12px] text-gray-600 leading-relaxed">{c.rationale}</p>
+              <ThumbsFeedback
+                className="mt-2"
+                surface="interview_criterion"
+                surfaceId={interview.id}
+                findingId={c.key}
+              />
             </div>
           ))}
         </div>
