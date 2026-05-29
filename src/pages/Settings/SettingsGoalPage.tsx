@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GOAL_COPY, type Goal } from '@artemis/shared';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
-import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { Button } from '@/components/ui/Button';
 import { ArrowRightIcon, SpinnerIcon, CheckIcon } from '@/components/ui/icons';
 import { useGoal, useSetGoal } from '@/hooks/useGoal';
 import { extractApiError } from '@/hooks/useAuth';
+import { cn } from '@/lib/cn';
 
 const GOAL_VALUES: Goal[] = ['job_searching', 'levelling_up', 'exploring'];
 
@@ -62,22 +62,61 @@ export default function SettingsGoalPage() {
         ) : null}
       </div>
 
-      <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8 space-y-4">
-        {GOAL_VALUES.map((value) => {
-          const copy = GOAL_COPY[value];
-          return (
-            <SelectableCard
-              key={value}
-              selected={selected === value}
-              onSelect={() => {
-                setJustSaved(false);
-                setSelected(value);
-              }}
-              title={copy.label}
-              description={copy.blurb}
-            />
-          );
-        })}
+      <section className="rounded-3xl border border-gray-100 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8 space-y-6">
+        <div>
+          <h2 className="text-[18px] font-bold text-[#111827]">What are you here for?</h2>
+          <p className="mt-1 text-[13px] text-gray-500">
+            One active goal at a time. Your dashboard top action and recommendations
+            adapt to this choice.
+          </p>
+        </div>
+
+        {/* Radio-row pattern: a fieldset of compact bordered rows. Each row
+            shows the goal label + blurb so the user can compare without
+            hidden text. This is the conventional settings shape for "pick one
+            with prose descriptions" (Linear/Notion/GitHub all use it). */}
+        <fieldset className="space-y-2.5">
+          <legend className="sr-only">Your goal</legend>
+          {GOAL_VALUES.map((value) => {
+            const copy = GOAL_COPY[value];
+            const isSelected = selected === value;
+            const id = `settings-goal-${value}`;
+            return (
+              <label
+                key={value}
+                htmlFor={id}
+                className={cn(
+                  'flex cursor-pointer items-start gap-3.5 rounded-2xl border p-4 transition-colors',
+                  isSelected
+                    ? 'border-brand-green bg-[#f0fdf4] ring-1 ring-brand-green/30'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50',
+                )}
+              >
+                <input
+                  id={id}
+                  type="radio"
+                  name="settings-goal"
+                  value={value}
+                  checked={isSelected}
+                  onChange={() => {
+                    setJustSaved(false);
+                    setSelected(value);
+                  }}
+                  disabled={setGoal.isPending}
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/40"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14.5px] font-semibold text-[#111827]">
+                    {copy.label}
+                  </div>
+                  <p className="mt-0.5 text-[13px] leading-snug text-gray-600">
+                    {copy.blurb}
+                  </p>
+                </div>
+              </label>
+            );
+          })}
+        </fieldset>
 
         {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
         {justSaved && !dirty ? (
@@ -86,7 +125,7 @@ export default function SettingsGoalPage() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-4 pt-2">
+        <div className="flex items-center justify-between gap-4 pt-2 border-t border-gray-100">
           <Link
             to="/dashboard"
             className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#111827] hover:underline"
