@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AnalysisSeveritySchema, BulletStatusSchema } from './analysis.js';
+import { AnalysisSeveritySchema, BulletStatusSchema, FindingCategorySchema } from './analysis.js';
 
 /**
  * Analysis v3 — decomposed map-reduce schemas.
@@ -41,6 +41,10 @@ import { AnalysisSeveritySchema, BulletStatusSchema } from './analysis.js';
 export const RoleFindingSchema = z.object({
   title: z.string().min(1).max(120),
   detail: z.string().min(1).max(400),
+  /** REQUIRED stable finding kind. Forced by strict json_schema so every
+   *  finding is classified at the source; carried through synthesis to key
+   *  the cross-analysis diff. */
+  category: FindingCategorySchema,
   /** Severity is only meaningful for gaps; suggestions ignore it. We keep
    *  the field on both shapes so the synthesis step can treat them
    *  uniformly without branching. */
@@ -87,6 +91,8 @@ export type RoleFindings = z.infer<typeof RoleFindingsSchema>;
 export const EducationFindingSchema = z.object({
   title: z.string().min(1).max(120),
   detail: z.string().min(1).max(400),
+  /** REQUIRED stable finding kind (see {@link FindingCategorySchema}). */
+  category: FindingCategorySchema,
   severity: AnalysisSeveritySchema.nullable().default(null),
   /** REQUIRED. The id of the education entry this finding belongs to. */
   educationId: z.string().min(1).max(80),
@@ -112,6 +118,8 @@ export type EducationFindings = z.infer<typeof EducationFindingsSchema>;
 export const OverviewFindingSchema = z.object({
   title: z.string().min(1).max(120),
   detail: z.string().min(1).max(400),
+  /** REQUIRED stable finding kind (see {@link FindingCategorySchema}). */
+  category: FindingCategorySchema,
   severity: AnalysisSeveritySchema.nullable().default(null),
   /** Which non-list section this finding concerns. */
   section: z.enum(['summary', 'header', 'skills']),

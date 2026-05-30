@@ -3,10 +3,11 @@ import { AppShell } from '@/components/layout/AppShell';
 import { SplitPaneShell } from '@/components/layout/SplitPaneShell';
 import { ResumeReadinessHeader } from '@/components/profile/ResumeReadinessHeader';
 import { ActionPlan } from '@/components/profile/ActionPlan';
+import { ContinuitySummaryCard } from '@/components/profile/ContinuitySummaryCard';
 import { ScoreDetailsAccordion } from '@/components/profile/ScoreDetailsAccordion';
 import { BuilderPanel } from '@/components/cv/BuilderPanel';
 import { useMyCv } from '@/hooks/useOnboarding';
-import { useProfileOverview, useActionPlan } from '@/hooks/useProfile';
+import { useProfileOverview, useActionPlan, useContinuity } from '@/hooks/useProfile';
 import { useBuilderUrlState } from '@/hooks/useBuilderUrlState';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
 import { LockIcon } from '@/components/ui/icons';
@@ -29,6 +30,7 @@ export default function ProfilePage() {
   const cv = useMyCv();
   const overview = useProfileOverview();
   const plan = useActionPlan();
+  const continuity = useContinuity();
   const analysis = useLatestAnalysis();
   const builder = useBuilderUrlState();
   const navigate = useNavigate();
@@ -68,6 +70,11 @@ export default function ProfilePage() {
         isLoading={overview.isLoading}
         hasCv={!!cv.data}
         onEditCv={() => builder.open({})}
+      />
+
+      <ContinuitySummaryCard
+        continuity={continuity.data}
+        isLoading={continuity.isLoading}
       />
 
       <ActionPlan

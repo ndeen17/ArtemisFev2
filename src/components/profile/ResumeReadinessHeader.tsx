@@ -92,6 +92,12 @@ export function ResumeReadinessHeader({
             <DeltaChip delta={overview.weeklyDelta} />
             <StatusChip status={overview.analysisStatus} hasCv={hasCv} />
           </div>
+          {overview.scoreBand ? (
+            <p className="mt-2 text-[14px] text-gray-700">
+              <span className="font-semibold text-ink">{overview.scoreBand.label}</span>
+              <span className="text-gray-400"> — {overview.scoreBand.blurb}</span>
+            </p>
+          ) : null}
           <p className="mt-2 text-[13px] text-gray-500 max-w-md">
             How ready your CV is for the roles you&apos;re targeting.
           </p>

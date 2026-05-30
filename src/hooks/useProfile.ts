@@ -4,6 +4,7 @@ import { profileApi } from '@/features/profile/api';
 
 const OVERVIEW_KEY = ['profile', 'overview'] as const;
 const PLAN_KEY = ['profile', 'action-plan'] as const;
+const CONTINUITY_KEY = ['profile', 'continuity'] as const;
 
 /**
  * Polls the overview every 3s while analysis is queued/running so the score reveal
@@ -25,6 +26,14 @@ export function useActionPlan() {
   return useQuery({
     queryKey: PLAN_KEY,
     queryFn: profileApi.actionPlan,
+    staleTime: 5_000,
+  });
+}
+
+export function useContinuity() {
+  return useQuery({
+    queryKey: CONTINUITY_KEY,
+    queryFn: profileApi.continuity,
     staleTime: 5_000,
   });
 }

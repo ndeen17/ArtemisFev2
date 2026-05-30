@@ -32,3 +32,4 @@ export * from './domain/verbBank.js';
 export * from './domain/atsScore.js';
 export * from './domain/roleKeywords.js';
 export * from './domain/seniorityRubric.js';
+export * from './domain/scoreBand.js';

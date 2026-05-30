@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CareerLevelResolutionSchema } from '../domain/careerLevel.js';
+import { ScoreLabelSchema } from '../domain/scoreBand.js';
 
 /**
  * Phase 5 — Profile review API contracts.
@@ -65,6 +66,10 @@ export const ProfileOverviewSchema = z.object({
    *  CV tenure + role title to pick a single level for grading, suggestions, and
    *  interviews. Null until at least a claim or a CV is available. */
   levelResolution: CareerLevelResolutionSchema.nullable().default(null),
+  /** Presentation-only band/label over `readinessScore` (e.g. 67 → "Solid —
+   *  competitive but not standout"). Derived deterministically; does NOT replace
+   *  the number. Null when there is no score yet. */
+  scoreBand: ScoreLabelSchema.nullable().default(null),
 });
 export type ProfileOverview = z.infer<typeof ProfileOverviewSchema>;
 

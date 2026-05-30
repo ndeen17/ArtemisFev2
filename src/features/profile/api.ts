@@ -1,4 +1,4 @@
-import type { ProfileOverview, ActionPlan, BulletRewriteResponse } from '@artemis/shared';
+import type { ProfileOverview, ActionPlan, BulletRewriteResponse, ContinuitySummary } from '@artemis/shared';
 import { apiClient } from '@/lib/apiClient';
 
 export const profileApi = {
@@ -9,6 +9,10 @@ export const profileApi = {
   async actionPlan(): Promise<ActionPlan> {
     const res = await apiClient.get<{ plan: ActionPlan }>('/profile/action-plan');
     return res.data.plan;
+  },
+  async continuity(): Promise<ContinuitySummary> {
+    const res = await apiClient.get<{ continuity: ContinuitySummary }>('/profile/continuity');
+    return res.data.continuity;
   },
   async toggleAction(id: string, complete: boolean): Promise<ActionPlan> {
     const res = await apiClient.post<{ plan: ActionPlan }>(`/profile/actions/${id}`, { complete });

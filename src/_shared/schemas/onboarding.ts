@@ -53,6 +53,32 @@ export type OnboardingPatchInput = z.infer<typeof OnboardingPatchSchema>;
  *  any data-usage job that requires the new version. */
 export const DATA_USAGE_CONSENT_VERSION = 'v1-2026-05';
 
+/** The consent fields as persisted on the user. Both null until opt-in. */
+export interface DataUsageConsentFields {
+  dataUsageConsentedAt: Date | string | null | undefined;
+  dataUsageConsentVersion: string | null | undefined;
+}
+
+/**
+ * THE gate every data-usage job (training, fine-tuning, eval-set mining,
+ * analytics over user artefacts) MUST call before reading a user's data.
+ *
+ * Returns true only when the user has an opt-in timestamp AND their stored
+ * consent version is at least the version the job requires. Defaulting
+ * `requiredVersion` to the current constant means a wording bump silently
+ * revokes stale consent until the user re-opts-in — which is the desired,
+ * conservative behaviour. Pure + synchronous so it's trivially testable and
+ * usable on both BE and FE.
+ */
+export function hasDataUsageConsent(
+  fields: DataUsageConsentFields,
+  requiredVersion: string = DATA_USAGE_CONSENT_VERSION,
+): boolean {
+  if (fields.dataUsageConsentedAt == null) return false;
+  if (!fields.dataUsageConsentVersion) return false;
+  return fields.dataUsageConsentVersion === requiredVersion;
+}
+
 /** Snapshot returned by GET /onboarding — drives the wizard's initial state. */
 export const OnboardingStateSchema = z.object({
   displayName: z.string().nullable(),
