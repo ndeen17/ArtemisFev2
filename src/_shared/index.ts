@@ -33,3 +33,4 @@ export * from './domain/atsScore.js';
 export * from './domain/roleKeywords.js';
 export * from './domain/seniorityRubric.js';
 export * from './domain/scoreBand.js';
+export * from './domain/scoreCalibration.js';

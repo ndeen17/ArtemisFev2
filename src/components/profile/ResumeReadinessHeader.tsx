@@ -10,8 +10,9 @@ import {
   TrendUpIcon,
   TrendDownIcon,
 } from '@/components/ui/icons';
-import { useRefreshAnalysis } from '@/hooks/useAnalysis';
+import { useRefreshAnalysis, useLatestCalibration } from '@/hooks/useAnalysis';
 import { scoreBandClasses } from '@/lib/scoreBand';
+import { CalibrationBadge } from './CalibrationBadge';
 
 /**
  * Resume page header — replaces the legacy ProfileOverviewCard.
@@ -45,6 +46,7 @@ export function ResumeReadinessHeader({
   detailsAnchor = 'details',
 }: Props) {
   const refresh = useRefreshAnalysis();
+  const calibration = useLatestCalibration();
   const [explainerOpen, setExplainerOpen] = useState(false);
 
   // Auto-expand the explainer the first time a user lands on this page after
@@ -97,6 +99,9 @@ export function ResumeReadinessHeader({
               <span className="font-semibold text-ink">{overview.scoreBand.label}</span>
               <span className="text-gray-400"> — {overview.scoreBand.blurb}</span>
             </p>
+          ) : null}
+          {overview.analysisStatus === 'done' ? (
+            <CalibrationBadge calibration={calibration.data?.calibration} />
           ) : null}
           <p className="mt-2 text-[13px] text-gray-500 max-w-md">
             How ready your CV is for the roles you&apos;re targeting.

@@ -19,6 +19,21 @@ export function useLatestAnalysis() {
   });
 }
 
+/**
+ * Fetches the latest analysis together with its cohort calibration (#6c) — where
+ * the CV's deterministic structural spine sits relative to comparable candidates.
+ * Separate query key from {@link useLatestAnalysis} so existing consumers keep
+ * their `CvAnalysis`-shaped data; this one carries the `{ analysis, calibration }`
+ * envelope. Calibration is `null`/`available:false` until the cohort matures.
+ */
+export function useLatestCalibration() {
+  return useQuery({
+    queryKey: ['analysis', 'latest', 'calibration'] as const,
+    queryFn: analysisApi.latestWithCalibration,
+    staleTime: 5_000,
+  });
+}
+
 export function useRefreshAnalysis() {
   const qc = useQueryClient();
   return useMutation({

@@ -143,6 +143,11 @@ export const AnalysisResultSchema = z.object({
    *  rubric and the role-aware ATS surfaces. May be empty when the CV
    *  already covers the expected keyword set. */
   keywordGaps: z.array(z.string().min(1).max(60)).max(20).default([]),
+  /** Backlog #6b — deterministic structural spine (0–100), computed purely
+   *  from CV features (verb strength, quantification, STAR, voice, tenure).
+   *  A stable numeric backbone for calibration, persisted alongside the
+   *  LLM-emitted overallScore. Optional: older analyses won't have it. */
+  structuralScore: z.number().int().min(0).max(100).optional(),
 });
 export type AnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
