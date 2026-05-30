@@ -23,16 +23,45 @@ export const AnalysisStrengthSchema = z.object({
 export type AnalysisStrength = z.infer<typeof AnalysisStrengthSchema>;
 
 /**
+ * Where a finding originates, in human terms. Resolved deterministically during
+ * synthesis from the user's structured CV (expId → "Title · Company",
+ * educationId → "Qualification · School") or the overview section the finding
+ * targets (summary / header / skills). Lets the FE label each finding with the
+ * exact place it comes from instead of a bare title.
+ */
+export const AnalysisScopeKindSchema = z.enum([
+  'experience',
+  'education',
+  'summary',
+  'header',
+  'skills',
+  'general',
+]);
+export type AnalysisScopeKind = z.infer<typeof AnalysisScopeKindSchema>;
+
+export const AnalysisScopeSchema = z.object({
+  kind: AnalysisScopeKindSchema,
+  /** Human-readable origin, e.g. "Software Engineer · NeedSolution",
+   *  "BSc Computer Science · UCL", "Professional summary". */
+  label: z.string().min(1).max(160),
+});
+export type AnalysisScope = z.infer<typeof AnalysisScopeSchema>;
+
+/**
  * Optional reference fields the LLM populates when a finding is item-specific.
  * Validated server-side against the user's structured CV; hallucinated/stale refs
- * are dropped (set to null) before persistence. All four fields are nullable so
+ * are dropped (set to null) before persistence. All four ref fields are nullable so
  * CV-wide findings and legacy analysis documents validate as-is.
+ *
+ * `scope` is derived (not LLM-supplied) during synthesis and is optional so older
+ * persisted analyses without it still validate.
  */
 const RefFields = {
   expId: z.string().max(80).nullable().default(null),
   educationId: z.string().max(80).nullable().default(null),
   bulletIndex: z.number().int().min(0).max(50).nullable().default(null),
   quotedBullet: z.string().min(1).max(500).nullable().default(null),
+  scope: AnalysisScopeSchema.nullable().optional(),
 } as const;
 
 export const AnalysisGapSchema = z.object({

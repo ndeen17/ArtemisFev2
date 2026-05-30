@@ -1,4 +1,4 @@
-import type { CvAnalysis, AnalysisGap, AnalysisSeverity } from '@artemis/shared';
+import type { CvAnalysis, AnalysisGap, AnalysisScope, AnalysisSeverity } from '@artemis/shared';
 import {
   SparklesIcon,
   AlertTriangleIcon,
@@ -186,6 +186,7 @@ export function AnalysisCard({ analysis, isLoading, hasCv }: Props) {
             title={s.title}
             detail={s.detail}
             accent="bg-[#dcfce7] text-[#15803d]"
+            scope={s.scope}
             footer={
               <ThumbsFeedback
                 surface="analysis_suggestion"
@@ -281,12 +282,14 @@ function Item({
   title,
   detail,
   accent,
+  scope,
   children,
   footer,
 }: {
   title: string;
   detail: string;
   accent: string;
+  scope?: AnalysisScope | null;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
@@ -298,11 +301,24 @@ function Item({
         {children}
       </span>
       <div className="min-w-0 flex-1">
+        <ScopeEyebrow scope={scope} />
         <div className="text-[14px] font-semibold text-[#111827]">{title}</div>
         <div className="text-[13px] text-gray-600 mt-0.5">{detail}</div>
         {footer ? <div className="mt-1.5">{footer}</div> : null}
       </div>
     </li>
+  );
+}
+
+/** Small uppercase eyebrow naming where a finding comes from, e.g.
+ *  "Software Engineer · NeedSolution" or "Professional summary". Renders
+ *  nothing for CV-wide findings with no resolved scope. */
+function ScopeEyebrow({ scope }: { scope?: AnalysisScope | null }) {
+  if (!scope) return null;
+  return (
+    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-green mb-0.5 truncate">
+      {scope.label}
+    </div>
   );
 }
 
@@ -314,6 +330,7 @@ function GapItem({ gap, analysisId }: { gap: AnalysisGap; analysisId: string }) 
         <AlertTriangleIcon />
       </span>
       <div className="min-w-0 flex-1">
+        <ScopeEyebrow scope={gap.scope} />
         <div className="flex items-center justify-between gap-2">
           <div className="text-[14px] font-semibold text-[#111827]">{gap.title}</div>
           <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600">

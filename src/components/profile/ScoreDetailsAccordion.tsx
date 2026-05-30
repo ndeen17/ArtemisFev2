@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { RubricItem, AnalysisResult, ProfileOverview } from '@artemis/shared';
+import type { RubricItem, AnalysisResult, AnalysisScope, ProfileOverview } from '@artemis/shared';
 import { roleLabel } from '@artemis/shared';
 import { RubricBreakdown } from './RubricBreakdown';
 import { BulletFeedbackList } from './BulletFeedback';
@@ -307,6 +307,7 @@ function InsightsTab({
             detail={g.detail}
             accent="bg-amber-100 text-amber-600"
             icon={<AlertTriangleIcon className="text-amber-600" />}
+            scope={g.scope}
             footer={renderFeedback(analysisId, 'analysis_gap', g.title)}
           />
         ))}
@@ -324,6 +325,7 @@ function InsightsTab({
                 detail={s.detail}
                 accent="bg-brand-greenSoft text-brand-greenInk"
                 icon={<LightbulbIcon className="text-brand-greenInk" />}
+                scope={s.scope}
                 footer={renderFeedback(analysisId, 'analysis_suggestion', s.title)}
               />
             ))}
@@ -437,12 +439,14 @@ function ListRow({
   detail,
   accent,
   icon,
+  scope,
   footer,
 }: {
   title: string;
   detail: string;
   accent: string;
   icon: React.ReactNode;
+  scope?: AnalysisScope | null;
   footer?: React.ReactNode;
 }) {
   return (
@@ -453,6 +457,11 @@ function ListRow({
         {icon}
       </span>
       <div className="min-w-0 flex-1">
+        {scope ? (
+          <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-greenInk mb-0.5 truncate">
+            {scope.label}
+          </div>
+        ) : null}
         <div className="text-[14px] font-semibold text-[#111827]">{title}</div>
         <div className="text-[13px] text-gray-600 mt-0.5">{detail}</div>
         {footer ? <div className="mt-1.5">{footer}</div> : null}
