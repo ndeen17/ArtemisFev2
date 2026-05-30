@@ -31,3 +31,4 @@ export * from './domain/cvRubric.js';
 export * from './domain/verbBank.js';
 export * from './domain/atsScore.js';
 export * from './domain/roleKeywords.js';
+export * from './domain/seniorityRubric.js';
