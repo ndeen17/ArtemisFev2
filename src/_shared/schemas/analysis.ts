@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ScoreBandSchema } from '../domain/scoreBand.js';
 
 /**
  * CV Analysis (Phase 3).
@@ -127,6 +128,42 @@ export const BulletFeedbackSchema = z.object({
 });
 export type BulletFeedback = z.infer<typeof BulletFeedbackSchema>;
 
+/* ------------------------------------------------------------------ *
+ * Per-dimension critique (deterministic rubric scorecard)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Closed vocabulary of the rubric dimensions the overall score decomposes
+ * into. Each maps 1:1 to a weighted component of the deterministic structural
+ * spine (`structuralSpine.components`) and to the LLM finding categories that
+ * critique it. Stable so the FE can branch/style per dimension.
+ */
+export const DimensionKeySchema = z.enum([
+  'quantified_impact',
+  'action_language',
+  'results_focus',
+  'clarity',
+  'career_continuity',
+]);
+export type DimensionKey = z.infer<typeof DimensionKeySchema>;
+
+/**
+ * One row of the per-dimension scorecard. `score` is the deterministic spine
+ * component normalised to 0–100 (reproducible, calibratable); `band` is its
+ * presentation projection; `findingCount` is the number of LLM findings whose
+ * category critiques this dimension (the qualitative "why"); `summary` is
+ * deterministic copy. Derived during synthesis — never LLM-emitted.
+ */
+export const DimensionScoreSchema = z.object({
+  key: DimensionKeySchema,
+  label: z.string().min(1).max(40),
+  score: z.number().int().min(0).max(100),
+  band: ScoreBandSchema,
+  findingCount: z.number().int().min(0).max(50),
+  summary: z.string().min(1).max(200),
+});
+export type DimensionScore = z.infer<typeof DimensionScoreSchema>;
+
 /** Strict shape we ask OpenAI to produce (JSON mode). Validated server-side before persist. */
 export const AnalysisResultSchema = z.object({
   overallScore: z.number().int().min(0).max(100),
@@ -148,6 +185,11 @@ export const AnalysisResultSchema = z.object({
    *  A stable numeric backbone for calibration, persisted alongside the
    *  LLM-emitted overallScore. Optional: older analyses won't have it. */
   structuralScore: z.number().int().min(0).max(100).optional(),
+  /** Per-dimension critique scorecard — decomposes the overall score into
+   *  named rubric dimensions, each anchored on a deterministic spine
+   *  component and annotated with the count of LLM findings that critique it.
+   *  Optional: older analyses (and CV-less synthesis) won't have it. */
+  dimensionScores: z.array(DimensionScoreSchema).max(8).optional(),
 });
 export type AnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
