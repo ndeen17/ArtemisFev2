@@ -45,6 +45,10 @@ export function useToggleAction() {
       profileApi.toggleAction(id, complete),
     onSuccess(plan: ActionPlan) {
       qc.setQueryData(PLAN_KEY, plan);
+      // The "Your progress" card derives from the same action plan (completed →
+      // done, rest → still-to-do), so a tick must refresh it too — otherwise the
+      // card lags the list until its own staleTime-triggered refetch.
+      void qc.invalidateQueries({ queryKey: CONTINUITY_KEY });
     },
   });
 }

@@ -93,6 +93,9 @@ interface CreateOpts {
 }
 
 const OPENAI_REALTIME_BASE = 'https://api.openai.com/v1/realtime';
+/** GA SDP-exchange endpoint. The model is bound to the ephemeral key's session
+ *  config, so (unlike the beta `?model=` form) no query param is needed. */
+const OPENAI_REALTIME_CALLS_URL = `${OPENAI_REALTIME_BASE}/calls`;
 const HEARTBEAT_INTERVAL_MS = 10_000;
 const TRANSCRIPT_BATCH_SIZE = 5;
 const CONNECT_TIMEOUT_MS = 6_000;
@@ -310,9 +313,9 @@ export function createRealtimeClient(opts: CreateOpts): RealtimeClient {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    // POST SDP to OpenAI with the ephemeral key.
-    const url = `${OPENAI_REALTIME_BASE}?model=${encodeURIComponent(s.sessionConfig.model)}`;
-    const sdpRes = await fetch(url, {
+    // POST SDP to OpenAI with the ephemeral key. GA uses /v1/realtime/calls;
+    // the session (model, voice, VAD) is already bound to the ephemeral key.
+    const sdpRes = await fetch(OPENAI_REALTIME_CALLS_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${s.ephemeralKey}`,
