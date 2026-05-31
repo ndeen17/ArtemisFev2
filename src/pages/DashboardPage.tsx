@@ -166,8 +166,8 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* "Since last time" — what changed vs the previous analysis. Lives on
-          Home so the continuity signal sits next to the action list it drives. */}
+      {/* "Your progress" — action items the user has ticked off. Lives on Home
+          so the progress signal sits next to the action list it tracks. */}
       <ContinuitySummaryCard
         continuity={continuity.data}
         isLoading={continuity.isLoading}

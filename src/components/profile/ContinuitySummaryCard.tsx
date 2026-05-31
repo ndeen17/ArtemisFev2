@@ -8,13 +8,13 @@ import {
 } from '@/components/ui/icons';
 
 /**
- * "Since last time" continuity card (Section C). Reads the {@link ContinuitySummary}
- * the backend derives by diffing the user's two most recent analyses and tells
- * the user, in plain language, what they fixed, what's still open, and what's
- * newly surfaced — plus how the score moved.
+ * "Your progress" card (Section C). Reads the {@link ContinuitySummary} the
+ * backend derives from the user's action plan and shows, in plain language,
+ * which action items they've ticked off (`resolved`) and which are still to do
+ * (`persisting`) — plus how their score has moved across analyses.
  *
- * First-timers (one or zero analyses) get a friendly forward-looking empty
- * state instead of an awkward all-zeros readout.
+ * First-timers (no analysed CV, so no action plan yet) get a friendly
+ * forward-looking empty state instead of an awkward all-zeros readout.
  */
 export function ContinuitySummaryCard({
   continuity,
@@ -40,8 +40,8 @@ export function ContinuitySummaryCard({
         <div className="mt-3 flex items-start gap-3 text-[14px] text-gray-500">
           <SparklesIcon className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
           <p>
-            This is your baseline. Make a few improvements and re-run the analysis —
-            next time we’ll show you exactly what you fixed and how your score moved.
+            No action plan yet. Once your CV is analysed we’ll list what to improve
+            here — tick items off and watch your progress build.
           </p>
         </div>
       </Card>
@@ -58,13 +58,13 @@ export function ContinuitySummaryCard({
       <BandTransition delta={continuity.scoreDelta} current={continuity.currentScore} />
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Stat label="Fixed" value={continuity.resolvedCount} tone="emerald" />
-        <Stat label="Still open" value={continuity.openCount} tone="amber" />
+        <Stat label="Done" value={continuity.resolvedCount} tone="emerald" />
+        <Stat label="Still to do" value={continuity.openCount} tone="amber" />
       </div>
 
       {continuity.resolved.length > 0 && (
         <FindingGroup
-          title="You fixed"
+          title="Completed"
           findings={continuity.resolved}
           icon={<CheckIcon className="h-4 w-4 text-emerald-600" />}
         />
@@ -84,8 +84,8 @@ export function ContinuitySummaryCard({
 function Header() {
   return (
     <div>
-      <h2 className="text-[15px] font-semibold text-gray-900">Since last time</h2>
-      <p className="text-[12px] text-gray-400">What’s changed since your previous analysis</p>
+      <h2 className="text-[15px] font-semibold text-gray-900">Your progress</h2>
+      <p className="text-[12px] text-gray-400">Action items you’ve ticked off so far</p>
     </div>
   );
 }
