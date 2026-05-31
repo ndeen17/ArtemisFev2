@@ -4,12 +4,13 @@ import { deriveReadiness, roleLabel } from '@artemis/shared';
 import { AppShell } from '@/components/layout/AppShell';
 import { useMyCv, useOnboardingState } from '@/hooks/useOnboarding';
 import { useLatestAnalysis } from '@/hooks/useAnalysis';
-import { useProfileOverview } from '@/hooks/useProfile';
+import { useProfileOverview, useContinuity } from '@/hooks/useProfile';
 import { useInterview, useInterviews } from '@/hooks/useInterviews';
 import { ResumeReadinessCard } from '@/components/dashboard/ResumeReadinessCard';
 import { SetupProgressCard } from '@/components/dashboard/SetupProgressCard';
 import { AnalysingResumeCard } from '@/components/dashboard/AnalysingResumeCard';
 import { ActionList, type WeakInterviewSummary } from '@/components/dashboard/ActionList';
+import { ContinuitySummaryCard } from '@/components/profile/ContinuitySummaryCard';
 import { useAuthStore } from '@/store/authStore';
 import { useGoalCopy } from '@/hooks/useGoal';
 import { ArrowRightIcon } from '@/components/ui/icons';
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const cv = useMyCv();
   const analysis = useLatestAnalysis();
   const overview = useProfileOverview();
+  const continuity = useContinuity();
   const interviews = useInterviews();
   const { goal, copy } = useGoalCopy();
   const toast = useToast();
@@ -163,6 +165,13 @@ export default function DashboardPage() {
           hasCv={!!cv.data}
         />
       )}
+
+      {/* "Since last time" — what changed vs the previous analysis. Lives on
+          Home so the continuity signal sits next to the action list it drives. */}
+      <ContinuitySummaryCard
+        continuity={continuity.data}
+        isLoading={continuity.isLoading}
+      />
 
       {/* Action list — the workhorse: what to do next, ranked by goal. */}
       <ActionList

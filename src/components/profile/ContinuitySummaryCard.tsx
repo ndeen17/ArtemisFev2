@@ -2,7 +2,6 @@ import type { ContinuitySummary, FindingChange } from '@artemis/shared';
 import { scoreLabel } from '@artemis/shared';
 import {
   CheckIcon,
-  PlusIcon,
   AlertTriangleIcon,
   SparklesIcon,
   SpinnerIcon,
@@ -58,10 +57,9 @@ export function ContinuitySummaryCard({
 
       <BandTransition delta={continuity.scoreDelta} current={continuity.currentScore} />
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <Stat label="Fixed" value={continuity.resolvedCount} tone="emerald" />
         <Stat label="Still open" value={continuity.openCount} tone="amber" />
-        <Stat label="New" value={continuity.newCount} tone="violet" />
       </div>
 
       {continuity.resolved.length > 0 && (
@@ -69,14 +67,6 @@ export function ContinuitySummaryCard({
           title="You fixed"
           findings={continuity.resolved}
           icon={<CheckIcon className="h-4 w-4 text-emerald-600" />}
-        />
-      )}
-
-      {continuity.new.length > 0 && (
-        <FindingGroup
-          title="Newly surfaced"
-          findings={continuity.new}
-          icon={<PlusIcon className="h-4 w-4 text-violet-600" />}
         />
       )}
 
