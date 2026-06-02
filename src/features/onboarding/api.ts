@@ -39,9 +39,10 @@ export const cvApi = {
   async upload(file: File): Promise<CvDetail> {
     const fd = new FormData();
     fd.append('file', file);
-    const res = await apiClient.post<{ cv: CvDetail }>('/cv/upload', fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    // Let axios set `multipart/form-data; boundary=...` itself. Setting the
+    // Content-Type manually (without a boundary) breaks the multipart request
+    // and drops the Authorization header, causing a spurious 401.
+    const res = await apiClient.post<{ cv: CvDetail }>('/cv/upload', fd);
     return res.data.cv;
   },
   async fromJd(input: CvFromJdInput): Promise<{ queued: true }> {
