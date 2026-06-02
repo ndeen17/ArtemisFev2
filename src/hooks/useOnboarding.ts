@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const KEY = ['onboarding', 'state'] as const;
 const CV_KEY = ['cv', 'me'] as const;
+const CV_GEN_KEY = ['cv', 'generation', 'latest'] as const;
 
 /** Pulls current onboarding state from the server and mirrors it into the store. */
 export function useOnboardingState() {
@@ -87,10 +88,11 @@ export function useGenerateCvFromJd() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: cvApi.fromJd,
-    async onSuccess() {
-      void qc.invalidateQueries({ queryKey: CV_KEY });
-      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
-      syncAuthStep(qc, state);
+    onSuccess(generation) {
+      // Generation runs async on the server; seed the poll cache with the
+      // queued job. The step advances server-side once the worker finishes —
+      // finalizeCvGeneration() (below) syncs it after the job reports 'done'.
+      qc.setQueryData(CV_GEN_KEY, generation);
     },
   });
 }
@@ -99,12 +101,43 @@ export function useGenerateCvFromQuestionnaire() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: cvApi.fromQuestionnaire,
-    async onSuccess() {
-      void qc.invalidateQueries({ queryKey: CV_KEY });
-      const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
-      syncAuthStep(qc, state);
+    onSuccess(generation) {
+      qc.setQueryData(CV_GEN_KEY, generation);
     },
   });
+}
+
+/**
+ * Polls the latest CV-generation job while it's in flight. Enable it only after
+ * a job has been enqueued so the editor / dashboard don't poll needlessly.
+ */
+export function useLatestCvGeneration(enabled: boolean) {
+  return useQuery({
+    queryKey: CV_GEN_KEY,
+    queryFn: cvApi.generationLatest,
+    enabled,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === 'queued' || status === 'running' ? 2_500 : false;
+    },
+  });
+}
+
+/**
+ * Call after a generation job reports `done`: the worker has created the CV and
+ * advanced onboardingStep server-side, so refresh the CV + onboarding caches and
+ * mirror the new step into the auth store before routing to the editor.
+ */
+export function useFinalizeCvGeneration() {
+  const qc = useQueryClient();
+  return async function finalizeCvGeneration() {
+    void qc.invalidateQueries({ queryKey: CV_KEY });
+    void qc.invalidateQueries({ queryKey: ['analysis', 'latest'] });
+    void qc.invalidateQueries({ queryKey: ['profile', 'overview'] });
+    void qc.invalidateQueries({ queryKey: ['dashboard'] });
+    const state = await qc.fetchQuery({ queryKey: KEY, queryFn: onboardingApi.getState });
+    syncAuthStep(qc, state);
+  };
 }
 
 export function usePatchCv() {

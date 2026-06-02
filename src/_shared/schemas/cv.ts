@@ -121,3 +121,30 @@ export const CvFromQuestionnaireSchema = z.object({
   answers: QuestionnaireAnswersSchema,
 });
 export type CvFromQuestionnaireInput = z.infer<typeof CvFromQuestionnaireSchema>;
+
+/** Which builder produced the async generation job. */
+export const CvGenerationKindSchema = z.enum(['jd', 'questionnaire']);
+export type CvGenerationKind = z.infer<typeof CvGenerationKindSchema>;
+
+/** Lifecycle of an async CV-generation job. Mirrors the analysis job states. */
+export const CvGenerationStatusSchema = z.enum(['queued', 'running', 'done', 'failed']);
+export type CvGenerationStatus = z.infer<typeof CvGenerationStatusSchema>;
+
+/**
+ * Async CV-generation job. The builder endpoints (`/cv/from-jd`,
+ * `/cv/from-questionnaire`) enqueue one of these and return 202; the FE polls
+ * `GET /cv/generation/latest` until `status` is `done` (then `cvId` is set) or
+ * `failed`. Generation is offloaded to the polling worker so a long, multi-call
+ * OpenAI request never holds the HTTP connection open past the proxy timeout.
+ */
+export const CvGenerationSchema = z.object({
+  id: z.string(),
+  kind: CvGenerationKindSchema,
+  status: CvGenerationStatusSchema,
+  /** Populated once the CV has been created (status === 'done'). */
+  cvId: z.string().nullable(),
+  error: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type CvGeneration = z.infer<typeof CvGenerationSchema>;

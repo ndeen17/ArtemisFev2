@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
@@ -8,14 +8,23 @@ import { StepHeader } from '@/components/onboarding/StepHeader';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
 import { PlusIcon, SpinnerIcon, TrashIcon } from '@/components/ui/icons';
-import { useGenerateCvFromQuestionnaire } from '@/hooks/useOnboarding';
+import {
+  useFinalizeCvGeneration,
+  useGenerateCvFromQuestionnaire,
+  useLatestCvGeneration,
+} from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
 
 export default function CvBuilderQuestionnairePage() {
   const navigate = useNavigate();
   const generate = useGenerateCvFromQuestionnaire();
+  const finalize = useFinalizeCvGeneration();
   const [topError, setTopError] = useState<string | null>(null);
   const [skillsInput, setSkillsInput] = useState('');
+  // True once a job is enqueued — enables polling and keeps the button busy.
+  const [generating, setGenerating] = useState(false);
+  const generation = useLatestCvGeneration(generating);
+  const busy = generate.isPending || generating;
 
   const form = useForm<QuestionnaireAnswers>({
     resolver: zodResolver(QuestionnaireAnswersSchema),
@@ -48,6 +57,20 @@ export default function CvBuilderQuestionnairePage() {
     );
   }
 
+  // React to the polled job: route to the editor on success, surface the error
+  // and re-enable the form on failure.
+  useEffect(() => {
+    if (!generating) return;
+    const status = generation.data?.status;
+    if (status === 'done') {
+      setGenerating(false);
+      void finalize().then(() => navigate('/onboarding/cv/edit'));
+    } else if (status === 'failed') {
+      setGenerating(false);
+      setTopError(generation.data?.error ?? 'CV generation failed. Please try again.');
+    }
+  }, [generating, generation.data?.status, generation.data?.error, finalize, navigate]);
+
   const onSubmit = form.handleSubmit(async (values) => {
     setTopError(null);
     try {
@@ -58,7 +81,7 @@ export default function CvBuilderQuestionnairePage() {
         education: values.education.filter((e) => e.school),
       };
       await generate.mutateAsync({ answers: cleaned });
-      navigate('/onboarding/cv/edit');
+      setGenerating(true);
     } catch (err) {
       setTopError(extractApiError(err).message);
     }
@@ -263,8 +286,8 @@ export default function CvBuilderQuestionnairePage() {
         {topError ? <div className="text-[13px] text-red-600">{topError}</div> : null}
 
         <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={generate.isPending}>
-            {generate.isPending ? (
+          <Button type="submit" disabled={busy}>
+            {busy ? (
               <span className="inline-flex items-center gap-2">
                 <SpinnerIcon /> Drafting your CV…
               </span>

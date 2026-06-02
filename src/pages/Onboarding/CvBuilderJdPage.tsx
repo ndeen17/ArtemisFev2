@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { Button } from '@/components/ui/Button';
 import { SpinnerIcon } from '@/components/ui/icons';
-import { useGenerateCvFromJd } from '@/hooks/useOnboarding';
+import {
+  useFinalizeCvGeneration,
+  useGenerateCvFromJd,
+  useLatestCvGeneration,
+} from '@/hooks/useOnboarding';
 import { extractApiError } from '@/hooks/useAuth';
 
 const MIN = 100;
@@ -13,12 +17,32 @@ const MAX = 6000;
 export default function CvBuilderJdPage() {
   const navigate = useNavigate();
   const generate = useGenerateCvFromJd();
+  const finalize = useFinalizeCvGeneration();
   const [jd, setJd] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // True once a job is enqueued — enables polling and keeps the button busy
+  // until the worker finishes (or fails).
+  const [generating, setGenerating] = useState(false);
+  const generation = useLatestCvGeneration(generating);
 
   const len = jd.trim().length;
   const tooShort = len < MIN;
   const ready = len >= MIN && len <= MAX;
+  const busy = generate.isPending || generating;
+
+  // React to the polled job: route to the editor on success, surface the error
+  // and re-enable the form on failure.
+  useEffect(() => {
+    if (!generating) return;
+    const status = generation.data?.status;
+    if (status === 'done') {
+      setGenerating(false);
+      void finalize().then(() => navigate('/onboarding/cv/edit'));
+    } else if (status === 'failed') {
+      setGenerating(false);
+      setError(generation.data?.error ?? 'CV generation failed. Please try again.');
+    }
+  }, [generating, generation.data?.status, generation.data?.error, finalize, navigate]);
 
   async function submit() {
     setError(null);
@@ -32,7 +56,7 @@ export default function CvBuilderJdPage() {
     }
     try {
       await generate.mutateAsync({ jobDescription: jd.trim() });
-      navigate('/onboarding/cv/edit');
+      setGenerating(true);
     } catch (err) {
       setError(extractApiError(err).message);
     }
@@ -72,8 +96,8 @@ export default function CvBuilderJdPage() {
       {error ? <div className="text-[13px] text-red-600">{error}</div> : null}
 
       <div className="flex justify-end">
-        <Button onClick={submit} disabled={generate.isPending}>
-          {generate.isPending ? (
+        <Button onClick={submit} disabled={busy}>
+          {busy ? (
             <span className="inline-flex items-center gap-2">
               <SpinnerIcon /> Drafting your CV…
             </span>

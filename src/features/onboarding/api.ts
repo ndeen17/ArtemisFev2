@@ -5,6 +5,7 @@ import type {
   CvDetail,
   CvFromJdInput,
   CvFromQuestionnaireInput,
+  CvGeneration,
   OnboardingPatchInput,
   OnboardingState,
   StructuredCv,
@@ -40,13 +41,23 @@ export const cvApi = {
     });
     return res.data.cv;
   },
-  async fromJd(input: CvFromJdInput): Promise<CvDetail> {
-    const res = await apiClient.post<{ cv: CvDetail }>('/cv/from-jd', input);
-    return res.data.cv;
+  /** Enqueue async JD→CV generation. Returns the queued job (202); poll generationLatest. */
+  async fromJd(input: CvFromJdInput): Promise<CvGeneration> {
+    const res = await apiClient.post<{ generation: CvGeneration }>('/cv/from-jd', input);
+    return res.data.generation;
   },
-  async fromQuestionnaire(input: CvFromQuestionnaireInput): Promise<CvDetail> {
-    const res = await apiClient.post<{ cv: CvDetail }>('/cv/from-questionnaire', input);
-    return res.data.cv;
+  /** Enqueue async questionnaire→CV generation. Returns the queued job (202). */
+  async fromQuestionnaire(input: CvFromQuestionnaireInput): Promise<CvGeneration> {
+    const res = await apiClient.post<{ generation: CvGeneration }>(
+      '/cv/from-questionnaire',
+      input,
+    );
+    return res.data.generation;
+  },
+  /** Poll the latest CV-generation job for the current user. */
+  async generationLatest(): Promise<CvGeneration | null> {
+    const res = await apiClient.get<{ generation: CvGeneration | null }>('/cv/generation/latest');
+    return res.data.generation;
   },
   async patchStructured(cvId: string, structured: StructuredCv): Promise<CvDetail> {
     const res = await apiClient.patch<{ cv: CvDetail }>(`/cv/${cvId}`, { structured });
