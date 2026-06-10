@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { CheckIcon } from '@/components/ui/icons';
 
 export default function CompletePage() {
@@ -20,6 +20,13 @@ export default function CompletePage() {
           You&apos;re all set.
         </h1>
         <p className="text-[15px] text-gray-600">Building your dashboard…</p>
+        <Link
+          to="/dashboard"
+          replace
+          className="inline-block text-[13px] text-gray-400 underline underline-offset-2 hover:text-gray-600"
+        >
+          Continue to dashboard
+        </Link>
       </div>
     </div>
   );

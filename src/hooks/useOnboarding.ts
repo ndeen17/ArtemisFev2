@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OnboardingState } from '@artemis/shared';
 import { onboardingApi, cvApi } from '@/features/onboarding/api';
@@ -8,9 +8,17 @@ import { useAuthStore } from '@/store/authStore';
 const KEY = ['onboarding', 'state'] as const;
 const CV_KEY = ['cv', 'me'] as const;
 
+const CV_GENERATION_POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 /** Pulls current onboarding state from the server and mirrors it into the store. */
 export function useOnboardingState() {
   const hydrate = useOnboardingStore((s) => s.hydrate);
+  // Tracks when we started polling for a running CV generation job. Reset to
+  // null when the job is no longer running (success, failure, or component
+  // remount). Lets us cap total polling time so a stuck backend job doesn't
+  // poll indefinitely.
+  const pollingStartRef = useRef<number | null>(null);
+
   const query = useQuery({
     queryKey: KEY,
     queryFn: onboardingApi.getState,
@@ -18,8 +26,19 @@ export function useOnboardingState() {
     // Poll while the AI is drafting a CV in the background so the editor
     // page can flip from the "drafting" loader to the editor as soon as
     // the job finishes (success → status='idle', or failure → 'failed').
-    refetchInterval: (q) =>
-      q.state.data?.cvGenerationStatus === 'running' ? 3000 : false,
+    refetchInterval: (q) => {
+      if (q.state.data?.cvGenerationStatus !== 'running') {
+        pollingStartRef.current = null;
+        return false;
+      }
+      if (pollingStartRef.current === null) {
+        pollingStartRef.current = Date.now();
+      }
+      if (Date.now() - pollingStartRef.current > CV_GENERATION_POLL_TIMEOUT_MS) {
+        return false;
+      }
+      return 3000;
+    },
   });
   useEffect(() => {
     if (query.data) hydrate(query.data);

@@ -13,34 +13,34 @@ import { stepToPath } from '@/store/onboardingStore';
  */
 
 // Linear ordering of onboarding steps. Used to allow backward navigation while
-// still preventing skip-ahead. CV / no-CV (and the two CV builder variants)
-// share the same index because they are mutually exclusive branches.
+// still preventing skip-ahead. All CV-phase steps (cv, no_cv, cv_builder_*)
+// share the same index because they are mutually exclusive branches of the
+// same wizard phase — none is a forward progression of another.
 const STEP_ORDER: Record<OnboardingStep, number> = {
   role: 0,
   goal: 1,
   cv: 2,
   no_cv: 2,
-  cv_builder_jd: 3,
-  cv_builder_questionnaire: 3,
+  cv_builder_jd: 2,
+  cv_builder_questionnaire: 2,
   linkedin: 4,
   complete: 5,
 };
 
 function stepForPath(pathname: string): OnboardingStep | null {
-  // Multiple steps can share the same URL — the unified CV builder URL
-  // (`/onboarding/cv/builder`) is the canonical destination for all the
-  // CV-builder-flavour steps. Pick the canonical (current) step where
-  // there's overlap so STEP_ORDER comparisons line up with the user's
-  // actual progress on the server.
+  // Builder steps must be checked before 'cv' because their URL
+  // (/onboarding/cv/builder) is a sub-path of 'cv' (/onboarding/cv).
+  // Checking 'cv' first would cause startsWith to swallow the builder URL
+  // and return 'cv' instead of the correct builder step.
   const PREFER: OnboardingStep[] = [
     'role',
     'goal',
-    'cv',
     'cv_builder_questionnaire',
     'cv_builder_jd',
+    'no_cv',
+    'cv',
     'linkedin',
     'complete',
-    'no_cv',
   ];
   for (const step of PREFER) {
     const path = stepToPath[step];
