@@ -1,21 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/components/ui/Toast';
 import { bootstrapAuth } from '@/lib/apiClient';
+import { useAuthStore } from '@/store/authStore';
 
 /**
  * App root — wires global providers around the router.
  * Provider order: ErrorBoundary → QueryClientProvider → ToastProvider → AppRoutes.
  */
 export default function App() {
+  // Start ready when no bootstrap is needed (unauthenticated users, or when
+  // the access token is already in memory). For authenticated users on a hard
+  // reload the token is gone — hold back routes until bootstrapAuth() mints a
+  // fresh one so child queries don't race it and fire without a token (which
+  // causes needless 401 → refresh → replay round-trips on every page load).
+  const { isAuthenticated, accessToken } = useAuthStore.getState();
+  const [authReady, setAuthReady] = useState(!isAuthenticated || !!accessToken);
+
   useEffect(() => {
-    // Mint a fresh access token on hard reload so the user's first action
-    // doesn't eat a 401-then-retry round-trip (or, on long AI endpoints,
-    // a timeout). The access token is intentionally never persisted.
-    void bootstrapAuth();
+    bootstrapAuth().finally(() => setAuthReady(true));
 
     // Tabs left idle for hours can have an expired in-memory access token
     // by the time the user returns. Re-bootstrapping when the tab regains
@@ -33,7 +39,7 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
-          <AppRoutes />
+          {authReady ? <AppRoutes /> : null}
         </ToastProvider>
       </QueryClientProvider>
     </ErrorBoundary>
