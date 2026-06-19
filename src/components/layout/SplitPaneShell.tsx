@@ -113,7 +113,15 @@ export function SplitPaneShell({
           )}
           aria-label={rightTitle}
         >
-          <div className="flex h-full flex-col xl:h-auto xl:rounded-3xl xl:border xl:border-gray-100 xl:bg-white xl:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+          {/*
+           * On xl+ the card is capped to the available viewport height so it
+           * never extends the page. TopBar = 4rem (h-16). Content wrapper
+           * padding = py-10 top + py-10 bottom = 5rem. Total offset = 9rem.
+           * This means the page scroll container (<main>) never grows a
+           * scrollbar when the builder is open — the left panel is naturally
+           * stationary, and the builder content scrolls inside its own panel.
+           */}
+          <div className="flex h-full flex-col xl:h-[calc(100vh-9rem)] xl:rounded-3xl xl:border xl:border-gray-100 xl:bg-white xl:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
             <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-gray-100 bg-white px-4 py-3 sm:px-6 xl:rounded-t-3xl">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -153,11 +161,11 @@ export function SplitPaneShell({
                 </Button>
               </div>
             </header>
-            {/* Below xl this scroller carries the sheet content. On xl+ we
-                rely on the page's own scroll so the editor flows to its full
-                vertical length next to the action plan, never capped at the
-                viewport height. */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 xl:flex-none xl:overflow-visible">
+            {/* Single scroller for both mobile sheet and xl+ panel.
+                On xl+ the card has a fixed viewport-relative height above,
+                so flex-1 fills the remaining space after the header and
+                overflow-y-auto gives the builder its own independent scroll. */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
               {right}
             </div>
           </div>
