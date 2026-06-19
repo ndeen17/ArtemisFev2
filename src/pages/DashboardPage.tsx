@@ -7,7 +7,6 @@ import { useLatestAnalysis } from '@/hooks/useAnalysis';
 import { useProfileOverview, useContinuity } from '@/hooks/useProfile';
 import { useInterview, useInterviews } from '@/hooks/useInterviews';
 import { ResumeReadinessCard } from '@/components/dashboard/ResumeReadinessCard';
-import { SetupProgressCard } from '@/components/dashboard/SetupProgressCard';
 import { AnalysingResumeCard } from '@/components/dashboard/AnalysingResumeCard';
 import { ActionList, type WeakInterviewSummary } from '@/components/dashboard/ActionList';
 import { ContinuitySummaryCard } from '@/components/profile/ContinuitySummaryCard';
@@ -148,11 +147,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-
-      {/* Setup checklist — sits directly under the hero so new users see the
-          guided path FIRST, not as a footnote at the bottom of the page.
-          Renders only when there are remaining steps; returns null otherwise. */}
-      <SetupProgressCard snapshot={snapshot} />
 
       {/* Readiness signal — analysing OR score OR empty. One card, three states.
           NEVER stacked with another progress visual. */}
