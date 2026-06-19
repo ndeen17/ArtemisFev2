@@ -128,4 +128,8 @@ export const cvApi = {
     const res = await apiClient.get<Blob>(`/cv/${cvId}/pdf`, { responseType: 'blob' });
     return res.data;
   },
+  async downloadDocx(cvId: string): Promise<Blob> {
+    const res = await apiClient.get<Blob>(`/cv/${cvId}/docx`, { responseType: 'blob' });
+    return res.data;
+  },
 };

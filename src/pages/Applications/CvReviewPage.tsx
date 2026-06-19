@@ -8,7 +8,6 @@ import { ArrowLeftIcon, SparklesIcon } from '@/components/ui/icons';
 import { CvDiffViewer } from '@/components/applications/CvDiffViewer';
 import { CvPreview } from '@/components/cv/CvPreview';
 import { RefineChatDrawer } from '@/components/applications/RefineChatDrawer';
-import { AtsScoreCard } from '@/components/applications/AtsScoreCard';
 import {
   useApplication,
   usePatchTargetedCv,
@@ -227,7 +226,6 @@ export default function CvReviewPage() {
               {targeted.rationale}
             </p>
           </div>
-          <AtsScoreCard score={targeted.atsScore} variant="cv" />
           <CvDiffViewer segments={targeted.diff} />
           <div className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8">
             <div className="flex items-center justify-between gap-3 flex-wrap">

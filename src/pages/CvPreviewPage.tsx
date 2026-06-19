@@ -11,28 +11,22 @@ import { applicationApi } from '@/features/applications/api';
 import { extractApiError } from '@/hooks/useAuth';
 import { emptyStructuredCv } from '@/lib/structuredCv';
 
-/**
- * Dedicated preview surface for the inline CV builder.
- *
- * Why this exists:
- *   The inline builder lives in `SplitPaneShell` and would otherwise have to
- *   render the editor and the preview side-by-side inside the same right
- *   pane. On smaller "xl" viewports that forces them to overlap. Instead,
- *   the editor surfaces a "Preview" button that navigates here, where the
- *   user gets a full-width preview, a Download PDF button, and a
- *   "Continue editing" button that takes them back to the exact builder
- *   URL they came from (`?back=` query param).
- *
- * Two route entries reuse this component:
- *   - `/profile/cv/preview` (canonical CV)
- *   - `/applications/:id/cv-review/preview` (targeted CV)
- */
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function ProfilePreview() {
   const cvQuery = useMyCv();
   const location = useLocation();
   const navigate = useNavigate();
   const back = new URLSearchParams(location.search).get('back') || '/profile?builder=1';
-  const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingDocx, setDownloadingDocx] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   if (cvQuery.isLoading) {
@@ -62,22 +56,31 @@ function ProfilePreview() {
 
   const structured = cvQuery.data.structured ?? emptyStructuredCv();
 
-  async function download() {
+  async function downloadPdf() {
     if (!cvQuery.data) return;
     setDownloadError(null);
-    setDownloading(true);
+    setDownloadingPdf(true);
     try {
       const blob = await cvApi.downloadPdf(cvQuery.data.id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'my-cv.pdf';
-      a.click();
-      URL.revokeObjectURL(url);
+      triggerDownload(blob, 'my-cv.pdf');
     } catch (err) {
       setDownloadError(extractApiError(err).message);
     } finally {
-      setDownloading(false);
+      setDownloadingPdf(false);
+    }
+  }
+
+  async function downloadDocx() {
+    if (!cvQuery.data) return;
+    setDownloadError(null);
+    setDownloadingDocx(true);
+    try {
+      const blob = await cvApi.downloadDocx(cvQuery.data.id);
+      triggerDownload(blob, 'my-cv.docx');
+    } catch (err) {
+      setDownloadError(extractApiError(err).message);
+    } finally {
+      setDownloadingDocx(false);
     }
   }
 
@@ -86,8 +89,10 @@ function ProfilePreview() {
       <PreviewToolbar
         backHref={back}
         onContinue={() => navigate(back)}
-        onDownload={download}
-        downloading={downloading}
+        onDownloadPdf={downloadPdf}
+        onDownloadDocx={downloadDocx}
+        downloadingPdf={downloadingPdf}
+        downloadingDocx={downloadingDocx}
       />
       {downloadError ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
@@ -109,7 +114,8 @@ function TargetedPreview() {
   const back =
     new URLSearchParams(location.search).get('back') ||
     `/applications/${id}/cv-review?builder=1`;
-  const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingDocx, setDownloadingDocx] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   if (appQuery.isLoading) {
@@ -145,25 +151,37 @@ function TargetedPreview() {
 
   const structured = targeted.structured ?? emptyStructuredCv();
 
-  async function download() {
+  function slugName() {
+    return (targeted?.name ?? `${appQuery.data?.jobTitle ?? ''} ${appQuery.data?.company ?? ''}`)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'targeted-cv';
+  }
+
+  async function downloadPdf() {
     setDownloadError(null);
-    setDownloading(true);
+    setDownloadingPdf(true);
     try {
       const blob = await applicationApi.downloadTargetedCvPdf(id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${(targeted?.name ?? 'targeted-cv')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 80) || 'targeted-cv'}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      triggerDownload(blob, `${slugName()}.pdf`);
     } catch (err) {
       setDownloadError(extractApiError(err).message);
     } finally {
-      setDownloading(false);
+      setDownloadingPdf(false);
+    }
+  }
+
+  async function downloadDocx() {
+    setDownloadError(null);
+    setDownloadingDocx(true);
+    try {
+      const blob = await applicationApi.downloadTargetedCvDocx(id);
+      triggerDownload(blob, `${slugName()}.docx`);
+    } catch (err) {
+      setDownloadError(extractApiError(err).message);
+    } finally {
+      setDownloadingDocx(false);
     }
   }
 
@@ -177,8 +195,10 @@ function TargetedPreview() {
       <PreviewToolbar
         backHref={back}
         onContinue={() => navigate(back)}
-        onDownload={download}
-        downloading={downloading}
+        onDownloadPdf={downloadPdf}
+        onDownloadDocx={downloadDocx}
+        downloadingPdf={downloadingPdf}
+        downloadingDocx={downloadingDocx}
       />
       {downloadError ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
@@ -195,24 +215,26 @@ function TargetedPreview() {
 function PreviewToolbar({
   backHref,
   onContinue,
-  onDownload,
-  downloading,
+  onDownloadPdf,
+  onDownloadDocx,
+  downloadingPdf,
+  downloadingDocx,
 }: {
   backHref: string;
   onContinue: () => void;
-  onDownload: () => void;
-  downloading: boolean;
+  onDownloadPdf: () => void;
+  onDownloadDocx: () => void;
+  downloadingPdf: boolean;
+  downloadingDocx: boolean;
 }) {
   return (
     <div
-      // Sticky so the user can keep "Continue editing" and Download in reach
-      // while scrolling a long CV. `print:hidden` keeps the toolbar out of
-      // the printed output — Ctrl+P should give the same look as the PDF.
-      className="sticky top-16 z-10 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 py-3 bg-[#fafafa]/95 backdrop-blur border-b border-gray-100 print:hidden"
+      // top-0: stick at the very top of the <main> scroll container.
+      // The AppShell TopBar sits outside <main> so no extra offset is needed.
+      // print:hidden keeps the toolbar out of Ctrl+P output.
+      className="sticky top-0 z-10 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 py-3 bg-[#fafafa]/95 backdrop-blur border-b border-gray-100 print:hidden"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Use a real Link as a fallback navigation target so right-click /
-            middle-click "Open in new tab" still does something sensible. */}
         <Link
           to={backHref}
           onClick={(e) => {
@@ -223,6 +245,7 @@ function PreviewToolbar({
         >
           <ArrowLeftIcon className="w-4 h-4" /> Continue editing
         </Link>
+
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -231,8 +254,25 @@ function PreviewToolbar({
           >
             Print
           </button>
-          <Button type="button" onClick={onDownload} disabled={downloading}>
-            {downloading ? (
+
+          {/* Word download — outlined style to visually distinguish from PDF */}
+          <button
+            type="button"
+            onClick={onDownloadDocx}
+            disabled={downloadingDocx}
+            className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            {downloadingDocx ? (
+              <span className="inline-flex items-center gap-1.5">
+                <SpinnerIcon /> Preparing…
+              </span>
+            ) : (
+              'Download Word'
+            )}
+          </button>
+
+          <Button type="button" onClick={onDownloadPdf} disabled={downloadingPdf}>
+            {downloadingPdf ? (
               <span className="inline-flex items-center gap-2">
                 <SpinnerIcon /> Preparing…
               </span>

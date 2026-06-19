@@ -91,4 +91,10 @@ export const applicationApi = {
     });
     return res.data;
   },
+  async downloadTargetedCvDocx(id: string): Promise<Blob> {
+    const res = await apiClient.get<Blob>(`/applications/${id}/targeted-cv/docx`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
 };
