@@ -50,7 +50,9 @@ export default function ProfilePage() {
   // hidden until the builder is closed — they're navigation/context the
   // user doesn't need while they're mid-edit.
   const left = builderOpen ? (
-    <div className="space-y-5">
+    // sticky + internally scrollable so the action plan stays anchored while
+    // the builder (right column) extends below the viewport.
+    <div className="space-y-5 xl:sticky xl:top-10 xl:self-start xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-1">
       <CompactReadinessChip
         score={overview.data?.readinessScore ?? null}
         weeklyDelta={overview.data?.weeklyDelta ?? null}
@@ -59,6 +61,7 @@ export default function ProfilePage() {
         plan={plan.data}
         isLoading={plan.isLoading}
         onOpenBuilder={builder.open}
+        activeFocusId={builder.state.focus}
       />
     </div>
   ) : (
@@ -74,6 +77,7 @@ export default function ProfilePage() {
         plan={plan.data}
         isLoading={plan.isLoading}
         onOpenBuilder={builder.open}
+        activeFocusId={null}
       />
 
       <ScoreDetailsAccordion

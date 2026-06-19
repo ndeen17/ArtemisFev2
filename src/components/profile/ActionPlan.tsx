@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import type {
   ActionPlan as ActionPlanData,
@@ -18,18 +18,10 @@ import {
 import { useToggleAction } from '@/hooks/useProfile';
 import { useMyCv } from '@/hooks/useOnboarding';
 import { RewriteDrawer } from './RewriteDrawer';
-import { FixButton } from './FixButton';
 
 /** Number of high-priority actions shown above the fold; the rest expand on demand. */
 const DEFAULT_VISIBLE = 3;
 
-/**
- * PRF-06 — Unified action plan. Renders gaps (severity-sorted) then suggestions,
- * each with a checkbox. Completing an action POSTs the toggle and updates locally
- * via the mutation's onSuccess (server returns the recomputed plan).
- *
- * Source labels (CV / LinkedIn) prepare the surface for Phase 6+ when LinkedIn lights up.
- */
 const SEVERITY_DOT: Record<'high' | 'medium' | 'low', string> = {
   high: 'bg-rose-500',
   medium: 'bg-amber-500',
@@ -40,11 +32,13 @@ export function ActionPlan({
   plan,
   isLoading,
   onOpenBuilder,
+  activeFocusId,
 }: {
   plan: ActionPlanData | undefined;
   isLoading: boolean;
-  /** Required: open the inline builder pane focused on the given action. */
   onOpenBuilder: (opts: OpenBuilderOptions) => void;
+  /** The action item id currently open in the builder — highlights that card. */
+  activeFocusId?: string | null;
 }) {
   const toggle = useToggleAction();
   const cv = useMyCv();
@@ -55,8 +49,6 @@ export function ActionPlan({
   const [showAll, setShowAll] = useState(false);
   const location = useLocation();
 
-  // Scroll into view when the user lands on `/profile#actions` (e.g. from the
-  // legacy `/profile/action-plan` redirect or dashboard goal CTA).
   useEffect(() => {
     if (location.hash !== '#actions') return;
     const el = document.getElementById('actions');
@@ -85,9 +77,6 @@ export function ActionPlan({
     );
   }
 
-  // Show the top N actions by default (already sorted server-side by severity
-  // then suggestions). The rest are hidden behind a "Show all" toggle so the
-  // section reads as a tight to-do list, not a wall of work.
   const remaining = Math.max(0, plan.items.length - DEFAULT_VISIBLE);
   const visibleItems = showAll ? plan.items : plan.items.slice(0, DEFAULT_VISIBLE);
 
@@ -104,6 +93,7 @@ export function ActionPlan({
             onRewriteBullet={(target, original) => setRewriteTarget({ target, original })}
             onOpenBuilder={onOpenBuilder}
             disabled={toggle.isPending}
+            isActive={item.id === activeFocusId}
           />
         ))}
       </div>
@@ -172,6 +162,7 @@ function Row({
   onRewriteBullet,
   onOpenBuilder,
   disabled,
+  isActive,
 }: {
   item: ActionPlanItem;
   cv: CvDetail | null;
@@ -179,11 +170,11 @@ function Row({
   onRewriteBullet: (target: BulletPath, original: string) => void;
   onOpenBuilder: (opts: OpenBuilderOptions) => void;
   disabled: boolean;
+  isActive: boolean;
 }) {
   const Icon = item.kind === 'gap' ? AlertTriangleIcon : LightbulbIcon;
+  const rowRef = useRef<HTMLDivElement>(null);
 
-  // Resolve a deep-linkable bullet target if the action quotes one and we
-  // can match it in the current structured CV. Recomputed cheaply per render.
   const bulletTarget = useMemo<BulletPath | null>(() => {
     if (!cv || !item.quotedBullet) return null;
     const found = findBulletInStructured(cv.structured ?? null, item.quotedBullet);
@@ -191,25 +182,51 @@ function Row({
     return { cvId: cv.id, expId: found.expId, bulletIdx: found.bulletIdx };
   }, [cv, item.quotedBullet]);
 
-  // When an Experience/Education item slips through without a specific itemId
-  // (earned exception — it named the entity by hand) the CTA can only land
-  // the user on the section header, not a specific entry. Mute the affordance
-  // so they know to scan rather than expect a focused jump.
   const isUnanchoredExpOrEdu =
     (item.section === 'experience' || item.section === 'education') && !item.itemId;
 
+  // Scroll the highlighted card into view when it becomes active (e.g. user
+  // clicked it and the builder opened; left panel may have scrolled).
+  useEffect(() => {
+    if (!isActive || !rowRef.current) return;
+    rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [isActive]);
+
+  const openBuilderOpts: OpenBuilderOptions = {
+    section: item.section,
+    focus: item.id,
+    itemId: item.itemId ?? undefined,
+    bulletIndex: item.bulletIndex ?? null,
+    why: item.detail,
+  };
+
   return (
     <div
-      className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
-        item.completed ? 'border-gray-100 bg-[#fafafa]' : 'border-gray-100 bg-white'
-      }`}
+      ref={rowRef}
+      // Entire card opens the builder for incomplete items. Checkbox and
+      // "See alternatives" stop propagation so they don't also fire this.
+      onClick={() => {
+        if (!item.completed) onOpenBuilder(openBuilderOpts);
+      }}
+      className={[
+        'rounded-2xl border p-4 sm:p-5 transition-all duration-150 outline-none',
+        item.completed
+          ? 'border-gray-100 bg-[#fafafa]'
+          : isActive
+            ? 'border-brand-green/50 bg-brand-green/[0.04] ring-2 ring-brand-green/25 cursor-pointer'
+            : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm cursor-pointer',
+      ].join(' ')}
     >
       <div className="flex items-start gap-4">
+        {/* Checkbox — stop propagation so it doesn't trigger the card click */}
         <button
           type="button"
           aria-pressed={item.completed}
           aria-label={item.completed ? 'Mark as not done' : 'Mark as done'}
-          onClick={onToggle}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
           disabled={disabled}
           className={`mt-0.5 shrink-0 w-6 h-6 rounded-full border-2 inline-flex items-center justify-center transition-colors ${
             item.completed
@@ -219,7 +236,9 @@ function Row({
         >
           {item.completed && <CheckIcon className="w-4 h-4" />}
         </button>
+
         <div className="min-w-0 flex-1">
+          {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
             {item.severity && (
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
@@ -231,7 +250,14 @@ function Row({
               <Icon className="w-3 h-3" />
               {item.source}
             </span>
+            {/* "Editing" pill — only visible while this card's builder is open */}
+            {isActive && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green/10 px-2 py-0.5 text-[11px] font-semibold text-brand-green">
+                Editing
+              </span>
+            )}
           </div>
+
           <h3
             className={`mt-1 text-[15px] font-semibold ${
               item.completed ? 'text-gray-500 line-through' : 'text-[#111827]'
@@ -246,48 +272,53 @@ function Row({
           >
             {item.detail}
           </p>
+
+          {/* Action bar — only on incomplete items */}
           {!item.completed ? (
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              {bulletTarget ? (
-                <FixButton
-                  target={bulletTarget}
-                  original={item.quotedBullet ?? ''}
-                  actionId={item.id}
-                />
-              ) : null}
-              <button
-                type="button"
-                onClick={() =>
-                  onOpenBuilder({
-                    section: item.section,
-                    focus: item.id,
-                    itemId: item.itemId ?? undefined,
-                    bulletIndex: item.bulletIndex ?? null,
-                    why: item.detail,
-                  })
-                }
-                className={
-                  isUnanchoredExpOrEdu
-                    ? 'inline-flex items-center gap-1 text-[12.5px] font-semibold text-gray-500 hover:underline'
-                    : 'inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#15803d] hover:underline'
-                }
-                title={
-                  isUnanchoredExpOrEdu
-                    ? 'Lands on the section header — no specific entry identified'
-                    : undefined
-                }
-              >
-                {bulletTarget ? 'Open in builder' : 'Fix in builder'} →
-              </button>
+              {/* See alternatives — stop propagation so it opens the drawer, not the builder */}
               {bulletTarget ? (
                 <button
                   type="button"
-                  onClick={() => onRewriteBullet(bulletTarget, item.quotedBullet ?? '')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRewriteBullet(bulletTarget, item.quotedBullet ?? '');
+                  }}
                   className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-gray-500 hover:text-[#15803d] hover:underline"
                 >
                   See alternatives
                 </button>
               ) : null}
+
+              {/* Right-aligned CTA — shows "Editing now" when active, else "Open in builder →" */}
+              <span className="ml-auto">
+                {isActive ? (
+                  <span className="text-[12px] font-semibold text-brand-green">
+                    Editing now ✓
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      // Card already handles open; stop propagation to avoid double call.
+                      e.stopPropagation();
+                      onOpenBuilder(openBuilderOpts);
+                    }}
+                    className={
+                      isUnanchoredExpOrEdu
+                        ? 'text-[12.5px] font-semibold text-gray-500 hover:underline'
+                        : 'text-[12.5px] font-semibold text-[#15803d] hover:underline'
+                    }
+                    title={
+                      isUnanchoredExpOrEdu
+                        ? 'Lands on the section header — no specific entry identified'
+                        : undefined
+                    }
+                  >
+                    Open in builder →
+                  </button>
+                )}
+              </span>
             </div>
           ) : null}
         </div>

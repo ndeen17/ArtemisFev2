@@ -99,7 +99,9 @@ export function SplitPaneShell({
         open ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]' : '',
       )}
     >
-      <div className="min-w-0">{left}</div>
+      {/* xl:self-start prevents this grid item from stretching to the row height,
+          which is required for position:sticky on the left panel to work in a grid. */}
+      <div className="min-w-0 xl:self-start">{left}</div>
       {open ? (
         <aside
           className={cn(
