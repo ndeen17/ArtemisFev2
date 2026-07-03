@@ -96,8 +96,6 @@ export const CoverLetterSchema = z.object({
   text: z.string().min(50),
   /** Optional one-line tagline used as a subject line / intro hook. */
   hook: z.string().min(5).max(200),
-  /** Phase 2 — keyword-coverage subset of AtsScore. */
-  atsScore: z.lazy(() => AtsScoreSchema).nullable().default(null),
 });
 export type CoverLetter = z.infer<typeof CoverLetterSchema>;
 

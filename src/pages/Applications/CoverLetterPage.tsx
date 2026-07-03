@@ -2,7 +2,6 @@ import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { ArrowLeftIcon } from '@/components/ui/icons';
 import { CoverLetterEditor } from '@/components/applications/CoverLetterEditor';
-import { AtsScoreCard } from '@/components/applications/AtsScoreCard';
 import { useApplication, useDraftCoverLetter, useEditCoverLetter } from '@/hooks/useApplications';
 
 /**
@@ -44,7 +43,6 @@ export default function CoverLetterPage() {
         isDrafting={draft.isPending}
         isSaving={edit.isPending}
       />
-      <AtsScoreCard score={app?.coverLetter?.atsScore ?? null} variant="cover-letter" />
     </AppShell>
   );
 }
