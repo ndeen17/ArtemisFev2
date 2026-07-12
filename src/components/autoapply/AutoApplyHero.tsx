@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/Button';
 
-/** AutoApply — top hero section with headline, subhead, CTA, and globe illustration. */
+/** AutoApply — top hero section with headline, subhead, and CTA. */
 export function AutoApplyHero() {
   return (
     <main className="w-full bg-white">
-      <section className="mx-auto flex max-w-[900px] flex-col items-center px-6 pt-24 text-center sm:pt-28 lg:pt-32">
+      <section className="mx-auto flex max-w-[900px] flex-col items-center px-6 pt-24 pb-48 text-center sm:pt-28 sm:pb-64 lg:pt-32 lg:pb-96">
         <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-[64px]">
           <span className="text-[#111827]">Stop Applying for Weeks</span>
           <br />
@@ -21,15 +21,6 @@ export function AutoApplyHero() {
             Get started
           </Button>
         </div>
-      </section>
-
-      <section className="mx-auto flex w-full justify-center px-6 pt-16 pb-0 sm:pt-20">
-        <img
-          src="/assets/globe.png"
-          alt="Illustration of a globe with orbital rings"
-          className="w-full max-w-[900px] select-none"
-          draggable={false}
-        />
       </section>
     </main>
   );
