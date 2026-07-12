@@ -13,6 +13,17 @@ export default function AutoApplyPage() {
       <div className="bg-[#ecedec]">
         <ValueProp />
 
+        <div id="autoapply">
+          <FeatureRow
+            eyebrow="Auto-Apply."
+            title="We fill it out. You show up."
+            description="Artemis finds roles that match your profile and submits tailored applications on your behalf, so your time goes into interviewing, not paperwork."
+            cta={{ label: 'Start auto-applying', href: '/signup' }}
+            image="/assets/ai.png"
+            imageAlt="Application form being filled out automatically on a tablet"
+          />
+        </div>
+
         <div id="resume">
           <FeatureRow
             eyebrow="Profile Review."
