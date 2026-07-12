@@ -1,5 +1,6 @@
-import { Navbar, ValueProp, FeatureRow, Difference, FinalCTA, Footer } from '@/components/landing';
+import { Navbar, ValueProp, FeatureRow, Difference, Footer } from '@/components/landing';
 import { AutoApplyHero } from '@/components/autoapply/AutoApplyHero';
+import { AutoApplyFinalCTA } from '@/components/autoapply/AutoApplyFinalCTA';
 import { MarketingLayout } from '@/components/layout/MarketingLayout';
 
 /** Public marketing page for the AutoApply product surface (route: `/autoapply`). */
@@ -26,7 +27,7 @@ export default function AutoApplyPage() {
       </div>
 
       <Difference />
-      <FinalCTA />
+      <AutoApplyFinalCTA />
       <Footer />
     </MarketingLayout>
   );
