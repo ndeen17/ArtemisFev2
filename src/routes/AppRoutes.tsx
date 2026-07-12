@@ -60,6 +60,7 @@ function lazyWithRetry<T extends ComponentType<unknown>>(
 }
 
 const LandingPage = lazyWithRetry(() => import('@/pages/Landing/LandingPage'));
+const AutoApplyPage = lazyWithRetry(() => import('@/pages/AutoApply/AutoApplyPage'));
 const NotFoundPage = lazyWithRetry(() => import('@/pages/NotFoundPage'));
 const SignUpPage = lazyWithRetry(() => import('@/pages/Auth/SignUpPage'));
 const SignInPage = lazyWithRetry(() => import('@/pages/Auth/SignInPage'));
@@ -106,6 +107,7 @@ const SettingsPrivacyPage = lazyWithRetry(() => import('@/pages/Settings/Setting
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
+  { path: '/autoapply', element: <AutoApplyPage /> },
   // Phase 1: auth surface
   { path: '/signup', element: <SignUpPage /> },
   { path: '/signin', element: <SignInPage /> },
