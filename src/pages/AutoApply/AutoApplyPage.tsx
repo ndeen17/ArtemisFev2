@@ -1,18 +1,21 @@
-import { Navbar, ValueProp, FeatureRow, Difference, Footer } from '@/components/landing';
+import { FeatureRow, Footer } from '@/components/landing';
+import { AutoApplyNavbar } from '@/components/autoapply/AutoApplyNavbar';
 import { AutoApplyHero } from '@/components/autoapply/AutoApplyHero';
+import { AutoApplyValueProp } from '@/components/autoapply/AutoApplyValueProp';
+import { AutoApplyDifference } from '@/components/autoapply/AutoApplyDifference';
 import { AutoApplyFinalCTA } from '@/components/autoapply/AutoApplyFinalCTA';
 import { MarketingLayout } from '@/components/layout/MarketingLayout';
 
-/** Public marketing page for the AutoApply product surface (route: `/autoapply`). */
+/** Public marketing page for the AutoApply feature (route: `/autoapply`). */
 export default function AutoApplyPage() {
   return (
     <MarketingLayout>
-      <Navbar />
+      <AutoApplyNavbar />
       <AutoApplyHero />
 
       {/* Continuous light-gray band: value prop + auto-apply feature row */}
       <div className="bg-[#ecedec]">
-        <ValueProp />
+        <AutoApplyValueProp />
 
         <div id="autoapply">
           <FeatureRow
@@ -26,7 +29,7 @@ export default function AutoApplyPage() {
         </div>
       </div>
 
-      <Difference />
+      <AutoApplyDifference />
       <AutoApplyFinalCTA />
       <Footer />
     </MarketingLayout>
