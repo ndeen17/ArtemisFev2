@@ -14,7 +14,7 @@ const ACCEPT = ALLOWED_CV_MIME.join(',');
 
 function validate(file: File): string | null {
   if (!ALLOWED_CV_MIME.includes(file.type as (typeof ALLOWED_CV_MIME)[number])) {
-    return 'Only PDF or plain-text CVs are accepted.';
+    return 'Only PDF, Word (.docx), or plain-text CVs are accepted.';
   }
   if (file.size > MAX_CV_BYTES) {
     return 'File exceeds the 5MB limit.';
@@ -82,7 +82,7 @@ export function CvUploader({ onUpload, pending, errorMessage }: Props) {
           <UploadIcon />
         </div>
         <p className="mt-4 text-[16px] font-semibold text-[#111827]">Drag your CV here</p>
-        <p className="mt-1 text-[13px] text-gray-500">PDF or plain text, up to 5MB</p>
+        <p className="mt-1 text-[13px] text-gray-500">PDF, Word, or plain text, up to 5MB</p>
         <div className="mt-5">
           <Button variant="outline" size="sm" onClick={pick} type="button">
             Choose file

@@ -138,7 +138,7 @@ export default function SettingsResumePage() {
             {cv ? 'Replace your CV' : 'Upload your CV'}
           </div>
           <p className="mt-1 text-[13px] text-gray-500">
-            PDF or plain text, up to 5MB. Uploading a new file replaces the previous one and
+            PDF, Word, or plain text, up to 5MB. Uploading a new file replaces the previous one and
             triggers a fresh analysis automatically.
           </p>
         </div>

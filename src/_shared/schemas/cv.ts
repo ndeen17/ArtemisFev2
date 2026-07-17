@@ -6,7 +6,10 @@ export const CvSourceSchema = z.enum(['upload', 'jd', 'questionnaire']);
 export type CvSource = z.infer<typeof CvSourceSchema>;
 
 export const MAX_CV_BYTES = 5 * 1024 * 1024; // 5 MB
-export const ALLOWED_CV_MIME = ['application/pdf', 'text/plain'] as const;
+export const PDF_MIME = 'application/pdf';
+export const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+export const TEXT_MIME = 'text/plain';
+export const ALLOWED_CV_MIME = [PDF_MIME, DOCX_MIME, TEXT_MIME] as const;
 
 /** CV summary returned by /cv endpoints (no rawText to keep payloads small). */
 export const CvSummarySchema = z.object({
